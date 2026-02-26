@@ -5,10 +5,23 @@ export default class extends Controller {
     this.element.addEventListener('mousedown', this.toggleOption);
     this.element.addEventListener('change', this.renderChips);
 
+    // Create filter input
+    this.filterInput = document.createElement('input');
+    this.filterInput.type = 'text';
+    this.filterInput.placeholder = 'Search tags...';
+    this.filterInput.className = "form-field__input text-sm mb-2";
+    this.filterInput.addEventListener('input', this.filterOptions);
+    this.element.parentNode.insertBefore(this.filterInput, this.element);
+
+    // Create separator
+    this.separator = document.createElement('div');
+    this.separator.className = "border-t border-secondary mt-3 mb-2 hidden";
+    this.element.parentNode.insertBefore(this.separator, this.element.nextSibling);
+
     // Create container for chips
     this.chipsContainer = document.createElement('div');
     this.chipsContainer.className = "flex flex-wrap gap-2 mt-2";
-    this.element.parentNode.insertBefore(this.chipsContainer, this.element.nextSibling);
+    this.element.parentNode.insertBefore(this.chipsContainer, this.separator.nextSibling);
 
     // Initial render
     this.renderChips();
@@ -17,6 +30,16 @@ export default class extends Controller {
   disconnect() {
     this.element.removeEventListener('mousedown', this.toggleOption);
     this.element.removeEventListener('change', this.renderChips);
+
+    if (this.filterInput) {
+      this.filterInput.removeEventListener('input', this.filterOptions);
+      this.filterInput.remove();
+    }
+
+    if (this.separator) {
+      this.separator.remove();
+    }
+
     if (this.chipsContainer) {
       this.chipsContainer.remove();
     }
@@ -32,12 +55,36 @@ export default class extends Controller {
     }
   }
 
+  filterOptions = (e) => {
+    const term = e.target.value.toLowerCase();
+    Array.from(this.element.options).forEach(option => {
+      if (option.value === "") return;
+
+      const text = option.text.toLowerCase();
+      if (text.includes(term)) {
+        option.hidden = false;
+        option.style.display = "";
+      } else {
+        option.hidden = true;
+        option.style.display = "none";
+      }
+    });
+  }
+
   renderChips = () => {
     if (!this.chipsContainer) return;
 
     this.chipsContainer.innerHTML = '';
 
     const selectedOptions = Array.from(this.element.options).filter(opt => opt.selected && opt.value !== "");
+
+    if (selectedOptions.length > 0) {
+      if (this.separator) this.separator.classList.remove('hidden');
+      this.chipsContainer.classList.remove('hidden');
+    } else {
+      if (this.separator) this.separator.classList.add('hidden');
+      this.chipsContainer.classList.add('hidden');
+    }
 
     selectedOptions.forEach(option => {
       const chip = document.createElement('div');
