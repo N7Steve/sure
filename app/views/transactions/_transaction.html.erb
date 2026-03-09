@@ -6,7 +6,7 @@
   <%= turbo_frame_tag dom_id(transaction) do %>
     <div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4 <%= entry.excluded ? "opacity-50 text-secondary" : "" %>">
 
-      <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 min-w-0">
+      <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 xl:col-span-5 min-w-0">
         <%= check_box_tag dom_id(entry, "selection"),
             disabled: transaction.transfer.present?,
             class: "checkbox checkbox--light hidden lg:block",
@@ -134,6 +134,47 @@
             </div>
           <% end %>
         </div>
+      </div>
+
+      <div class="hidden xl:flex items-center gap-1 col-span-3 min-w-0 flex-wrap overflow-hidden pr-4">
+        <% 
+          current_q = params.fetch(:q, {}).respond_to?(:permit!) ? params.fetch(:q, {}).permit!.to_h : params.fetch(:q, {}).to_h
+          current_tags = Array.wrap(current_q[:tags] || current_q["tags"])
+        %>
+        <% transaction.tags.first(4).each do |tag| %>
+          <% tag_color = tag.color.presence || Tag::UNCATEGORIZED_COLOR %>
+          <%= link_to transactions_path(q: current_q.merge(tags: (current_tags + [tag.name]).uniq)),
+                      class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center whitespace-nowrap border hover:opacity-80 transition-opacity",
+                      style: "background-color: color-mix(in oklab, #{tag_color} 10%, transparent); border-color: color-mix(in oklab, #{tag_color} 20%, transparent); color: #{tag_color};",
+                      title: tag.name,
+                      data: { turbo_frame: "_top" } do %>
+            <%= tag.name %>
+          <% end %>
+        <% end %>
+
+        <%= render DS::Menu.new do |menu| %>
+          <% menu.with_button(class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center justify-center whitespace-nowrap border border-dashed border-secondary text-secondary hover:bg-surface-hover hover:text-primary transition-colors", style: "width: 24px; height: 24px;") do %>
+            <%= icon "plus", size: "sm" %>
+          <% end %>
+          <% menu.with_custom_content do %>
+            <div class="p-3 w-64">
+              <%= styled_form_with model: entry,
+                    url: transaction_path(entry),
+                    data: { controller: "auto-submit-form" } do |f| %>
+                <%= f.fields_for :entryable do |ef| %>
+                  <%= ef.select :tag_ids,
+                        Current.family.tags.alphabetically.pluck(:name, :id),
+                        {
+                          include_blank: t("transactions.show.none", default: "None"),
+                          multiple: true,
+                          label: t("transactions.show.tags_label", default: "Tags")
+                        },
+                        { "data-controller": "multi-select", "data-auto-submit-form-target": "auto" } %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
       </div>
 
       <div class="hidden md:flex items-center gap-1 col-span-2">
