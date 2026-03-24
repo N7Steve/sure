@@ -33,4 +33,16 @@ module SyncableInterfaceTest
     assert_equal earlier_start, first_sync.window_start_date
     assert_equal wider_end, first_sync.window_end_date
   end
+
+  test "second sync request enqueues new sync if existing sync is syncing" do
+    later_start = 2.days.ago.to_date
+    first_sync = @syncable.sync_later(window_start_date: later_start, window_end_date: later_start)
+    first_sync.start!
+
+    assert_difference "@syncable.syncs.count", 1 do
+      assert_enqueued_with job: SyncJob do
+        @syncable.sync_later
+      end
+    end
+  end
 end

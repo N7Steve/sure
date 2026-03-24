@@ -18,10 +18,10 @@ module Syncable
   def sync_later(parent_sync: nil, window_start_date: nil, window_end_date: nil)
     Sync.transaction do
       with_lock do
-        sync = self.syncs.visible.first
+        sync = self.syncs.pending.where("syncs.created_at > ?", Sync::VISIBLE_FOR.ago).first
 
         if sync
-          Rails.logger.info("There is an existing recent sync, expanding window if needed (#{sync.id})")
+          Rails.logger.info("There is an existing pending sync, expanding window if needed (#{sync.id})")
           sync.expand_window_if_needed(window_start_date, window_end_date)
 
           # Update parent relationship if one is provided and sync doesn't already have a parent

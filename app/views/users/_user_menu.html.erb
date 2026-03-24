@@ -50,6 +50,7 @@
       href: intro_mode ? settings_profile_path : accounts_path(return_to: request.fullpath)
     ) %>
     <% menu.with_item(variant: "link", text: "Changelog", icon: "box", href: changelog_path) %>
+    <% menu.with_item(variant: "button", text: "Recalculate balances", icon: "refresh-cw", href: sync_all_accounts_path, method: :post) %>
 
     <% if self_hosted? && !intro_mode %>
       <% menu.with_item(variant: "link", text: "Feedback", icon: "megaphone", href: feedback_path) %>
