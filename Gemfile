@@ -140,3 +140,5 @@ group :test do
   gem "climate_control"
   gem "simplecov", require: false
 end
+
+gem "connection_pool", "< 3.0"
