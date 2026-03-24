@@ -107,6 +107,11 @@ Rails.application.routes.draw do
 
   mount Lookbook::Engine, at: "/design-system"
 
+  if Rails.env.development?
+    mount Rswag::Api::Engine => "/api-docs"
+    mount Rswag::Ui::Engine => "/api-docs"
+  end
+
   # Uses basic auth - see config/initializers/sidekiq.rb
   mount Sidekiq::Web => "/sidekiq"
 
@@ -224,6 +229,7 @@ Rails.application.routes.draw do
     collection do
       get :merge
       post :perform_merge
+      post :enhance
     end
   end
 
