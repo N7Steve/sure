@@ -85,9 +85,9 @@
             <% end %>
 
             <% if account.excluded? %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.include", default: "Include in totals"), href: polymorphic_path([:toggle_excluded, account]), method: :patch, icon: "eye", data: { turbo_frame: :_top }) %>
+              <% menu.with_item(variant: "button", text: t("accounts.account.include", default: "Include in totals"), href: polymorphic_path([:toggle_excluded, account]), method: :patch, icon: "toggle-right", data: { turbo_frame: :_top }) %>
             <% else %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.exclude", default: "Exclude from totals"), href: polymorphic_path([:toggle_excluded, account]), method: :patch, icon: "eye-off", data: { turbo_frame: :_top }) %>
+              <% menu.with_item(variant: "button", text: t("accounts.account.exclude", default: "Exclude from totals"), href: polymorphic_path([:toggle_excluded, account]), method: :patch, icon: "toggle-left", data: { turbo_frame: :_top }) %>
             <% end %>
           <% end %>
           <% if is_default %>
