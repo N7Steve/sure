@@ -142,4 +142,3 @@ group :test do
   gem "simplecov", require: false
 end
 
-gem "connection_pool", "< 3.0"
