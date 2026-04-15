@@ -49,13 +49,18 @@ class EnableBankingItem::Syncer
     end
 
     # Phase 3: Process transactions for linked and visible accounts only
-    if linked_accounts.any?
+    linked_account_ids = enable_banking_item.enable_banking_accounts
+      .joins(:account_provider)
+      .joins(:account)
+      .merge(Account.sync_enabled)
+      .pluck("accounts.id")
+
+    if linked_account_ids.any?
       sync.update!(status_text: "Processing transactions...") if sync.respond_to?(:status_text)
-      account_ids = linked_accounts.filter_map { |a| a.current_account&.id }
       enable_banking_item.process_accounts
 
       # Collect transaction statistics
-      collect_transaction_stats(sync, account_ids: account_ids, source: "enable_banking")
+      collect_transaction_stats(sync, account_ids: linked_account_ids, source: "enable_banking")
 
       # Phase 4: Schedule balance calculations for linked accounts
       sync.update!(status_text: "Calculating balances...") if sync.respond_to?(:status_text)
@@ -65,6 +70,11 @@ class EnableBankingItem::Syncer
         window_end_date: sync.window_end_date
       )
     end
+
+    collect_health_stats(sync, errors: nil)
+  rescue => e
+    collect_health_stats(sync, errors: [ { message: e.message, category: "sync_error" } ])
+    raise
   end
 
   def perform_post_sync
