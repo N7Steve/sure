@@ -70,6 +70,9 @@ class Transfer < ApplicationRecord
   end
 
   def name
+    outflow_name = outflow_transaction&.entry&.name
+    return outflow_name if outflow_name.present?
+
     acc = to_account
     if payment?
       acc ? "Payment to #{acc.name}" : "Payment"
