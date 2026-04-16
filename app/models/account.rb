@@ -387,8 +387,9 @@ class Account < ApplicationRecord
   end
 
   # Determines if this account supports manual trade entry
-  # Investment accounts always support trades; Crypto only if subtype is "exchange"
+  # Investment accounts always support trades (except generic funds); Crypto only if subtype is "exchange"
   def supports_trades?
+    return false if investment? && %w[roboadvisor managed_fund].include?(subtype)
     return true if investment?
     return accountable.supports_trades? if crypto? && accountable.respond_to?(:supports_trades?)
     false

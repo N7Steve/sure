@@ -55,6 +55,8 @@ class Investment < ApplicationRecord
     "riester" => { short: "Riester", long: "Riester-Rente", region: "eu", tax_treatment: :tax_deferred },
 
     # === Generic (available everywhere) ===
+    "roboadvisor" => { short: "Roboadvisor", long: "Roboadvisor", region: nil, tax_treatment: :taxable },
+    "managed_fund" => { short: "Managed Fund", long: "Managed Portfolio / Fund", region: nil, tax_treatment: :taxable },
     "pension" => { short: "Pension", long: "Pension", region: nil, tax_treatment: :tax_deferred },
     "retirement" => { short: "Retirement", long: "Retirement Account", region: nil, tax_treatment: :tax_deferred },
     "mutual_fund" => { short: "Mutual Fund", long: "Mutual Fund", region: nil, tax_treatment: :taxable },

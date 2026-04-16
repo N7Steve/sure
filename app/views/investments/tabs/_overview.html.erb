@@ -1,0 +1,18 @@
+<%# locals: (account:) %>
+
+<%= turbo_frame_tag dom_id(account, :overview) do %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    <%= summary_card title: t(".portfolio_value", default: "Portfolio Value") do %>
+      <%= format_money(account.balance_money) %>
+    <% end %>
+  </div>
+
+  <div class="flex justify-center py-8">
+    <%= render DS::Link.new(
+      text: t(".edit_account", default: "Edit account form"),
+      href: edit_account_path(account),
+      variant: "ghost",
+      frame: :modal
+    ) %>
+  </div>
+<% end %>

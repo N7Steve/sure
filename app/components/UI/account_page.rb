@@ -38,7 +38,13 @@ class UI::AccountPage < ApplicationComponent
 
   def tabs
     case account.accountable_type
-    when "Investment", "Crypto"
+    when "Investment"
+      if %w[roboadvisor managed_fund].include?(account.subtype)
+        [ :activity, :overview ]
+      else
+        [ :activity, :holdings ]
+      end
+    when "Crypto"
       [ :activity, :holdings ]
     when "Property", "Vehicle", "Loan"
       [ :activity, :overview ]
