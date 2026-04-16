@@ -19,7 +19,7 @@
           <% end %>
 
           <% unless account.crypto? %>
-            <% if account.investment? %>
+            <% if account.supports_trades? %>
               <% menu.with_item(
                   variant: "link",
                   text: t("accounts.show.activity.new_activity"),

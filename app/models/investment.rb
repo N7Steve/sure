@@ -1,6 +1,8 @@
 class Investment < ApplicationRecord
   include Accountable
 
+  after_update :migrate_trades_to_transactions, if: :subtype_migrated_to_generic?
+
   # Tax treatment categories:
   # - taxable: Gains taxed when realized
   # - tax_deferred: Taxes deferred until withdrawal
@@ -113,6 +115,35 @@ class Investment < ApplicationRecord
       region_order.filter_map do |region|
         next unless grouped[region]
         [ region_label_for(region), grouped[region].map { |k, v| [ v[:long], k ] } ]
+      end
+    end
+  end
+
+  private
+
+  def subtype_migrated_to_generic?
+    saved_change_to_subtype? && %w[roboadvisor managed_fund].include?(subtype)
+  end
+
+  def migrate_trades_to_transactions
+    # `account` returns the Account model because of the polymorphic has_one
+    return unless account
+
+    account.entries.where(entryable_type: "Trade").find_each do |entry|
+      trade = entry.entryable
+      
+      Transaction.transaction do
+        # Create an equivalent Transaction, taking any useful categorization labels available
+        transaction = Transaction.create!(
+          category_id: trade.category_id,
+          investment_activity_label: trade.investment_activity_label
+        )
+        
+        # Repoint the common Entry to the generic new Transaction
+        entry.update!(entryable: transaction)
+        
+        # Purge the now defunct trade metrics (ticker, price, quantity)
+        trade.destroy!
       end
     end
   end
