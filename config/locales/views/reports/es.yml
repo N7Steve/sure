@@ -123,6 +123,13 @@ es:
       total_liabilities: Pasivos
       no_assets: Sin activos
       no_liabilities: Sin pasivos
+    roboadvisor_performance:
+      title: Carteras Gestionadas
+      portfolio_value: Valor de la Cartera
+      total_return: Rentabilidad Total
+      period_contributions: Aportaciones del Periodo
+      accounts: Carteras
+      no_data: "Sin retorno"
     investment_performance:
       title: Rendimiento de inversiones
       portfolio_value: Valor de la cartera

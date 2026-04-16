@@ -123,6 +123,13 @@ en:
       total_liabilities: Liabilities
       no_assets: No assets
       no_liabilities: No liabilities
+    roboadvisor_performance:
+      title: Managed Portfolios
+      portfolio_value: Portfolio Value
+      total_return: Total Return
+      period_contributions: Period Contributions
+      accounts: Portfolios
+      no_data: "No Returns"
     investment_performance:
       title: Investment Performance
       portfolio_value: Portfolio Value

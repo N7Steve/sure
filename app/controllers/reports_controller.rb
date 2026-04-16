@@ -122,6 +122,9 @@ class ReportsController < ApplicationController
 
       # Investment metrics
       @investment_metrics = build_investment_metrics
+      
+      # Roboadvisor metrics
+      @roboadvisor_metrics = build_roboadvisor_metrics
 
       # Investment flows (contributions/withdrawals)
       @investment_flows = InvestmentFlowStatement.new(Current.family, user: Current.user).period_totals(period: @period)
@@ -154,6 +157,14 @@ class ReportsController < ApplicationController
           partial: "reports/trends_insights",
           locals: { trends_data: @trends_data },
           visible: @has_accounts,
+          collapsible: true
+        },
+        {
+          key: "roboadvisor_performance",
+          title: "reports.roboadvisor_performance.title",
+          partial: "reports/roboadvisor_performance",
+          locals: { roboadvisor_metrics: @roboadvisor_metrics },
+          visible: @roboadvisor_metrics[:has_roboadvisors],
           collapsible: true
         },
         {
@@ -457,13 +468,28 @@ class ReportsController < ApplicationController
 
       {
         has_investments: true,
-        portfolio_value: investment_statement.portfolio_value_money,
+        portfolio_value: investment_statement.portfolio_value_money, # Note: this includes roboadvisors
         unrealized_trend: investment_statement.unrealized_gains_trend,
         period_contributions: period_totals.contributions,
         period_withdrawals: period_totals.withdrawals,
         top_holdings: investment_statement.top_holdings(limit: 5),
         accounts: investment_accounts.to_a,
         gains_by_tax_treatment: build_gains_by_tax_treatment(investment_statement)
+      }
+    end
+
+    def build_roboadvisor_metrics
+      investment_statement = Current.family.investment_statement
+      robo_accounts = investment_statement.roboadvisor_accounts
+
+      return { has_roboadvisors: false } unless robo_accounts.any?
+
+      {
+        has_roboadvisors: true,
+        portfolio_value: investment_statement.roboadvisor_portfolio_value_money,
+        total_return_trend: investment_statement.roboadvisor_total_return_trend,
+        period_contributions: investment_statement.roboadvisor_period_contributions(period: @period),
+        accounts: robo_accounts.to_a
       }
     end
 

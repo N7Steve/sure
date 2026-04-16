@@ -177,13 +177,78 @@ class InvestmentStatement
     )
   end
 
-  # Investment accounts
   def investment_accounts
     @investment_accounts ||= begin
       scope = family.accounts.visible.where(accountable_type: %w[Investment Crypto])
       scope = scope.included_in_finances_for(user) if user
       scope
     end
+  end
+
+  # --- ROBOADVISOR / MANAGED FUND SUPPORT ---
+
+  def roboadvisor_accounts
+    @roboadvisor_accounts ||= investment_accounts.select do |a|
+      a.investment? && %w[roboadvisor managed_fund].include?(a.subtype)
+    end
+  end
+
+  def traditional_investment_accounts
+    @traditional_investment_accounts ||= investment_accounts.select do |a|
+      (a.investment? && !%w[roboadvisor managed_fund].include?(a.subtype)) || a.crypto?
+    end
+  end
+
+  def roboadvisor_portfolio_value
+    roboadvisor_accounts.sum { |a| convert_to_family_currency(a.balance, a.currency) }
+  end
+
+  def roboadvisor_portfolio_value_money
+    Money.new(roboadvisor_portfolio_value, family.currency)
+  end
+
+  def roboadvisor_net_contributions(period: Period.all_time)
+    account_ids = roboadvisor_accounts.map(&:id)
+    return 0 if account_ids.empty?
+
+    entries = family.entries
+                    .where(account_id: account_ids, entryable_type: "Transfer", excluded: false)
+                    .where(date: period.date_range)
+    
+    entries.sum { |e| convert_to_family_currency(e.amount, e.currency) }
+  end
+
+  def roboadvisor_net_contributions_money
+    Money.new(roboadvisor_net_contributions(period: Period.all_time), family.currency)
+  end
+
+  def roboadvisor_period_contributions(period: Period.current_month)
+    account_ids = roboadvisor_accounts.map(&:id)
+    return 0 if account_ids.empty?
+    
+    # Positive transfers = contributions into the account
+    entries = family.entries
+                    .where(account_id: account_ids, entryable_type: "Transfer", excluded: false)
+                    .where(date: period.date_range)
+                    .where("amount > 0")
+                   
+    total = entries.sum { |e| convert_to_family_currency(e.amount, e.currency) }
+    Money.new(total, family.currency)
+  end
+
+  def roboadvisor_total_return
+    roboadvisor_portfolio_value - roboadvisor_net_contributions(period: Period.all_time)
+  end
+
+  def roboadvisor_total_return_trend
+    current = roboadvisor_portfolio_value
+    net_inflows = roboadvisor_net_contributions(period: Period.all_time)
+    return nil if net_inflows.zero? && current.zero?
+    
+    Trend.new(
+      current: Money.new(current, family.currency),
+      previous: Money.new(net_inflows, family.currency)
+    )
   end
 
   private

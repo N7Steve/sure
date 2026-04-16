@@ -1,0 +1,70 @@
+<%# locals: (roboadvisor_metrics:) %>
+
+<% if roboadvisor_metrics[:has_roboadvisors] %>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-xl font-medium"><%= t("reports.roboadvisor_performance.title", default: "Managed Portfolios") %></h3>
+    </div>
+
+    <%# Roboadvisor Summary Cards %>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <%# Portfolio Value Card %>
+      <div class="bg-container-inset rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <%= icon("briefcase", size: "sm") %>
+          <span class="text-sm text-secondary"><%= t("reports.roboadvisor_performance.portfolio_value", default: "Portfolio Value") %></span>
+        </div>
+        <p class="text-xl font-semibold text-primary privacy-sensitive">
+          <%= format_money(roboadvisor_metrics[:portfolio_value]) %>
+        </p>
+      </div>
+
+      <%# Total Return Card %>
+      <div class="bg-container-inset rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <%= icon("trending-up", size: "sm") %>
+          <span class="text-sm text-secondary"><%= t("reports.roboadvisor_performance.total_return", default: "Total Return") %></span>
+        </div>
+        <% if roboadvisor_metrics[:total_return_trend] %>
+          <p class="text-xl font-semibold privacy-sensitive" style="color: <%= roboadvisor_metrics[:total_return_trend].color %>">
+            <%= format_money(Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency)) %>
+            (<%= roboadvisor_metrics[:total_return_trend].percent_formatted %>)
+          </p>
+        <% else %>
+          <p class="text-xl font-semibold text-secondary"><%= t("reports.roboadvisor_performance.no_data", default: "No Data") %></p>
+        <% end %>
+      </div>
+
+      <%# Period Contributions Card %>
+      <div class="bg-container-inset rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <%= icon("arrow-down-to-line", size: "sm") %>
+          <span class="text-sm text-secondary"><%= t("reports.roboadvisor_performance.period_contributions", default: "Period Contributions") %></span>
+        </div>
+        <p class="text-xl font-semibold text-primary privacy-sensitive">
+          <%= format_money(roboadvisor_metrics[:period_contributions]) %>
+        </p>
+      </div>
+    </div>
+
+    <%# Accounts Summary %>
+    <div class="space-y-3">
+      <h4 class="text-lg font-medium"><%= t("reports.roboadvisor_performance.accounts", default: "Roboadvisor Accounts") %></h4>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <% roboadvisor_metrics[:accounts].each do |account| %>
+          <%= link_to account_path(account), class: "bg-container-inset rounded-lg p-4 flex items-center justify-between hover:bg-container-hover transition-colors" do %>
+            <div class="flex items-center gap-3">
+              <%= render "accounts/logo", account: account, size: "sm" %>
+              <div>
+                <p class="font-medium text-primary text-sm"><%= account.name %></p>
+                <p class="text-xs text-secondary"><%= account.short_subtype_label %></p>
+              </div>
+            </div>
+            <p class="font-medium text-primary privacy-sensitive"><%= format_money(account.balance_money) %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
