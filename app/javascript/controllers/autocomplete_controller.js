@@ -4,7 +4,7 @@ import { computePosition, autoUpdate, offset, flip, shift } from "@floating-ui/d
 // Connects to data-controller="autocomplete"
 export default class extends Controller {
   static targets = ["input", "results", "account"]
-  static values = { url: String }
+  static values = { url: String, accountId: String }
 
   connect() {
     this.selectedIndex = -1
@@ -24,8 +24,11 @@ export default class extends Controller {
   }
 
   get accountId() {
-    if (this.hasAccountTarget) {
+    if (this.hasAccountTarget && this.accountTarget.value) {
       return this.accountTarget.value
+    }
+    if (this.hasAccountIdValue) {
+      return this.accountIdValue
     }
     return null
   }
@@ -73,7 +76,7 @@ export default class extends Controller {
 
     descriptions.forEach((desc, index) => {
       const item = document.createElement("div")
-      item.classList.add("px-4", "py-2", "cursor-pointer", "hover:bg-slate-100", "dark:hover:bg-slate-800", "truncate")
+      item.classList.add("text-primary", "text-sm", "cursor-pointer", "flex", "items-center", "px-3", "py-2", "rounded-lg", "hover:bg-container-inset-hover", "truncate")
       item.textContent = desc
       item.dataset.index = index
       item.dataset.action = "click->autocomplete#select mousedown->autocomplete#preventBlur"
@@ -165,9 +168,9 @@ export default class extends Controller {
   highlightItem(items) {
     items.forEach((item, index) => {
       if (index === this.selectedIndex) {
-        item.classList.add("bg-slate-100", "dark:bg-slate-800")
+        item.classList.add("bg-container-inset")
       } else {
-        item.classList.remove("bg-slate-100", "dark:bg-slate-800")
+        item.classList.remove("bg-container-inset")
       }
     })
   }

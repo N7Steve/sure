@@ -54,10 +54,17 @@
               url: transaction_path(@entry),
               class: "space-y-2",
               data: { controller: "auto-submit-form" } do |f| %>
-          <%= f.text_field :name,
-                label: t(".name_label"),
-                disabled: @entry.split_child? || edit_locked,
-                "data-auto-submit-form-target": "auto" %>
+          <div data-controller="autocomplete" data-autocomplete-url-value="<%= descriptions_transactions_path %>" data-autocomplete-account-id-value="<%= @entry.account_id %>">
+            <%= f.text_field :name,
+                  label: t(".name_label"),
+                  disabled: @entry.split_child? || edit_locked,
+                  "data-auto-submit-form-target": "auto",
+                  data: {
+                    autocomplete_target: "input",
+                    action: "input->autocomplete#fetch keydown->autocomplete#keydown blur->autocomplete#hide click->autocomplete#fetch"
+                  } %>
+            <div data-autocomplete-target="results" class="hidden bg-container border border-secondary shadow-border-xs p-1.5 rounded-lg text-sm text-primary overflow-hidden min-w-32 mt-1 z-50"></div>
+          </div>
           <%= f.date_field :date,
                 label: t(".date_label"),
                 max: Date.current,

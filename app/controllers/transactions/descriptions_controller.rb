@@ -17,9 +17,11 @@ class Transactions::DescriptionsController < ApplicationController
     descriptions = @account.entries
                            .where("name ILIKE ?", "%#{query}%")
                            .where.not(name: query)
-                           .distinct
-                           .limit(6)
+                           .limit(20)
                            .pluck(:name)
+                           .map(&:strip)
+                           .uniq { |name| name.downcase }
+                           .first(6)
 
     render json: descriptions
   end
