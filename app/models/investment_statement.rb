@@ -207,15 +207,23 @@ class InvestmentStatement
     Money.new(roboadvisor_portfolio_value, family.currency)
   end
 
+  # Sum of all incoming transfers to roboadvisor accounts in the given period.
+  # Incoming transfers are Transaction entries with transfer kinds and negative
+  # amounts (negative = inflow in this codebase's sign convention).
+  # Returns a positive numeric value representing total contributions.
   def roboadvisor_net_contributions(period: Period.all_time)
     account_ids = roboadvisor_accounts.map(&:id)
     return 0 if account_ids.empty?
 
     entries = family.entries
-                    .where(account_id: account_ids, entryable_type: "Transfer", excluded: false)
+                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+                    .where(account_id: account_ids, excluded: false)
                     .where(date: period.date_range)
-    
-    entries.sum { |e| convert_to_family_currency(e.amount, e.currency) }
+                    .where(transactions: { kind: Transaction::TRANSFER_KINDS })
+                    .where("entries.amount < 0") # negative amount = inflow
+
+    # Sum absolute values (inflows are negative, we want a positive total)
+    entries.sum { |e| convert_to_family_currency(e.amount.abs, e.currency) }
   end
 
   def roboadvisor_net_contributions_money
@@ -224,15 +232,17 @@ class InvestmentStatement
 
   def roboadvisor_period_contributions(period: Period.current_month)
     account_ids = roboadvisor_accounts.map(&:id)
-    return 0 if account_ids.empty?
-    
-    # Positive transfers = contributions into the account
+    return Money.new(0, family.currency) if account_ids.empty?
+
+    # Incoming transfers = negative amount entries with transfer kinds
     entries = family.entries
-                    .where(account_id: account_ids, entryable_type: "Transfer", excluded: false)
+                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+                    .where(account_id: account_ids, excluded: false)
                     .where(date: period.date_range)
-                    .where("amount > 0")
-                   
-    total = entries.sum { |e| convert_to_family_currency(e.amount, e.currency) }
+                    .where(transactions: { kind: Transaction::TRANSFER_KINDS })
+                    .where("entries.amount < 0")
+
+    total = entries.sum { |e| convert_to_family_currency(e.amount.abs, e.currency) }
     Money.new(total, family.currency)
   end
 
@@ -241,13 +251,15 @@ class InvestmentStatement
   end
 
   def roboadvisor_total_return_trend
+    contributions = roboadvisor_net_contributions(period: Period.all_time)
     current = roboadvisor_portfolio_value
-    net_inflows = roboadvisor_net_contributions(period: Period.all_time)
-    return nil if net_inflows.zero? && current.zero?
-    
+    return nil if contributions.zero? && current.zero?
+
+    # Trend.value  = current - previous = portfolio_value - contributions = total return
+    # Trend.percent = (current - previous) / previous * 100 = return %
     Trend.new(
       current: Money.new(current, family.currency),
-      previous: Money.new(net_inflows, family.currency)
+      previous: Money.new(contributions, family.currency)
     )
   end
 
