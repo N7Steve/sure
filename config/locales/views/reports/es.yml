@@ -127,6 +127,7 @@ es:
       title: Carteras Gestionadas
       portfolio_value: Valor de la Cartera
       total_return: Rentabilidad Total
+      period_return: Rentabilidad del Periodo
       period_contributions: Aportaciones del Periodo
       accounts: Carteras
       no_data: "Sin retorno"

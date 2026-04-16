@@ -127,6 +127,7 @@ en:
       title: Managed Portfolios
       portfolio_value: Portfolio Value
       total_return: Total Return
+      period_return: Period Return
       period_contributions: Period Contributions
       accounts: Portfolios
       no_data: "No Returns"

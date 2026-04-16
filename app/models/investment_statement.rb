@@ -263,6 +263,24 @@ class InvestmentStatement
     )
   end
 
+  # Period return: net of all non-transfer transactions in roboadvisor accounts.
+  # Income entries (negative amount) become positive gains; expense entries
+  # (positive amount) become losses. Result is the net gain/loss for the period.
+  def roboadvisor_period_return(period: Period.current_month)
+    account_ids = roboadvisor_accounts.map(&:id)
+    return Money.new(0, family.currency) if account_ids.empty?
+
+    entries = family.entries
+                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+                    .where(account_id: account_ids, excluded: false)
+                    .where(date: period.date_range)
+                    .where.not(transactions: { kind: Transaction::TRANSFER_KINDS })
+
+    # Negate sum: income (negative) becomes positive gain, expenses (positive) become losses
+    total = entries.sum { |e| convert_to_family_currency(-e.amount, e.currency) }
+    Money.new(total, family.currency)
+  end
+
   private
     # Today's rates for every currency present on the family's investment
     # accounts and their holdings. Mirrors BalanceSheet::AccountTotals#exchange_rates.
