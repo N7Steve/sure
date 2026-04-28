@@ -40,7 +40,8 @@
         <% is_selected = item[:value] == selected_value %>
         <% obj = item[:object] %>
 
-        <div class="filterable-item text-primary text-sm cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if is_selected %>"
+        <% is_subcategory = obj&.respond_to?(:subcategory?) && obj.subcategory? %>
+        <div class="filterable-item text-primary text-sm cursor-pointer flex items-center gap-2 py-2 rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if is_selected %> <%= is_subcategory ? "pl-8 pr-3" : "px-3" %>"
               role="option"
               tabindex="0"
               aria-selected="<%= is_selected %>"
@@ -51,6 +52,12 @@
           <span class="check-icon <%= "hidden" unless is_selected %>">
             <%= helpers.icon("check") %>
           </span>
+
+          <% if is_subcategory %>
+            <span class="text-secondary flex shrink-0">
+              <%= helpers.icon("corner-down-right", size: "sm") %>
+            </span>
+          <% end %>
 
           <% case variant %>
           <% when :simple %>
