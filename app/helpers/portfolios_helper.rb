@@ -33,8 +33,7 @@ module PortfoliosHelper
     net_liquidity_amount = portfolio_value_amount - tax
 
     if portfolio_value.is_a?(Money)
-      subunit_amount = (net_liquidity_amount * portfolio_value.currency.subunit_to_unit).round
-      Money.new(subunit_amount, portfolio_value.currency)
+      Money.new(net_liquidity_amount, portfolio_value.currency)
     else
       net_liquidity_amount
     end
