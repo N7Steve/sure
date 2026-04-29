@@ -17,6 +17,12 @@
         <p class="text-xl font-semibold text-primary privacy-sensitive">
           <%= format_money(roboadvisor_metrics[:portfolio_value]) %>
         </p>
+        <% if roboadvisor_metrics[:total_return_trend] %>
+          <% total_return_money = Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency) %>
+          <p class="text-xs text-gray-500 mt-1 privacy-sensitive">
+            Liquidez est. post-impuestos: <%= format_money(calculate_estimated_net_liquidity(roboadvisor_metrics[:portfolio_value], total_return_money)) %>
+          </p>
+        <% end %>
       </div>
 
       <%# Total Return Card %>
