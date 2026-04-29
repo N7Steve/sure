@@ -131,6 +131,8 @@ en:
       period_contributions: Period Contributions
       accounts: Portfolios
       no_data: "No Returns"
+      estimated_net_value: "Estimated net value: %{value}"
+      estimated_net_return: "Estimated net return: %{value}"
     investment_performance:
       title: Investment Performance
       portfolio_value: Portfolio Value

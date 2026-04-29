@@ -131,6 +131,8 @@ es:
       period_contributions: Aportaciones del Periodo
       accounts: Carteras
       no_data: "Sin retorno"
+      estimated_net_value: "Valor estimado post-impuestos: %{value}"
+      estimated_net_return: "Retorno estimado post-impuestos: %{value}"
     investment_performance:
       title: Rendimiento de inversiones
       portfolio_value: Valor de la cartera

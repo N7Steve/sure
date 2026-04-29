@@ -20,7 +20,7 @@
         <% if roboadvisor_metrics[:total_return_trend] %>
           <% total_return_money = Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency) %>
           <p class="text-xs text-gray-500 mt-1 privacy-sensitive">
-            Liquidez est. post-impuestos: <%= format_money(calculate_estimated_net_liquidity(roboadvisor_metrics[:portfolio_value], total_return_money)) %>
+            <%= t("reports.roboadvisor_performance.estimated_net_value", value: format_money(calculate_estimated_net_liquidity(roboadvisor_metrics[:portfolio_value], total_return_money))) %>
           </p>
         <% end %>
       </div>
@@ -32,9 +32,13 @@
           <span class="text-sm text-secondary"><%= t("reports.roboadvisor_performance.total_return", default: "Total Return") %></span>
         </div>
         <% if roboadvisor_metrics[:total_return_trend] %>
+          <% total_return_money = Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency) %>
           <p class="text-xl font-semibold privacy-sensitive" style="color: <%= roboadvisor_metrics[:total_return_trend].color %>">
-            <%= format_money(Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency)) %>
+            <%= format_money(total_return_money) %>
             (<%= roboadvisor_metrics[:total_return_trend].percent_formatted %>)
+          </p>
+          <p class="text-xs text-gray-500 mt-1 privacy-sensitive">
+            <%= t("reports.roboadvisor_performance.estimated_net_return", value: format_money(calculate_estimated_net_return(total_return_money))) %>
           </p>
         <% else %>
           <p class="text-xl font-semibold text-secondary"><%= t("reports.roboadvisor_performance.no_data", default: "No Data") %></p>

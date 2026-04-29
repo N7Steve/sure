@@ -1,9 +1,7 @@
 module PortfoliosHelper
-  def calculate_estimated_net_liquidity(portfolio_value, total_return)
-    portfolio_value_amount = portfolio_value.is_a?(Money) ? portfolio_value.amount : portfolio_value.to_d
+  def calculate_estimated_tax(total_return)
     total_return_amount = total_return.is_a?(Money) ? total_return.amount : total_return.to_d
-
-    return portfolio_value if total_return_amount <= 0
+    return 0.0 if total_return_amount <= 0
 
     tax = 0.0
 
@@ -30,12 +28,30 @@ module PortfoliosHelper
       tax += t5_taxable * 0.28
     end
 
+    tax
+  end
+
+  def calculate_estimated_net_liquidity(portfolio_value, total_return)
+    portfolio_value_amount = portfolio_value.is_a?(Money) ? portfolio_value.amount : portfolio_value.to_d
+    tax = calculate_estimated_tax(total_return)
     net_liquidity_amount = portfolio_value_amount - tax
 
     if portfolio_value.is_a?(Money)
       Money.new(net_liquidity_amount, portfolio_value.currency)
     else
       net_liquidity_amount
+    end
+  end
+
+  def calculate_estimated_net_return(total_return)
+    total_return_amount = total_return.is_a?(Money) ? total_return.amount : total_return.to_d
+    tax = calculate_estimated_tax(total_return)
+    net_return_amount = total_return_amount - tax
+
+    if total_return.is_a?(Money)
+      Money.new(net_return_amount, total_return.currency)
+    else
+      net_return_amount
     end
   end
 end
