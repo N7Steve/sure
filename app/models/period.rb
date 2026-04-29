@@ -124,7 +124,8 @@ class Period
     def current_month_for(family)
       return from_key("current_month") unless family&.uses_custom_month_start?
 
-      family.current_custom_month_period
+      period = family.current_custom_month_period
+      new(start_date: period.start_date, end_date: period.end_date, key: "current_month")
     end
 
     def last_month_for(family)
@@ -134,7 +135,7 @@ class Period
       last_month_date = current_start - 1.day
       start_date = family.custom_month_start_for(last_month_date)
       end_date = family.custom_month_end_for(last_month_date)
-      custom(start_date: start_date, end_date: end_date)
+      new(start_date: start_date, end_date: end_date, key: "last_month")
     end
   end
 
