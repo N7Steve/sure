@@ -132,7 +132,12 @@
                 <div class="text-secondary text-xs font-normal">
                   <% if transaction.transfer? %>
                     <span class="text-secondary">
-                      <%= transaction.loan_payment? ? t("transactions.show.loan_payment") : t("transactions.show.transfer") %> • <%= entry.account.name %>
+                      <% transfer = transaction.transfer %>
+                      <% if transfer&.from_account && transfer&.to_account %>
+                        <%= transaction.loan_payment? ? t("transactions.show.loan_payment") : t("transactions.show.transfer") %> • <%= transfer.from_account.name %> → <%= transfer.to_account.name %>
+                      <% else %>
+                        <%= transaction.loan_payment? ? t("transactions.show.loan_payment") : t("transactions.show.transfer") %> • <%= entry.account.name %>
+                      <% end %>
                     </span>
                   <% else %>
                     <% if transaction.merchant&.present? %>
@@ -219,8 +224,8 @@
           <% end %>
         <% end %>
         <%= content_tag :p,
-            transaction.transfer? ? "+/- #{format_money(entry.amount_money.abs)}" : format_money(-entry.amount_money),
-            class: ["privacy-sensitive", "text-green-600": entry.amount.negative? && !transaction.transfer?] %>
+            format_money(-entry.amount_money),
+            class: ["privacy-sensitive", "text-green-600": entry.amount.negative?, "text-red-500": entry.amount.positive?] %>
       </div>
     </div>
   <% end %>
