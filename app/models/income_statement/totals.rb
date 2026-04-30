@@ -21,7 +21,8 @@ class IncomeStatement::Totals
         total: row["total"],
         transactions_count: row["transactions_count"],
         is_uncategorized_investment: row["is_uncategorized_investment"],
-        is_transfer_to_excluded: row["is_transfer_to_excluded"]
+        is_transfer_to_excluded: row["is_transfer_to_excluded"],
+        is_transfer_from_excluded: row["is_transfer_from_excluded"]
       )
     end
   end
