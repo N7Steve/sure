@@ -238,32 +238,33 @@ class ReportsController < ApplicationController
     def default_start_date
       case @period_type
       when :monthly
-        Date.current.beginning_of_month.to_date
+        Current.family.custom_month_start_for(Date.current)
       when :quarterly
-        Date.current.beginning_of_quarter.to_date
+        Current.family.custom_month_start_for(Date.current.beginning_of_quarter.to_date)
       when :ytd
         Date.current.beginning_of_year.to_date
       when :last_6_months
-        6.months.ago.beginning_of_month.to_date
+        Current.family.custom_month_start_for(6.months.ago.to_date)
       when :custom
         1.month.ago.to_date
       else
-        Date.current.beginning_of_month.to_date
+        Current.family.custom_month_start_for(Date.current)
       end
     end
 
     def default_end_date
       case @period_type
       when :monthly, :last_6_months
-        Date.current.end_of_month.to_date
+        Current.family.custom_month_end_for(Date.current)
       when :quarterly
-        Date.current.end_of_quarter.to_date
+        quarter_start = Current.family.custom_month_start_for(Date.current.beginning_of_quarter.to_date)
+        (quarter_start + 3.months - 1.day).to_date
       when :ytd
         Date.current
       when :custom
         Date.current
       else
-        Date.current.end_of_month.to_date
+        Current.family.custom_month_end_for(Date.current)
       end
     end
 
@@ -309,9 +310,10 @@ class ReportsController < ApplicationController
 
     def calculate_budget_performance
       # Only calculate if we're looking at current month
-      return nil unless @period_type == :monthly && @start_date.beginning_of_month.to_date == Date.current.beginning_of_month.to_date
+      is_current_month = @period_type == :monthly && @start_date == Current.family.custom_month_start_for(Date.current)
+      return nil unless is_current_month
 
-      budget = Budget.find_or_bootstrap(Current.family, start_date: @start_date.beginning_of_month.to_date, user: Current.user)
+      budget = Budget.find_or_bootstrap(Current.family, start_date: @start_date, user: Current.user)
       return 0 if budget.nil? || budget.allocated_spending.zero?
 
       (budget.actual_spending / budget.allocated_spending * 100).round(1)
@@ -323,15 +325,15 @@ class ReportsController < ApplicationController
       # Generate month-by-month data based on the current period filter
       trends = []
 
-      # Generate list of months within the period
-      current_month = @start_date.beginning_of_month
-      end_of_period = @end_date.end_of_month
+      # Start with the custom month that contains @start_date
+      current_month_start = Current.family.custom_month_start_for(@start_date)
 
-      while current_month <= end_of_period
-        month_start = current_month
-        month_end = current_month.end_of_month
+      while current_month_start <= @end_date
+        month_start = current_month_start
+        month_end = Current.family.custom_month_end_for(current_month_start)
 
-        # Ensure we don't go beyond the end date
+        # Ensure we don't go beyond the bounds of the overall period
+        month_start = @start_date if month_start < @start_date
         month_end = @end_date if month_end > @end_date
 
         period = Period.custom(start_date: month_start, end_date: month_end)
@@ -339,15 +341,18 @@ class ReportsController < ApplicationController
         income = Current.family.income_statement.income_totals(period: period).total
         expenses = Current.family.income_statement.expense_totals(period: period).total
 
+        # Use a mid-month display date so e.g. Mar 25 - Apr 24 correctly identifies as "Apr"
+        display_date = current_month_start + 15.days
+
         trends << {
-          month: month_start.strftime("%b %Y"),
-          is_current_month: (month_start.month == Date.current.month && month_start.year == Date.current.year),
+          month: display_date.strftime("%b %Y"),
+          is_current_month: (display_date.month == Date.current.month && display_date.year == Date.current.year),
           income: income,
           expenses: expenses,
           net: income - expenses
         }
 
-        current_month = current_month.next_month
+        current_month_start = current_month_start + 1.month
       end
 
       trends
@@ -703,12 +708,11 @@ class ReportsController < ApplicationController
     def build_monthly_breakdown_for_export
       # Generate list of months in the period
       months = []
-      current_month = @start_date.beginning_of_month
-      end_of_period = @end_date.end_of_month
+      current_month_start = Current.family.custom_month_start_for(@start_date)
 
-      while current_month <= end_of_period
-        months << current_month
-        current_month = current_month.next_month
+      while current_month_start <= @end_date
+        months << current_month_start
+        current_month_start = current_month_start + 1.month
       end
 
       # Get all transactions in the period
@@ -733,7 +737,7 @@ class ReportsController < ApplicationController
         is_expense = entry.amount > 0
         type = is_expense ? "expense" : "income"
         category_name = transaction.category&.name || "Uncategorized"
-        month_key = entry.date.beginning_of_month
+        month_key = Current.family.custom_month_start_for(entry.date)
 
         # Convert to family currency
         begin
@@ -775,7 +779,7 @@ class ReportsController < ApplicationController
 
       CSV.generate do |csv|
         # Build header row: Category + Month columns + Total
-        month_headers = @export_data[:months].map { |m| m.strftime("%b %Y") }
+        month_headers = @export_data[:months].map { |m| (m + 15.days).strftime("%b %Y") }
         header_row = [ "Category" ] + month_headers + [ "Total" ]
         csv << header_row
 
