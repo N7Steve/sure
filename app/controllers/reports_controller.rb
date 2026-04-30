@@ -581,7 +581,8 @@ class ReportsController < ApplicationController
         total_return_trend: investment_statement.roboadvisor_total_return_trend,
         period_contributions: investment_statement.roboadvisor_period_contributions(period: @period),
         period_return: investment_statement.roboadvisor_period_return(period: @period),
-        accounts: robo_accounts.to_a
+        accounts: robo_accounts.to_a,
+        transfers: investment_statement.roboadvisor_transfers_grouped(period: @period)
       }
     end
 

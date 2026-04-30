@@ -281,6 +281,43 @@ class InvestmentStatement
     Money.new(total, family.currency)
   end
 
+  def roboadvisor_transfers_grouped(period: Period.current_month)
+    account_ids = roboadvisor_accounts.map(&:id)
+    return [] if account_ids.empty?
+
+    entries = family.entries
+                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+                    .where(account_id: account_ids, excluded: false)
+                    .where(date: period.date_range)
+                    .where(transactions: { kind: Transaction::TRANSFER_KINDS })
+                    
+    transfer_ids = entries.map { |e| e.entryable.transfer_id }.compact.uniq
+    transfers = Transfer.includes(outflow_transaction: { entry: :account }, inflow_transaction: { entry: :account }).where(id: transfer_ids)
+
+    grouped = Hash.new { |h, k| h[k] = { amount: 0, count: 0 } }
+    
+    transfers.each do |transfer|
+      next unless transfer.outflow_transaction && transfer.inflow_transaction
+      outflow_acc = transfer.outflow_transaction.entry.account
+      inflow_acc = transfer.inflow_transaction.entry.account
+      
+      amount = convert_to_family_currency(transfer.outflow_transaction.entry.amount.abs, transfer.outflow_transaction.entry.currency)
+      
+      key = [outflow_acc, inflow_acc]
+      grouped[key][:amount] += amount
+      grouped[key][:count] += 1
+    end
+    
+    grouped.map do |(outflow, inflow), data|
+      {
+        outflow_account: outflow,
+        inflow_account: inflow,
+        amount: Money.new(data[:amount], family.currency),
+        count: data[:count]
+      }
+    end.sort_by { |item| -item[:amount].amount }
+  end
+
   private
     # Today's rates for every currency present on the family's investment
     # accounts and their holdings. Mirrors BalanceSheet::AccountTotals#exchange_rates.
