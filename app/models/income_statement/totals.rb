@@ -20,13 +20,14 @@ class IncomeStatement::Totals
         classification: row["classification"],
         total: row["total"],
         transactions_count: row["transactions_count"],
-        is_uncategorized_investment: row["is_uncategorized_investment"]
+        is_uncategorized_investment: row["is_uncategorized_investment"],
+        is_transfer_to_excluded: row["is_transfer_to_excluded"]
       )
     end
   end
 
   private
-    TotalsRow = Data.define(:parent_category_id, :category_id, :classification, :total, :transactions_count, :is_uncategorized_investment)
+    TotalsRow = Data.define(:parent_category_id, :category_id, :classification, :total, :transactions_count, :is_uncategorized_investment, :is_transfer_to_excluded)
 
     def query_sql
       ActiveRecord::Base.sanitize_sql_array([
@@ -43,6 +44,7 @@ class IncomeStatement::Totals
           parent_category_id,
           classification,
           is_uncategorized_investment,
+          is_transfer_to_excluded,
           SUM(total) as total,
           SUM(entry_count) as transactions_count
         FROM (
@@ -50,7 +52,7 @@ class IncomeStatement::Totals
           UNION ALL
           #{trades_subquery_sql}
         ) combined
-        GROUP BY category_id, parent_category_id, classification, is_uncategorized_investment;
+        GROUP BY category_id, parent_category_id, classification, is_uncategorized_investment, is_transfer_to_excluded;
       SQL
     end
 
@@ -60,10 +62,11 @@ class IncomeStatement::Totals
         SELECT
           c.id as category_id,
           c.parent_id as parent_category_id,
-          CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
-          ABS(SUM(CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
+          CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
+          ABS(SUM(CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
           COUNT(ae.id) as transactions_count,
-          false as is_uncategorized_investment
+          false as is_uncategorized_investment,
+          (at.kind = 'transfer_to_excluded') as is_transfer_to_excluded
         FROM (#{@transactions_scope.to_sql}) at
         JOIN entries ae ON ae.entryable_id = at.id AND ae.entryable_type = 'Transaction'
         JOIN accounts a ON a.id = ae.account_id
@@ -80,7 +83,7 @@ class IncomeStatement::Totals
           AND a.excluded = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
-        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END;
+        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded');
       SQL
     end
 
@@ -89,10 +92,11 @@ class IncomeStatement::Totals
         SELECT
           c.id as category_id,
           c.parent_id as parent_category_id,
-          CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
-          ABS(SUM(CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
+          CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
+          ABS(SUM(CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
           COUNT(ae.id) as entry_count,
-          false as is_uncategorized_investment
+          false as is_uncategorized_investment,
+          (at.kind = 'transfer_to_excluded') as is_transfer_to_excluded
         FROM (#{@transactions_scope.to_sql}) at
         JOIN entries ae ON ae.entryable_id = at.id AND ae.entryable_type = 'Transaction'
         JOIN accounts a ON a.id = ae.account_id
@@ -113,7 +117,7 @@ class IncomeStatement::Totals
           AND a.excluded = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
-        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('investment_contribution', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END
+        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded')
       SQL
     end
 
@@ -124,7 +128,7 @@ class IncomeStatement::Totals
       # Contributions/withdrawals are tracked separately as Transactions with activity labels
       <<~SQL
         SELECT NULL as category_id, NULL as parent_category_id, NULL as classification,
-               NULL as total, NULL as entry_count, NULL as is_uncategorized_investment
+               NULL as total, NULL as entry_count, NULL as is_uncategorized_investment, NULL as is_transfer_to_excluded
         WHERE false
       SQL
     end

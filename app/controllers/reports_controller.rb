@@ -458,7 +458,7 @@ class ReportsController < ApplicationController
       end
 
       # Helper to process an entry (transaction or trade)
-      process_entry = ->(category, entry, is_trade) do
+      process_entry = ->(category, entry, is_trade, is_transfer_to_excluded = false) do
         type = entry.amount > 0 ? "expense" : "income"
         begin
           converted_amount = Money.new(entry.amount.abs, entry.currency).exchange_to(family_currency).amount
@@ -471,6 +471,9 @@ class ReportsController < ApplicationController
           if is_trade
             parent_key = [ :other_investments, type ]
             grouped_data[parent_key] ||= init_category_group.call(:other_investments, Category.other_investments.name, Category.other_investments.color, Category.other_investments.lucide_icon, type)
+          elsif is_transfer_to_excluded
+            parent_key = [ :transfer_to_excluded, type ]
+            grouped_data[parent_key] ||= init_category_group.call(:transfer_to_excluded, Category.transfer_to_excluded.name, Category.transfer_to_excluded.color, Category.transfer_to_excluded.lucide_icon, type)
           else
             parent_key = [ :uncategorized, type ]
             grouped_data[parent_key] ||= init_category_group.call(:uncategorized, Category.uncategorized.name, Category.uncategorized.color, Category.uncategorized.lucide_icon, type)
@@ -497,12 +500,12 @@ class ReportsController < ApplicationController
 
       # Process transactions
       transactions.each do |transaction|
-        process_entry.call(transaction.category, transaction.entry, false)
+        process_entry.call(transaction.category, transaction.entry, false, transaction.kind == "transfer_to_excluded")
       end
 
       # Process trades
       trades.each do |trade|
-        process_entry.call(trade.category, trade.entry, true)
+        process_entry.call(trade.category, trade.entry, true, false)
       end
 
       # Convert to array and sort subcategories

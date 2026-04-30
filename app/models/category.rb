@@ -89,6 +89,7 @@ class Category < ApplicationRecord
   UNCATEGORIZED_NAME_KEY = "models.category.uncategorized"
   OTHER_INVESTMENTS_NAME_KEY = "models.category.other_investments"
   INVESTMENT_CONTRIBUTIONS_NAME_KEY = "models.category.investment_contributions"
+  TRANSFER_TO_EXCLUDED_NAME_KEY = "models.category.transfer_to_excluded"
 
   class Group
     attr_reader :category, :subcategories
@@ -160,6 +161,14 @@ class Category < ApplicationRecord
         name: I18n.t(OTHER_INVESTMENTS_NAME_KEY),
         color: OTHER_INVESTMENTS_COLOR,
         lucide_icon: "trending-up"
+      )
+    end
+
+    def transfer_to_excluded
+      new(
+        name: I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Transfer to excluded account"),
+        color: TRANSFER_COLOR,
+        lucide_icon: "arrow-right-left"
       )
     end
 
@@ -258,9 +267,14 @@ class Category < ApplicationRecord
     !persisted? && name == I18n.t(OTHER_INVESTMENTS_NAME_KEY)
   end
 
+  # Predicate: is this the synthetic "Transfer to Excluded Account" category?
+  def transfer_to_excluded?
+    !persisted? && name == I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Transfer to excluded account")
+  end
+
   # Predicate: is this any synthetic (non-persisted) category?
   def synthetic?
-    uncategorized? || other_investments?
+    uncategorized? || other_investments? || transfer_to_excluded?
   end
 
   private

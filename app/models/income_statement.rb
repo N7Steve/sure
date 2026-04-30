@@ -133,16 +133,20 @@ class IncomeStatement
 
       uncategorized_category = family.categories.uncategorized
       other_investments_category = family.categories.other_investments
+      transfer_to_excluded_category = family.categories.transfer_to_excluded
 
-      category_totals = [ *categories, uncategorized_category, other_investments_category ].map do |category|
+      category_totals = [ *categories, uncategorized_category, other_investments_category, transfer_to_excluded_category ].map do |category|
         subcategory = categories.find { |c| c.id == category.parent_id }
 
         parent_category_total = if category.uncategorized?
-          # Regular uncategorized: NULL category_id and NOT uncategorized investment
-          totals.select { |t| t.category_id.nil? && !t.is_uncategorized_investment }&.sum(&:total) || 0
+          # Regular uncategorized: NULL category_id, NOT uncategorized investment, NOT transfer to excluded
+          totals.select { |t| t.category_id.nil? && !t.is_uncategorized_investment && !t.is_transfer_to_excluded }&.sum(&:total) || 0
         elsif category.other_investments?
           # Other investments: NULL category_id AND is_uncategorized_investment
           totals.select { |t| t.category_id.nil? && t.is_uncategorized_investment }&.sum(&:total) || 0
+        elsif category.transfer_to_excluded?
+          # Transfer to excluded: NULL category_id AND is_transfer_to_excluded
+          totals.select { |t| t.category_id.nil? && t.is_transfer_to_excluded }&.sum(&:total) || 0
         else
           totals.select { |t| t.category_id == category.id }&.sum(&:total) || 0
         end

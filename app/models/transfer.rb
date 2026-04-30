@@ -14,7 +14,9 @@ class Transfer < ApplicationRecord
 
   class << self
     def kind_for_account(account)
-      if account.loan?
+      if account.excluded?
+        "transfer_to_excluded"
+      elsif account.loan?
         "loan_payment"
       elsif account.credit_card?
         "cc_payment"
