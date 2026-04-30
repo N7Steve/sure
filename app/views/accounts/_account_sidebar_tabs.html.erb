@@ -28,67 +28,73 @@
     <% end %>
 
     <% tabs.with_panel(tab_id: "asset") do %>
-      <div class="space-y-2">
-        <%= render DS::Link.new(
-          text: t("accounts.sidebar.new_asset"),
-          variant: "ghost",
-          href: new_account_path(step: "method_select", classification: "asset"),
-          icon: "plus",
-          frame: :modal,
-          full_width: true,
-          class: "justify-start"
-        ) %>
-
-        <div class="divide-y divide-alpha-black-100">
+      <div class="flex flex-col h-full">
+        <div class="divide-y divide-alpha-black-100 flex-1">
           <% family.balance_sheet.assets.account_groups.each do |group| %>
             <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
             </div>
           <% end %>
         </div>
-      </div>
-    <% end %>
 
-    <% tabs.with_panel(tab_id: "liability") do %>
-      <div class="space-y-2">
-        <%= render DS::Link.new(
-            text: t("accounts.sidebar.new_debt"),
+        <div class="mt-auto pt-4 pb-2">
+          <%= render DS::Link.new(
+            text: t("accounts.sidebar.new_asset"),
             variant: "ghost",
-            href: new_account_path(step: "method_select", classification: "liability"),
+            href: new_account_path(step: "method_select", classification: "asset"),
             icon: "plus",
             frame: :modal,
             full_width: true,
             class: "justify-start"
           ) %>
+        </div>
+      </div>
+    <% end %>
 
-        <div class="divide-y divide-alpha-black-100">
+    <% tabs.with_panel(tab_id: "liability") do %>
+      <div class="flex flex-col h-full">
+        <div class="divide-y divide-alpha-black-100 flex-1">
           <% family.balance_sheet.liabilities.account_groups.each do |group| %>
             <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
             </div>
           <% end %>
         </div>
+
+        <div class="mt-auto pt-4 pb-2">
+          <%= render DS::Link.new(
+              text: t("accounts.sidebar.new_debt"),
+              variant: "ghost",
+              href: new_account_path(step: "method_select", classification: "liability"),
+              icon: "plus",
+              frame: :modal,
+              full_width: true,
+              class: "justify-start"
+            ) %>
+        </div>
       </div>
     <% end %>
 
     <% tabs.with_panel(tab_id: "all") do %>
-      <div class="space-y-2">
-        <%= render DS::Link.new(
-            text: t("accounts.sidebar.new_account"),
-            variant: "ghost",
-            full_width: true,
-            href: new_account_path(step: "method_select"),
-            icon: "plus",
-            frame: :modal,
-            class: "justify-start"
-          ) %>
-
-        <div class="divide-y divide-alpha-black-100">
+      <div class="flex flex-col h-full">
+        <div class="divide-y divide-alpha-black-100 flex-1">
           <% family.balance_sheet.account_groups.each do |group| %>
             <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true %>
             </div>
           <% end %>
+        </div>
+
+        <div class="mt-auto pt-4 pb-2">
+          <%= render DS::Link.new(
+              text: t("accounts.sidebar.new_account"),
+              variant: "ghost",
+              full_width: true,
+              href: new_account_path(step: "method_select"),
+              icon: "plus",
+              frame: :modal,
+              class: "justify-start"
+            ) %>
         </div>
       </div>
     <% end %>

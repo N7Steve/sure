@@ -37,7 +37,7 @@
             <div class="flex items-center gap-1">
               <%= tag.p account.short_subtype_label, class: "text-sm text-secondary truncate min-w-0" %>
               <% if account.excluded? %>
-                <%= icon("eye-off", class: "w-3 h-3 text-gray-400 opacity-50 flex-shrink-0") %>
+                <%= icon("eye-off", size: "xs", class: "text-gray-400 opacity-50") %>
               <% end %>
             </div>
           </div>
