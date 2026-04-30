@@ -459,7 +459,13 @@ class ReportsController < ApplicationController
 
       # Helper to process an entry (transaction or trade)
       process_entry = ->(category, entry, is_trade, is_transfer_to_excluded = false) do
-        type = entry.amount > 0 ? "expense" : "income"
+        type = if is_transfer_to_excluded || (!is_trade && entry.entryable.kind == "loan_payment")
+                 "expense"
+               elsif entry.amount > 0
+                 "expense"
+               else
+                 "income"
+               end
         begin
           converted_amount = Money.new(entry.amount.abs, entry.currency).exchange_to(family_currency).amount
         rescue Money::ConversionError
