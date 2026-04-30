@@ -3,6 +3,19 @@
   is_sub = level == :subcategory
   show_border = local_assigns.fetch(:show_border, false)
   hide_percentage = local_assigns.fetch(:hide_percentage, false)
+  report_start_date = local_assigns.fetch(:report_start_date, nil)
+  report_end_date = local_assigns.fetch(:report_end_date, nil)
+
+  # Build link to transactions filtered by this category and date range
+  entries_link_params = {}
+  if report_start_date && report_end_date && item[:category_name].present?
+    q_params = {
+      start_date: report_start_date.to_s,
+      end_date: report_end_date.to_s,
+      categories: [item[:category_name]]
+    }
+    entries_link_params = { q: q_params, filter_cleared: "1" }
+  end
 %>
 
 <tr data-category="category-<%= item[:category_id] %>" class="text-secondary text-sm <%= show_border ? "table-divider" : "" %>">
@@ -33,9 +46,15 @@
              <% end %>
            </span>
            
-           <span class="text-xs text-subdued whitespace-nowrap ml-1">
-             (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
-           </span>
+           <% if entries_link_params.present? %>
+             <%= link_to transactions_path(entries_link_params), class: "text-xs text-subdued whitespace-nowrap ml-1 hover:text-primary hover:underline transition-colors" do %>
+               (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
+             <% end %>
+           <% else %>
+             <span class="text-xs text-subdued whitespace-nowrap ml-1">
+               (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
+             </span>
+           <% end %>
          </div>
       <% else %>
         <% if item[:category_icon] %>
@@ -59,9 +78,15 @@
         <span class="font-medium text-primary">
           <%= item[:category_name] %>
         </span>
-        <span class="text-xs text-subdued whitespace-nowrap">
-          (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
-        </span>
+        <% if entries_link_params.present? %>
+          <%= link_to transactions_path(entries_link_params), class: "text-xs text-subdued whitespace-nowrap hover:text-primary hover:underline transition-colors" do %>
+            (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
+          <% end %>
+        <% else %>
+          <span class="text-xs text-subdued whitespace-nowrap">
+            (<%= t("reports.transactions_breakdown.table.entries", count: item[:count]) %>)
+          </span>
+        <% end %>
       <% end %>
     </div>
   </td>
