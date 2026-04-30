@@ -33,8 +33,20 @@ class BalanceSheet::AccountGroup
     accountable_type.to_s.underscore
   end
 
+  def loan?
+    accountable_type == Loan
+  end
+
   def total
-    accounts.reject(&:excluded?).sum(&:converted_balance)
+    if accountable_type == Loan
+      accounts.sum(&:converted_balance)
+    else
+      accounts.reject(&:excluded?).sum(&:converted_balance)
+    end
+  end
+
+  def icon
+    accountable_type.icon
   end
 
   def weight

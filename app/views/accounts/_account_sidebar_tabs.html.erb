@@ -39,9 +39,11 @@
           class: "justify-start"
         ) %>
 
-        <div>
+        <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.assets.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
+            <div class="py-1">
+              <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
+            </div>
           <% end %>
         </div>
       </div>
@@ -59,9 +61,11 @@
             class: "justify-start"
           ) %>
 
-        <div>
+        <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.liabilities.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
+            <div class="py-1">
+              <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
+            </div>
           <% end %>
         </div>
       </div>
@@ -79,9 +83,11 @@
             class: "justify-start"
           ) %>
 
-        <div>
+        <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true %>
+            <div class="py-1">
+              <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true %>
+            </div>
           <% end %>
         </div>
       </div>
