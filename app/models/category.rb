@@ -165,7 +165,7 @@ class Category < ApplicationRecord
       )
     end
   # Synthetic category for transfers from excluded accounts
-  def self.transfer_from_excluded
+  def transfer_from_excluded
     new(
       name: I18n.t(TRANSFER_FROM_EXCLUDED_NAME_KEY, default: "Transfer from excluded account"),
       color: "#9CA3AF", # Tailwind gray-400
