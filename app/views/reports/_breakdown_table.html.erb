@@ -30,8 +30,10 @@
 <div>
   <div class="text-large mb-4 flex items-center gap-2 text-lg">
     <%= icon(icon_name, class: "w-5 h-5") %>
-    <span><%= t(title_key, default: "Transfers") %>:</span>
-    <span class="font-medium text-secondary <%= color_class %> privacy-sensitive"> <%= Money.new(total, Current.family.currency).format %></span>
+    <span><%= t(title_key, default: "Transfers") %><%= ":" if type != :transfer %></span>
+    <% if type != :transfer %>
+      <span class="font-medium text-secondary <%= color_class %> privacy-sensitive"> <%= Money.new(total, Current.family.currency).format %></span>
+    <% end %>
   </div>
 
   <div class="bg-container-inset rounded-xl p-1 overflow-x-auto">
@@ -48,7 +50,9 @@
               <% end %>
             <% end %>
           </th>
-          <th class="px-4 py-2 text-right font-medium"><%= t("reports.transactions_breakdown.table.percentage") %></th>
+          <% if type != :transfer %>
+            <th class="px-4 py-2 text-right font-medium"><%= t("reports.transactions_breakdown.table.percentage") %></th>
+          <% end %>
         </tr>
       </thead>
       <tbody>
@@ -58,6 +62,7 @@
             total: total,
             color_class: color_class,
             level: :category,
+            hide_percentage: type == :transfer,
             show_border: idx < groups.size - 1 || group[:subcategories].present? %>
           <%# Render subcategories if present %>
           <% if group[:subcategories].present? && group[:subcategories].any? %>
@@ -67,6 +72,7 @@
                 total: total,
                 color_class: color_class,
                 level: :subcategory,
+                hide_percentage: type == :transfer,
                 show_border: sub_idx < group[:subcategories].size - 1 %>
             <% end %>
           <% end %>

@@ -483,11 +483,14 @@ class ReportsController < ApplicationController
             inflow_acc = transfer.inflow_transaction.entry.account
             
             color_class = kind == "transfer_to_excluded" ? "text-destructive" : "text-success"
-            name = "#{outflow_acc.name}#{outflow_acc.excluded? ? " (excluded)" : ""} -> #{inflow_acc.name}#{inflow_acc.excluded? ? " (excluded)" : ""}"
+            name = "Transfer"
             transfer_id = "transfer_#{outflow_acc.id}_#{inflow_acc.id}"
             parent_key = [ transfer_id, type ]
             
-            grouped_data[parent_key] ||= init_category_group.call(transfer_id, name, "#9CA3AF", "arrow-right-left", type, color_class)
+            grouped_data[parent_key] ||= init_category_group.call(transfer_id, name, "#9CA3AF", "arrow-right-left", type, color_class).merge(
+              outflow_account: outflow_acc,
+              inflow_account: inflow_acc
+            )
           else
             # Fallback
             parent_key = [ :transfer_fallback, type ]
