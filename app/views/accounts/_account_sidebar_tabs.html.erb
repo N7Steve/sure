@@ -41,7 +41,7 @@
 
         <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.assets.account_groups.each do |group| %>
-            <div class="py-1">
+            <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
             </div>
           <% end %>
@@ -63,7 +63,7 @@
 
         <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.liabilities.account_groups.each do |group| %>
-            <div class="py-1">
+            <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
             </div>
           <% end %>
@@ -85,7 +85,7 @@
 
         <div class="divide-y divide-alpha-black-100">
           <% family.balance_sheet.account_groups.each do |group| %>
-            <div class="py-1">
+            <div class="py-2">
               <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true %>
             </div>
           <% end %>
