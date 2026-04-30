@@ -2,15 +2,35 @@
 <%# Local variables: groups, total, type (:income or :expense), amount_sort_params, current_sort_by, current_sort_direction %>
 
 <%
-  color_class = type == :income ? "text-success" : "text-destructive"
-  icon_name = type == :income ? "trending-up" : "trending-down"
-  title_key = type == :income ? "reports.transactions_breakdown.table.income" : "reports.transactions_breakdown.table.expense"
+  color_class = if type == :income
+                  "text-success"
+                elsif type == :expense
+                  "text-destructive"
+                else
+                  "text-primary"
+                end
+
+  icon_name = if type == :income
+                "trending-up"
+              elsif type == :expense
+                "trending-down"
+              else
+                "arrow-right-left"
+              end
+
+  title_key = if type == :income
+                "reports.transactions_breakdown.table.income"
+              elsif type == :expense
+                "reports.transactions_breakdown.table.expense"
+              else
+                "reports.transactions_breakdown.table.transfer"
+              end
 %>
 
 <div>
   <div class="text-large mb-4 flex items-center gap-2 text-lg">
     <%= icon(icon_name, class: "w-5 h-5") %>
-    <span><%= t(title_key) %>:</span>
+    <span><%= t(title_key, default: "Transfers") %>:</span>
     <span class="font-medium text-secondary <%= color_class %> privacy-sensitive"> <%= Money.new(total, Current.family.currency).format %></span>
   </div>
 

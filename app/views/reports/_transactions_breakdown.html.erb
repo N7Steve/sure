@@ -72,6 +72,21 @@
               current_sort_by: current_sort_by,
               current_sort_direction: current_sort_direction %>
       <% end %>
+
+      <%# Transfers Section %>
+      <%
+        transfer_groups = transactions.select { |g| g[:type] == "transfer" }
+        transfer_total = transfer_groups.sum { |g| g[:total] }
+      %>
+      <% if transfer_groups.any? %>
+        <%= render "reports/breakdown_table",
+              groups: transfer_groups,
+              total: transfer_total,
+              type: :transfer,
+              amount_sort_params: amount_sort_params,
+              current_sort_by: current_sort_by,
+              current_sort_direction: current_sort_direction %>
+      <% end %>
     </div>
 
     <%# Summary Stats %>

@@ -459,7 +459,9 @@ class ReportsController < ApplicationController
 
       # Helper to process an entry (transaction or trade)
       process_entry = ->(category, entry, is_trade, is_transfer_to_excluded = false) do
-        type = if is_transfer_to_excluded || (!is_trade && entry.entryable.kind == "loan_payment")
+        type = if is_transfer_to_excluded
+                 "transfer"
+               elsif (!is_trade && entry.entryable.kind == "loan_payment")
                  "expense"
                elsif entry.amount > 0
                  "expense"
@@ -800,7 +802,15 @@ class ReportsController < ApplicationController
       transactions.each do |transaction|
         entry = transaction.entry
         is_expense = entry.amount > 0
-        type = is_expense ? "expense" : "income"
+        type = if transaction.kind == "transfer_to_excluded"
+                 "transfer"
+               elsif transaction.kind == "loan_payment"
+                 "expense"
+               elsif is_expense
+                 "expense"
+               else
+                 "income"
+               end
         category_name = transaction.category&.name || "Uncategorized"
         month_key = Current.family.custom_month_start_for(entry.date)
 
