@@ -285,36 +285,42 @@ class InvestmentStatement
     account_ids = roboadvisor_accounts.map(&:id)
     return [] if account_ids.empty?
 
-    entries = family.entries
-                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
-                    .where(account_id: account_ids, excluded: false)
-                    .where(date: period.date_range)
-                    .where(transactions: { kind: Transaction::TRANSFER_KINDS })
-                    
-    transfer_ids = entries.map { |e| e.entryable.transfer_id }.compact.uniq
-    transfers = Transfer.includes(outflow_transaction: { entry: :account }, inflow_transaction: { entry: :account }).where(id: transfer_ids)
+    # Find all transfer transactions on roboadvisor accounts in the period
+    transactions = Transaction
+                    .joins(:entry)
+                    .where(entries: { account_id: account_ids, excluded: false })
+                    .where(entries: { date: period.date_range })
+                    .where(kind: Transaction::TRANSFER_KINDS)
+                    .includes(:transfer_as_inflow, :transfer_as_outflow)
 
-    grouped = Hash.new { |h, k| h[k] = { amount: 0, count: 0 } }
-    
-    transfers.each do |transfer|
+    # Collect unique transfers from both sides of the association
+    seen_transfer_ids = Set.new
+    transfers = []
+
+    transactions.each do |txn|
+      t = txn.transfer
+      next unless t
+      next if seen_transfer_ids.include?(t.id)
+      seen_transfer_ids << t.id
+      transfers << t
+    end
+
+    # Eager load accounts for all found transfers
+    Transfer.includes(outflow_transaction: { entry: :account }, inflow_transaction: { entry: :account })
+            .where(id: transfers.map(&:id))
+            .each_with_object({}) do |transfer, grouped|
       next unless transfer.outflow_transaction && transfer.inflow_transaction
       outflow_acc = transfer.outflow_transaction.entry.account
       inflow_acc = transfer.inflow_transaction.entry.account
-      
+
       amount = convert_to_family_currency(transfer.outflow_transaction.entry.amount.abs, transfer.outflow_transaction.entry.currency)
-      
-      key = [outflow_acc, inflow_acc]
+
+      key = [outflow_acc.id, inflow_acc.id]
+      grouped[key] ||= { outflow_account: outflow_acc, inflow_account: inflow_acc, amount: 0, count: 0 }
       grouped[key][:amount] += amount
       grouped[key][:count] += 1
-    end
-    
-    grouped.map do |(outflow, inflow), data|
-      {
-        outflow_account: outflow,
-        inflow_account: inflow,
-        amount: Money.new(data[:amount], family.currency),
-        count: data[:count]
-      }
+    end.values.map do |data|
+      data.merge(amount: Money.new(data[:amount], family.currency))
     end.sort_by { |item| -item[:amount].amount }
   end
 
