@@ -488,8 +488,8 @@ class TransactionsController < ApplicationController
                 categories: [], merchants: [], types: [], tags: [], status: []
               )
               .to_h
-              .symbolize_keys
               .compact_blank
+              .with_indifferent_access
 
       cleaned_params.delete(:amount_operator) unless cleaned_params[:amount].present?
 
