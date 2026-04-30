@@ -498,9 +498,9 @@ class TransactionsController < ApplicationController
         base_accounts = Current.user.accessible_accounts.sidebar_visible
         
         allowed_ids = if include_excluded
-                        base_accounts.alphabetically.pluck(:id).map(&:to_s)
+                        base_accounts.pluck(:id).map(&:to_s)
                       else
-                        base_accounts.not_excluded.alphabetically.pluck(:id).map(&:to_s)
+                        base_accounts.not_excluded.pluck(:id).map(&:to_s)
                       end
         
         params_account_ids = Array(cleaned_params[:account_ids]).map(&:to_s)
