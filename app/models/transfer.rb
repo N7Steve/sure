@@ -116,7 +116,7 @@ class Transfer < ApplicationRecord
   end
 
   def categorizable?
-    to_account&.accountable_type == "Loan"
+    true
   end
 
   private

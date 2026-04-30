@@ -30,7 +30,7 @@
     <% tabs.with_panel(tab_id: "asset") do %>
       <div>
         <% family.balance_sheet.assets.account_groups.each_with_index do |group, index| %>
-          <div class="py-2" style="<%= 'border-bottom: 1px solid var(--color-alpha-black-100);' unless index == family.balance_sheet.assets.account_groups.size - 1 %>">
+          <div class="py-2 <%= 'border-b border-alpha-black-100 theme-dark:border-alpha-white-200' unless index == family.balance_sheet.assets.account_groups.size - 1 %>">
             <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
           </div>
         <% end %>
@@ -40,7 +40,7 @@
     <% tabs.with_panel(tab_id: "liability") do %>
       <div>
         <% family.balance_sheet.liabilities.account_groups.each_with_index do |group, index| %>
-          <div class="py-2" style="<%= 'border-bottom: 1px solid var(--color-alpha-black-100);' unless index == family.balance_sheet.liabilities.account_groups.size - 1 %>">
+          <div class="py-2 <%= 'border-b border-alpha-black-100 theme-dark:border-alpha-white-200' unless index == family.balance_sheet.liabilities.account_groups.size - 1 %>">
             <%= render "accounts/accountable_group", account_group: group, mobile: mobile %>
           </div>
         <% end %>
@@ -50,7 +50,7 @@
     <% tabs.with_panel(tab_id: "all") do %>
       <div>
         <% family.balance_sheet.account_groups.each_with_index do |group, index| %>
-          <div class="py-2" style="<%= 'border-bottom: 1px solid var(--color-alpha-black-100);' unless index == family.balance_sheet.account_groups.size - 1 %>">
+          <div class="py-2 <%= 'border-b border-alpha-black-100 theme-dark:border-alpha-white-200' unless index == family.balance_sheet.account_groups.size - 1 %>">
             <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true %>
           </div>
         <% end %>

@@ -67,6 +67,20 @@
         <% if @transfer.categorizable? %>
           <%= f.collection_select :category_id, @categories.alphabetically, :id, :name, { label: "Category", include_blank: "Uncategorized", selected: @transfer.outflow_transaction.category&.id }, "data-auto-submit-form-target": "auto" %>
         <% end %>
+        <% if @transfer.from_account.currency == @transfer.to_account.currency %>
+          <%= f.number_field :amount,
+                label: t("transactions.show.amount_label", default: "Amount"),
+                value: @transfer.amount_abs.amount,
+                step: 0.01,
+                min: 0,
+                "data-auto-submit-form-target": "auto" %>
+        <% else %>
+          <%= f.number_field :amount,
+                label: t("transactions.show.amount_label", default: "Amount"),
+                value: @transfer.amount_abs.amount,
+                disabled: true,
+                title: "Multi-currency transfer amounts cannot be edited here" %>
+        <% end %>
         <%= f.text_area :notes,
                   label: t(".note_label"),
                   placeholder: t(".note_placeholder"),

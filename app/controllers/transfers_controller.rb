@@ -103,7 +103,7 @@ class TransfersController < ApplicationController
     end
 
     def transfer_update_params
-      params.require(:transfer).permit(:notes, :status, :category_id, :name)
+      params.require(:transfer).permit(:notes, :status, :category_id, :name, :amount)
     end
 
     def update_transfer_status
@@ -124,6 +124,13 @@ class TransfersController < ApplicationController
           @transfer.outflow_transaction.entry.update!(name: new_name, user_modified: true)
           @transfer.inflow_transaction.entry.update!(name: new_name, user_modified: true)
         end
+      end
+
+      if transfer_update_params[:amount].present? && @transfer.from_account.currency == @transfer.to_account.currency
+        new_amount = transfer_update_params[:amount].to_d.abs
+        @transfer.outflow_transaction.entry.update!(amount: new_amount, user_modified: true)
+        @transfer.inflow_transaction.entry.update!(amount: -new_amount, user_modified: true)
+        @transfer.sync_account_later
       end
     end
 end
