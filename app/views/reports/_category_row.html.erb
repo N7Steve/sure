@@ -6,14 +6,19 @@
   report_start_date = local_assigns.fetch(:report_start_date, nil)
   report_end_date = local_assigns.fetch(:report_end_date, nil)
 
-  # Build link to transactions filtered by this category and date range
+  # Build link to transactions filtered by this category/type and date range
   entries_link_params = {}
-  if report_start_date && report_end_date && item[:category_name].present?
+  if report_start_date && report_end_date
     q_params = {
       start_date: report_start_date.to_s,
-      end_date: report_end_date.to_s,
-      categories: [item[:category_name]]
+      end_date: report_end_date.to_s
     }
+    if item[:outflow_account] && item[:inflow_account]
+      # Transfer row: filter by type instead of category
+      q_params[:types] = ["transfer"]
+    elsif item[:category_name].present?
+      q_params[:categories] = [item[:category_name]]
+    end
     entries_link_params = { q: q_params, filter_cleared: "1" }
   end
 %>
