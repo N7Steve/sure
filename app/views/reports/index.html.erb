@@ -90,10 +90,30 @@
     <% end %>
 
     <%# Period Display %>
-    <div class="text-sm text-subdued">
-      <%= t("reports.index.showing_period",
-            start: @start_date.strftime("%b %-d, %Y"),
-            end: @end_date.strftime("%b %-d, %Y")) %>
+    <div class="flex items-center gap-1 text-sm text-subdued">
+      <% if @period_nav %>
+        <%= link_to @period_nav[:prev_url], class: "p-1 rounded-md hover:bg-surface-hover text-secondary hover:text-primary transition-colors", aria: { label: "Previous period" } do %>
+          <%= icon("chevron-left", size: "sm") %>
+        <% end %>
+      <% end %>
+
+      <span class="px-1">
+        <%= t("reports.index.showing_period",
+              start: @start_date.strftime("%b %-d, %Y"),
+              end: @end_date.strftime("%b %-d, %Y")) %>
+      </span>
+
+      <% if @period_nav %>
+        <% if @period_nav[:next_url] %>
+          <%= link_to @period_nav[:next_url], class: "p-1 rounded-md hover:bg-surface-hover text-secondary hover:text-primary transition-colors", aria: { label: "Next period" } do %>
+            <%= icon("chevron-right", size: "sm") %>
+          <% end %>
+        <% else %>
+          <div class="p-1 opacity-30 cursor-not-allowed text-secondary" aria-label="Next period disabled">
+            <%= icon("chevron-right", size: "sm") %>
+          </div>
+        <% end %>
+      <% end %>
     </div>
   </div>
 <% end %>

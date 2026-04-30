@@ -97,6 +97,8 @@ class ReportsController < ApplicationController
       # Validate and fix date range if end_date is before start_date
       validate_and_fix_date_range(show_flash: show_flash)
 
+      @period_nav = build_period_navigation
+
       # Build the period
       @period = Period.custom(start_date: @start_date, end_date: @end_date)
       @previous_period = build_previous_period
@@ -274,6 +276,60 @@ class ReportsController < ApplicationController
       previous_start = previous_end - duration.days
 
       Period.custom(start_date: previous_start, end_date: previous_end)
+    end
+
+    def build_period_navigation
+      return nil if @period_type == :custom
+
+      prev_params = { period_type: @period_type }
+      next_params = { period_type: @period_type }
+
+      case @period_type
+      when :monthly
+        prev_start = Current.family.custom_month_start_for(@start_date - 15.days)
+        prev_params[:start_date] = prev_start
+        prev_params[:end_date] = Current.family.custom_month_end_for(prev_start)
+
+        next_start = Current.family.custom_month_start_for(@end_date + 15.days)
+        next_params[:start_date] = next_start
+        next_params[:end_date] = Current.family.custom_month_end_for(next_start)
+
+      when :quarterly
+        prev_start = Current.family.custom_month_start_for(@start_date - 2.months - 15.days)
+        prev_params[:start_date] = prev_start
+        prev_params[:end_date] = (prev_start + 3.months - 1.day).to_date
+
+        next_start = Current.family.custom_month_start_for(@end_date + 15.days)
+        next_params[:start_date] = next_start
+        next_params[:end_date] = (next_start + 3.months - 1.day).to_date
+
+      when :last_6_months
+        prev_start = Current.family.custom_month_start_for(@start_date - 5.months - 15.days)
+        prev_params[:start_date] = prev_start
+        prev_params[:end_date] = Current.family.custom_month_end_for(@start_date - 15.days)
+
+        next_start = Current.family.custom_month_start_for(@end_date + 15.days)
+        next_params[:start_date] = next_start
+        next_end_month_start = Current.family.custom_month_start_for(next_start + 5.months + 15.days)
+        next_params[:end_date] = Current.family.custom_month_end_for(next_end_month_start)
+
+      when :ytd
+        prev_start = (@start_date - 1.year).beginning_of_year.to_date
+        prev_params[:start_date] = prev_start
+        prev_params[:end_date] = prev_start.end_of_year.to_date
+
+        next_start = (@start_date + 1.year).beginning_of_year.to_date
+        next_params[:start_date] = next_start
+        next_params[:end_date] = next_start.year == Date.current.year ? Date.current : next_start.end_of_year.to_date
+      end
+
+      # Don't show next if next_start is in the future
+      has_next = next_params[:start_date] <= Date.current
+
+      {
+        prev_url: reports_path(prev_params),
+        next_url: has_next ? reports_path(next_params) : nil
+      }
     end
 
     def build_summary_metrics
