@@ -30,7 +30,7 @@ class TransactionsController < ApplicationController
 
     # Prepare accounts for the filter partial
     include_excluded = @q && @q[:active_accounts_only] == "false"
-    base_accounts = Current.family.accounts.sidebar_visible
+    base_accounts = Current.user.accessible_accounts.sidebar_visible
     @filter_accounts = include_excluded ? base_accounts.alphabetically : base_accounts.not_excluded.alphabetically
 
     # Preload split parent data
@@ -494,21 +494,21 @@ class TransactionsController < ApplicationController
 
       if cleaned_params[:account_ids].present?
         include_excluded = cleaned_params[:active_accounts_only].to_s == "false"
-        base_accounts = Current.family.accounts.sidebar_visible
+        base_accounts = Current.user.accessible_accounts.sidebar_visible
         
         allowed_ids = if include_excluded
-                        base_accounts.alphabetically.pluck(:id)
+                        base_accounts.alphabetically.pluck(:id).map(&:to_s)
                       else
-                        base_accounts.not_excluded.alphabetically.pluck(:id)
+                        base_accounts.not_excluded.alphabetically.pluck(:id).map(&:to_s)
                       end
         
-        params_account_ids = Array(cleaned_params[:account_ids]).map(&:to_i)
+        params_account_ids = Array(cleaned_params[:account_ids]).map(&:to_s)
         valid_ids = params_account_ids & allowed_ids
         
         if valid_ids.empty?
           cleaned_params.delete(:account_ids)
         else
-          cleaned_params[:account_ids] = valid_ids.map(&:to_s)
+          cleaned_params[:account_ids] = valid_ids
         end
       end
 
