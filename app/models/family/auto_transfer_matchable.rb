@@ -72,13 +72,14 @@ module Family::AutoTransferMatchable
         inflow_transaction = Transaction.find(match.inflow_transaction_id)
         outflow_transaction = Transaction.find(match.outflow_transaction_id)
 
-        # The kind is determined by the DESTINATION account (inflow), matching Transfer::Creator logic
-        inflow_transaction.update!(kind: "funds_movement")
-        outflow_transaction.update!(kind: Transfer.kind_for_account(inflow_transaction.entry.account))
+        # The kind is determined by both source and destination accounts
+        source_account = outflow_transaction.entry.account
+        destination_account = inflow_transaction.entry.account
+        inflow_transaction.update!(kind: Transfer.inflow_kind_for(source_account, destination_account))
+        outflow_transaction.update!(kind: Transfer.outflow_kind_for(source_account, destination_account))
 
         # Assign Investment Contributions category for transfers to investment accounts
-        destination_account = Transaction.find(match.inflow_transaction_id).entry.account
-        if Transfer.kind_for_account(destination_account) == "investment_contribution"
+        if Transfer.outflow_kind_for(source_account, destination_account) == "investment_contribution"
           outflow_txn = Transaction.find(match.outflow_transaction_id)
           if outflow_txn.category_id.blank?
             category = destination_account.family.investment_contributions_category

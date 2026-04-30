@@ -13,17 +13,27 @@ class Transfer < ApplicationRecord
   validate :transfer_has_same_family
 
   class << self
-    def kind_for_account(account)
-      if account.excluded?
+    def outflow_kind_for(source, destination)
+      if destination.excluded? && !source.excluded?
         "transfer_to_excluded"
-      elsif account.loan?
+      elsif source.excluded? && !destination.excluded?
+        "transfer_from_excluded"
+      elsif destination.loan?
         "loan_payment"
-      elsif account.credit_card?
+      elsif destination.credit_card? || destination.liability?
         "cc_payment"
-      elsif account.investment? || account.crypto?
+      elsif (destination.investment? || destination.crypto?) && !(source.investment? || source.crypto?)
         "investment_contribution"
-      elsif account.liability?
-        "cc_payment"
+      else
+        "funds_movement"
+      end
+    end
+
+    def inflow_kind_for(source, destination)
+      if destination.excluded? && !source.excluded?
+        "transfer_to_excluded"
+      elsif source.excluded? && !destination.excluded?
+        "transfer_from_excluded"
       else
         "funds_movement"
       end

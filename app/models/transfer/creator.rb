@@ -58,7 +58,7 @@ class Transfer::Creator
       name = "#{name_prefix} from #{source_account.name}"
 
       Transaction.new(
-        kind: "funds_movement",
+        kind: Transfer.inflow_kind_for(source_account, destination_account),
         entry: destination_account.entries.build(
           amount: inflow_converted_money.amount.abs * -1,
           currency: destination_account.currency,
@@ -80,17 +80,8 @@ class Transfer::Creator
            )
     end
 
-    # The "expense" side of a transfer is treated different in analytics based on where it goes.
     def outflow_transaction_kind
-      if destination_account.loan?
-        "loan_payment"
-      elsif destination_account.liability?
-        "cc_payment"
-      elsif destination_is_investment? && !source_is_investment?
-        "investment_contribution"
-      else
-        "funds_movement"
-      end
+      Transfer.outflow_kind_for(source_account, destination_account)
     end
 
     def destination_is_investment?

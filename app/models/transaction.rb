@@ -72,12 +72,13 @@ class Transaction < ApplicationRecord
     loan_payment: "loan_payment", # A payment to a Loan account, treated as an expense in budgets
     one_time: "one_time", # A one-time expense/income, excluded from budget analytics
     investment_contribution: "investment_contribution", # Transfer to investment/crypto account, treated as an expense in budgets
-    transfer_to_excluded: "transfer_to_excluded" # Transfer to an excluded account (e.g., hidden savings), treated as an expense
+    transfer_to_excluded: "transfer_to_excluded", # Transfer to an excluded account (e.g., hidden savings), treated as an expense
+    transfer_from_excluded: "transfer_from_excluded" # Transfer from an excluded account, treated as an income
   }
 
   # All kinds where money moves between accounts (transfer? returns true).
   # Used for search filters, rule conditions, and UI display.
-  TRANSFER_KINDS = %w[funds_movement cc_payment loan_payment investment_contribution transfer_to_excluded].freeze
+  TRANSFER_KINDS = %w[funds_movement cc_payment loan_payment investment_contribution transfer_to_excluded transfer_from_excluded].freeze
 
   # Kinds excluded from budget/income-statement analytics.
   # loan_payment and transfer_to_excluded are intentionally NOT here —

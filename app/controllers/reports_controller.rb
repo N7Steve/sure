@@ -448,8 +448,8 @@ class ReportsController < ApplicationController
       family_currency = Current.family.currency
 
       # Helper to initialize a category group hash
-      init_category_group = ->(id, name, color, icon, type) do
-        { category_id: id, category_name: name, category_color: color, category_icon: icon, type: type, total: 0, count: 0, subcategories: {} }
+      init_category_group = ->(id, name, color, icon, type, color_class = nil) do
+        { category_id: id, category_name: name, category_color: color, category_icon: icon, type: type, color_class: color_class, total: 0, count: 0, subcategories: {} }
       end
 
       # Helper to initialize a subcategory hash
@@ -458,10 +458,12 @@ class ReportsController < ApplicationController
       end
 
       # Helper to process an entry (transaction or trade)
-      process_entry = ->(category, entry, is_trade, is_transfer_to_excluded = false) do
-        type = if is_transfer_to_excluded
+      process_entry = ->(category, entry, is_trade) do
+        kind = is_trade ? "trade" : entry.entryable.kind
+
+        type = if kind.in?(%w[transfer_to_excluded transfer_from_excluded])
                  "transfer"
-               elsif (!is_trade && entry.entryable.kind == "loan_payment")
+               elsif (!is_trade && kind == "loan_payment")
                  "expense"
                elsif entry.amount > 0
                  "expense"
@@ -474,14 +476,28 @@ class ReportsController < ApplicationController
           converted_amount = entry.amount.abs
         end
 
-        if category.nil?
+        if kind.in?(%w[transfer_to_excluded transfer_from_excluded])
+          transfer = entry.entryable.transfer
+          if transfer && transfer.outflow_transaction && transfer.inflow_transaction
+            outflow_acc = transfer.outflow_transaction.entry.account
+            inflow_acc = transfer.inflow_transaction.entry.account
+            
+            color_class = kind == "transfer_to_excluded" ? "text-destructive" : "text-success"
+            name = "#{outflow_acc.name}#{outflow_acc.excluded? ? " (excluded)" : ""} -> #{inflow_acc.name}#{inflow_acc.excluded? ? " (excluded)" : ""}"
+            transfer_id = "transfer_#{outflow_acc.id}_#{inflow_acc.id}"
+            parent_key = [ transfer_id, type ]
+            
+            grouped_data[parent_key] ||= init_category_group.call(transfer_id, name, "#9CA3AF", "arrow-right-left", type, color_class)
+          else
+            # Fallback
+            parent_key = [ :transfer_fallback, type ]
+            grouped_data[parent_key] ||= init_category_group.call(:transfer_fallback, Category.transfer_to_excluded.name, Category.transfer_to_excluded.color, Category.transfer_to_excluded.lucide_icon, type)
+          end
+        elsif category.nil?
           # Uncategorized or Other Investments (for trades)
           if is_trade
             parent_key = [ :other_investments, type ]
             grouped_data[parent_key] ||= init_category_group.call(:other_investments, Category.other_investments.name, Category.other_investments.color, Category.other_investments.lucide_icon, type)
-          elsif is_transfer_to_excluded
-            parent_key = [ :transfer_to_excluded, type ]
-            grouped_data[parent_key] ||= init_category_group.call(:transfer_to_excluded, Category.transfer_to_excluded.name, Category.transfer_to_excluded.color, Category.transfer_to_excluded.lucide_icon, type)
           else
             parent_key = [ :uncategorized, type ]
             grouped_data[parent_key] ||= init_category_group.call(:uncategorized, Category.uncategorized.name, Category.uncategorized.color, Category.uncategorized.lucide_icon, type)
@@ -508,12 +524,12 @@ class ReportsController < ApplicationController
 
       # Process transactions
       transactions.each do |transaction|
-        process_entry.call(transaction.category, transaction.entry, false, transaction.kind == "transfer_to_excluded")
+        process_entry.call(transaction.category, transaction.entry, false)
       end
 
       # Process trades
       trades.each do |trade|
-        process_entry.call(trade.category, trade.entry, true, false)
+        process_entry.call(trade.category, trade.entry, true)
       end
 
       # Convert to array and sort subcategories
@@ -802,7 +818,7 @@ class ReportsController < ApplicationController
       transactions.each do |transaction|
         entry = transaction.entry
         is_expense = entry.amount > 0
-        type = if transaction.kind == "transfer_to_excluded"
+        type = if transaction.kind.in?(%w[transfer_to_excluded transfer_from_excluded])
                  "transfer"
                elsif transaction.kind == "loan_payment"
                  "expense"
@@ -811,7 +827,12 @@ class ReportsController < ApplicationController
                else
                  "income"
                end
-        category_name = transaction.category&.name || "Uncategorized"
+               
+        category_name = if transaction.kind.in?(%w[transfer_to_excluded transfer_from_excluded]) && transaction.transfer
+                          "#{transaction.transfer.outflow_transaction.entry.account.name} -> #{transaction.transfer.inflow_transaction.entry.account.name}"
+                        else
+                          transaction.category&.name || "Uncategorized"
+                        end
         month_key = Current.family.custom_month_start_for(entry.date)
 
         # Convert to family currency

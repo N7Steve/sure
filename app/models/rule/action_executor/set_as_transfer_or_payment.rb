@@ -19,9 +19,12 @@ class Rule::ActionExecutor::SetAsTransferOrPayment < Rule::ActionExecutor
         Transfer.transaction do
           transfer.save!
 
-          # Use DESTINATION (inflow) account for kind, matching Transfer::Creator logic
+          # Use BOTH accounts for kind logic
+          source_account = transfer.outflow_transaction.entry.account
           destination_account = transfer.inflow_transaction.entry.account
-          outflow_kind = Transfer.kind_for_account(destination_account)
+          outflow_kind = Transfer.outflow_kind_for(source_account, destination_account)
+          inflow_kind = Transfer.inflow_kind_for(source_account, destination_account)
+          
           outflow_attrs = { kind: outflow_kind }
 
           if outflow_kind == "investment_contribution"
@@ -30,7 +33,7 @@ class Rule::ActionExecutor::SetAsTransferOrPayment < Rule::ActionExecutor
           end
 
           transfer.outflow_transaction.update!(outflow_attrs)
-          transfer.inflow_transaction.update!(kind: "funds_movement")
+          transfer.inflow_transaction.update!(kind: inflow_kind)
         end
 
         transfer.sync_account_later
