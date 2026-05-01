@@ -365,6 +365,12 @@ class TransactionsController < ApplicationController
     head :unprocessable_entity
   end
 
+  def toggle_compact_view
+    current_view = Current.user.transactions_compact_view?
+    Current.user.update_transactions_preferences(compact_view: !current_view)
+    redirect_back_or_to request.referer || transactions_path
+  end
+
   def exchange_rate
     account = Current.family.accounts.find(params[:account_id])
     currency_from = params[:currency]
@@ -545,7 +551,7 @@ class TransactionsController < ApplicationController
     end
 
     def preferences_params
-      params.require(:preferences).permit(collapsed_sections: {})
+      params.require(:preferences).permit(:compact_view, collapsed_sections: {})
     end
 
     # Helper methods for convert_to_trade

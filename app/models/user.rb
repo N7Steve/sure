@@ -332,6 +332,10 @@ class User < ApplicationRecord
     preferences&.dig("show_split_grouped") != false
   end
 
+  def transactions_compact_view?
+    preferences&.dig("transactions_compact_view") == true
+  end
+
   def dashboard_two_column?
     preferences&.dig("dashboard_two_column") == true
   end

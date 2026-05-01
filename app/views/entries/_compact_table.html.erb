@@ -1,0 +1,53 @@
+<%# locals: (entries:) %>
+
+<div class="bg-container-inset rounded-xl border border-secondary/20 overflow-x-auto">
+  <table class="w-full text-sm text-left">
+    <thead class="text-xs text-secondary uppercase bg-surface-inset/50 font-medium">
+      <tr>
+        <th class="px-4 py-2 w-28 whitespace-nowrap"><%= t("transactions.show.date_label", default: "Date") %></th>
+        <th class="px-4 py-2"><%= t("transactions.show.name_label", default: "Name") %></th>
+        <th class="px-4 py-2 hidden md:table-cell"><%= t("transactions.show.account_label", default: "Account") %></th>
+        <th class="px-4 py-2 hidden md:table-cell"><%= t("transactions.form.category_label", default: "Category") %></th>
+        <th class="px-4 py-2 text-right"><%= t("transactions.show.amount", default: "Amount") %></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-secondary/20">
+      <% entries.each do |entry| %>
+        <tr class="hover:bg-surface-inset/30 group">
+          <td class="px-4 py-2 whitespace-nowrap text-secondary text-xs align-middle">
+            <%= I18n.l(entry.date, format: :short) %>
+          </td>
+          <td class="px-4 py-2 font-medium min-w-[200px] align-middle">
+            <div class="flex items-center gap-2">
+              <% if entry.entryable_type == "Transaction" && entry.entryable.pending? %>
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0" title="<%= t("transactions.transaction.pending") %>"></span>
+              <% end %>
+              <%= link_to entry.name, entry_path(entry), data: { turbo_frame: "drawer", turbo_prefetch: false }, class: "hover:underline text-primary truncate" %>
+              
+              <% if entry.entryable_type == "Transaction" && entry.entryable.transfer.present? %>
+                 <%= render "transactions/transfer_match", transaction: entry.entryable %>
+              <% end %>
+            </div>
+          </td>
+          <td class="px-4 py-2 hidden md:table-cell text-secondary truncate max-w-[150px] align-middle">
+            <%= entry.account.name %>
+          </td>
+          <td class="px-4 py-2 hidden md:table-cell truncate max-w-[150px] align-middle">
+            <% if entry.entryable_type == "Transaction" %>
+               <div class="flex items-center min-w-0">
+                 <%= render "categories/category_name_mobile", transaction: entry.entryable %>
+               </div>
+            <% else %>
+              <span class="text-secondary"><%= entry.entryable_type %></span>
+            <% end %>
+          </td>
+          <td class="px-4 py-2 text-right align-middle">
+            <p class="font-bold text-sm text-primary privacy-sensitive whitespace-nowrap">
+              <%= format_money(entry.amount_money) %>
+            </p>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

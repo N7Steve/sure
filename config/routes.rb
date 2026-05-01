@@ -307,6 +307,7 @@ Rails.application.routes.draw do
     collection do
       delete :clear_filter
       patch :update_preferences
+      patch :toggle_compact_view
       get :descriptions, to: "transactions/descriptions#index"
     end
 

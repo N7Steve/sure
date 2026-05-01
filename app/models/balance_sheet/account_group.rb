@@ -50,9 +50,9 @@ class BalanceSheet::AccountGroup
   end
 
   def weight
-    return 0 if classification_group.total.zero?
+    return 0 if classification_group.display_total.zero?
 
-    total / classification_group.total.to_d * 100
+    total / classification_group.display_total.to_d * 100
   end
 
   def syncing?

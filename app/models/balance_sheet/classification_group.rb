@@ -24,6 +24,14 @@ class BalanceSheet::ClassificationGroup
     accounts.reject(&:excluded?).select { |a| a.respond_to?(:included_in_finances?) ? a.included_in_finances? : true }.sum(&:converted_balance)
   end
 
+  def display_total
+    account_groups.sum(&:total)
+  end
+
+  def display_total_money
+    Money.new(display_total, currency)
+  end
+
   def syncing?
     accounts.any?(&:syncing?)
   end
