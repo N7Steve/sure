@@ -22,9 +22,9 @@ class TransactionsController < ApplicationController
                        .reverse_chronological
                        .includes(
                          { entry: :account },
-                         :category, :merchant, :tags,
-                         :transfer_as_inflow, :transfer_as_outflow,
-                         merchant: :logo_attachment
+                         :category, :tags,
+                         { merchant: :logo_attachment },
+                         :transfer_as_inflow, :transfer_as_outflow
                        )
 
     @pagy, @transactions = pagy(base_scope, limit: safe_per_page)
@@ -42,7 +42,7 @@ class TransactionsController < ApplicationController
       split_parent_ids = @transactions.filter_map { |t| t.entry.parent_entry_id }.uniq
       if split_parent_ids.any?
         Entry.where(id: split_parent_ids)
-             .includes(:account, entryable: [ :category, :tags, merchant: :logo_attachment ])
+             .includes(:account, entryable: [ :category, :tags, { merchant: :logo_attachment } ])
              .index_by(&:id)
       else
         {}
