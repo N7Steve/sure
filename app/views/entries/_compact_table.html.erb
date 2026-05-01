@@ -60,8 +60,8 @@
             <% end %>
           </td>
           <td class="px-4 py-2 text-right align-middle">
-            <p class="font-bold text-sm privacy-sensitive whitespace-nowrap <%= entry.amount.negative? ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500" %>">
-              <%= format_money(entry.amount_money) %>
+            <p class="font-bold text-sm privacy-sensitive whitespace-nowrap <%= entry.amount.positive? ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500" %>">
+              <%= format_money(-entry.amount_money) %>
             </p>
           </td>
         </tr>
