@@ -23,7 +23,7 @@ class TransactionsController < ApplicationController
                        .includes(
                          { entry: :account },
                          :category, :tags,
-                         { merchant: :logo_attachment },
+                         :merchant,
                          :transfer_as_inflow, :transfer_as_outflow
                        )
 
@@ -42,7 +42,7 @@ class TransactionsController < ApplicationController
       split_parent_ids = @transactions.filter_map { |t| t.entry.parent_entry_id }.uniq
       if split_parent_ids.any?
         Entry.where(id: split_parent_ids)
-             .includes(:account, entryable: [ :category, :tags, { merchant: :logo_attachment } ])
+             .includes(:account, entryable: [ :category, :tags, :merchant ])
              .index_by(&:id)
       else
         {}
