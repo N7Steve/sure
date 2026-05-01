@@ -19,7 +19,6 @@ export default class extends Controller {
   connect() {
     this._cleanup = null;
     this.boundUpdate = this.update.bind(this);
-    this.startAutoUpdate();
     this.addEventListeners();
   }
 
@@ -40,11 +39,13 @@ export default class extends Controller {
 
   show = () => {
     this.tooltipTarget.style.display = "block";
+    this.startAutoUpdate();
     this.update(); // Ensure immediate update when shown
   };
 
   hide = () => {
     this.tooltipTarget.style.display = "none";
+    this.stopAutoUpdate();
   };
 
   startAutoUpdate() {
