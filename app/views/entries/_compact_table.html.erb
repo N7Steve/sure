@@ -1,8 +1,8 @@
 <%# locals: (entries:) %>
 
-<div class="bg-container-inset rounded-xl border border-secondary/60 overflow-x-auto shadow-xs">
+<div class="bg-container-hover rounded-xl overflow-x-auto shadow-xs" style="border: 1px solid var(--color-alpha-white-200);">
   <table class="w-full text-sm text-left">
-    <thead class="text-xs text-secondary uppercase bg-surface-inset/50 font-medium">
+    <thead class="text-xs text-secondary uppercase font-medium" style="background-color: color-mix(in srgb, var(--color-alpha-white-200) 60%, transparent);">
       <tr>
         <th class="px-4 py-2 w-28 whitespace-nowrap"><%= t("transactions.show.date_label", default: "Date") %></th>
         <th class="px-4 py-2 hidden md:table-cell"><%= t("transactions.show.merchant_label", default: "Merchant") %></th>
@@ -12,13 +12,14 @@
         <th class="px-4 py-2 text-right"><%= t("transactions.show.amount", default: "Amount") %></th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-secondary/60">
+    <tbody style="border-top: 1px solid var(--color-alpha-white-200);">
       <% entries.each_with_index do |entry, idx| %>
         <%
            is_last_of_day = (idx == entries.size - 1) || (entry.date != entries[idx + 1].date)
-           border_class = is_last_of_day ? "border-b-[3px] border-secondary/30" : ""
+           border_class = is_last_of_day ? "" : ""
+           row_style = is_last_of_day ? "border-bottom: 3px solid var(--color-alpha-white-200);" : "border-bottom: 1px solid var(--color-alpha-white-200);"
         %>
-        <tr class="hover:bg-surface-inset/30 group <%= border_class %>">
+        <tr class="group" style="<%= row_style %>" onmouseover="this.style.backgroundColor='color-mix(in srgb, var(--color-alpha-white-200) 30%, transparent)'" onmouseout="this.style.backgroundColor=''">
           <td class="px-4 py-2 whitespace-nowrap text-secondary text-xs align-middle">
             <%= entry.date.strftime(Current.family.date_format) %>
           </td>
