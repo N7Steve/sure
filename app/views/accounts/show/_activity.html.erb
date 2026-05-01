@@ -67,68 +67,28 @@
                   bulk_select_singular_label_value: t(".entry"),
                   bulk_select_plural_label_value: t(".entries")
                 } do %>
-        <div id="entry-selection-bar" data-bulk-select-target="selectionBar" class="flex justify-center hidden">
-          <%= render "entries/selection_bar" %>
+        <div class="grid bg-container-inset rounded-xl grid-cols-12 items-center uppercase text-xs font-medium text-secondary px-5 py-3 mb-4">
+          <div class="pl-0.5 col-span-8 flex items-center gap-4">
+            <%= check_box_tag "selection_entry",
+                              class: "checkbox checkbox--light hidden lg:block",
+                              data: {
+                                action: "bulk-select#togglePageSelection",
+                                checkbox_toggle_target: "selectionEntry"
+                              } %>
+            <p><%= t(".date") %></p>
+          </div>
+          <%= tag.p t(".amount"), class: "col-span-2 justify-self-end" %>
+          <%= tag.p t(".balance"), class: "col-span-2 justify-self-end" %>
         </div>
 
-        <% if Current.user.transactions_compact_view? %>
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-4 text-xs uppercase font-medium text-secondary">
-              <%= check_box_tag "selection_entry",
-                                class: "checkbox checkbox--light hidden lg:block",
-                                data: {
-                                  action: "bulk-select#togglePageSelection",
-                                  checkbox_toggle_target: "selectionEntry"
-                                } %>
-              <p><%= t(".date") %></p>
-            </div>
-            
-            <%= button_to toggle_compact_view_transactions_path,
-                  method: :patch,
-                  class: "p-2 rounded-lg hover:bg-surface-inset text-secondary shrink-0",
-                  data: { turbo_frame: "_top" },
-                  title: t("transactions.list.toggle_view", default: "Toggle view") do %>
-              <%= icon("list", class: "w-5 h-5") %>
+        <div>
+          <div class="space-y-4">
+            <%= entries_by_date(@entries) do |entries| %>
+              <% entries.each_with_index do |entry, index| %>
+                <%= render entry, view_ctx: "account" %>
+              <% end %>
             <% end %>
           </div>
-        <% else %>
-          <div class="grid bg-container-inset rounded-xl grid-cols-12 items-center uppercase text-xs font-medium text-secondary px-5 py-3 mb-4 relative pr-14">
-            <div class="pl-0.5 col-span-8 flex items-center gap-4">
-              <%= check_box_tag "selection_entry",
-                                class: "checkbox checkbox--light hidden lg:block",
-                                data: {
-                                  action: "bulk-select#togglePageSelection",
-                                  checkbox_toggle_target: "selectionEntry"
-                                } %>
-              <p><%= t(".date") %></p>
-            </div>
-            <%= tag.p t(".amount"), class: "col-span-2 justify-self-end" %>
-            <%= tag.p t(".balance"), class: "col-span-2 justify-self-end" %>
-            
-            <div class="absolute right-3 top-1/2 -translate-y-1/2">
-              <%= button_to toggle_compact_view_transactions_path,
-                    method: :patch,
-                    class: "p-2 rounded-lg hover:bg-surface text-secondary shrink-0",
-                    data: { turbo_frame: "_top" },
-                    title: t("transactions.list.toggle_view", default: "Toggle view") do %>
-                <%= icon("align-justify", class: "w-5 h-5") %>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-
-        <div>
-          <% if Current.user.transactions_compact_view? %>
-            <%= render "entries/compact_table", entries: @entries %>
-          <% else %>
-            <div class="space-y-4">
-              <%= entries_by_date(@entries) do |entries| %>
-                <% entries.each_with_index do |entry, index| %>
-                  <%= render entry, view_ctx: "account" %>
-                <% end %>
-              <% end %>
-            </div>
-          <% end %>
 
           <div class="p-4 bg-container rounded-bl-lg rounded-br-lg">
             <%= render "shared/pagination", pagy: @pagy %>

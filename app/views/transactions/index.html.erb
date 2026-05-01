@@ -50,7 +50,8 @@
   <% include_excluded = @q && @q[:active_accounts_only] == "false" %>
 
   <% if Current.family.recurring_transactions_disabled? %>
-    <div class="flex justify-end mb-4">
+    <div class="flex items-center justify-end gap-6 mb-4">
+      <%= render "transactions/compact_view_toggle" %>
       <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
     </div>
     <%= render "transactions/list", transactions: @transactions, projected_recurring: @projected_recurring, q: params[:q], pagy: @pagy %>
@@ -62,7 +63,10 @@
           <% nav.with_btn(id: "upcoming", label: t("transactions.show.tab_upcoming"), classes: "px-6") %>
         <% end %>
 
-        <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
+        <div class="flex items-center gap-6">
+          <%= render "transactions/compact_view_toggle" %>
+          <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
+        </div>
       </div>
 
       <%= tabs.with_panel(tab_id: "transactions") do %>

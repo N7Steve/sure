@@ -1,0 +1,16 @@
+<%# locals: () %>
+<div class="flex items-center gap-2">
+  <label for="transactions_compact_view" class="text-sm text-secondary cursor-pointer select-none">
+    <%= t("transactions.index.compact_view", default: "Compact view") %>
+  </label>
+  <%= form_with url: toggle_compact_view_transactions_path, method: :patch, data: { turbo_frame: "_top", controller: "auto-submit-form" } do |f| %>
+    <%= render DS::Toggle.new(
+      id: "transactions_compact_view",
+      name: "compact_view",
+      checked: Current.user.transactions_compact_view?,
+      checked_value: "true",
+      unchecked_value: "false",
+      data: { auto_submit_form_target: "auto" }
+    ) %>
+  <% end %>
+</div>
