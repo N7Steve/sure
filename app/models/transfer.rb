@@ -4,6 +4,8 @@ class Transfer < ApplicationRecord
 
   enum :status, { pending: "pending", confirmed: "confirmed" }
 
+  attr_accessor :category_id
+
   validates :inflow_transaction_id, uniqueness: true
   validates :outflow_transaction_id, uniqueness: true
 

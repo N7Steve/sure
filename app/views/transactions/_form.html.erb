@@ -26,6 +26,17 @@
       <div data-autocomplete-target="results" class="hidden bg-container border border-secondary shadow-border-xs p-1.5 rounded-lg text-sm text-primary overflow-hidden min-w-32 mt-1 z-50"></div>
     </div>
 
+    <%= f.fields_for :entryable do |ef| %>
+      <%= ef.collection_select :merchant_id,
+                Current.family.available_merchants_for(Current.user).alphabetically,
+                :id, :name,
+                { include_blank: t(".none"),
+                  label: t(".merchant_label"),
+                  variant: :logo,
+                  searchable: true,
+                  menu_placement: :auto } %>
+    <% end %>
+
     <% if @entry.account_id %>
       <%= f.hidden_field :account_id, data: { transaction_form_target: "account", autocomplete_target: "account" } %>
     <% else %>
@@ -50,6 +61,17 @@
       max: Date.current, 
       value: f.object.date || Date.current,
       data: { transaction_form_target: "date", action: "change->transaction-form#checkCurrencyDifference" } %>
+
+    <%= f.fields_for :entryable do |ef| %>
+      <%= ef.select :tag_ids,
+                    Current.family.tags.alphabetically.pluck(:name, :id),
+                    {
+                      include_blank: t(".none"),
+                      multiple: true,
+                      label:    t(".tags_label")
+                    },
+                    { "data-controller": "tag-select" } %>
+    <% end %>
 
     <% convert_input = capture do %>
       <%= f.fields_for :entryable do |ef| %>
@@ -93,24 +115,6 @@
   </section>
 
   <%= render DS::Disclosure.new(title: t(".details")) do %>
-    <%= f.fields_for :entryable do |ef| %>
-      <%= ef.collection_select :merchant_id,
-                Current.family.available_merchants_for(Current.user).alphabetically,
-                :id, :name,
-                { include_blank: t(".none"),
-                  label: t(".merchant_label"),
-                  variant: :logo,
-                  searchable: true,
-                  menu_placement: :auto } %>
-      <%= ef.select :tag_ids,
-                    Current.family.tags.alphabetically.pluck(:name, :id),
-                    {
-                      include_blank: t(".none"),
-                      multiple: true,
-                      label:    t(".tags_label")
-                    },
-                    { "data-controller": "multi-select" } %>
-    <% end %>
     <%= f.text_area :notes,
                     label: t(".note_label"),
                     placeholder: t(".note_placeholder"),

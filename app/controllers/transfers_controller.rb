@@ -27,7 +27,8 @@ class TransfersController < ApplicationController
       destination_account_id: destination_account.id,
       date: transfer_params[:date].present? ? Date.parse(transfer_params[:date]) : Date.current,
       amount: transfer_params[:amount].to_d,
-      exchange_rate: transfer_params[:exchange_rate].presence&.to_d
+      exchange_rate: transfer_params[:exchange_rate].presence&.to_d,
+      category_id: transfer_params[:category_id]
     ).create
 
     if @transfer.persisted?
@@ -90,7 +91,7 @@ class TransfersController < ApplicationController
     end
 
     def transfer_params
-      params.require(:transfer).permit(:from_account_id, :to_account_id, :amount, :date, :name, :excluded, :exchange_rate)
+      params.require(:transfer).permit(:from_account_id, :to_account_id, :amount, :date, :name, :excluded, :exchange_rate, :category_id)
     end
 
     def set_accounts

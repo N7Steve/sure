@@ -34,6 +34,8 @@
     <%= f.date_field :date, value: transfer.inflow_transaction&.entry&.date || Date.current, label: t(".date"), required: true, max: Date.current, data: { transfer_form_target: "date", action: "change->transfer-form#checkCurrencyDifference" } %>
     
     <%= f.number_field :amount, label: t(".source_amount"), required: true, min: 0, placeholder: "100", step: 0.00000001, data: { transfer_form_target: "amount", action: "input->transfer-form#onSourceAmountChange" } %>
+
+    <%= f.collection_select :category_id, Current.family.categories.alphabetically, :id, :name, { prompt: t("transactions.form.category_prompt"), label: t("transactions.form.category"), variant: :badge, searchable: true } %>
     
     <% convert_input = capture do %>
       <%= f.number_field :exchange_rate,
