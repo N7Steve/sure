@@ -66,6 +66,7 @@ en:
       tags_label: Tags
       tab_transactions: Transactions
       tab_upcoming: Upcoming
+      tab_scheduled: Scheduled
       uncategorized: "(uncategorized)"
     activity_labels:
       buy: Buy

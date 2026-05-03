@@ -7,93 +7,138 @@
     <%= render "shared/form_errors", model: scheduled_payment %>
   <% end %>
 
-  <section class="space-y-2">
-    <%= f.text_field :title,
-        label: t("scheduled_payments.form.title_label"),
-        placeholder: t("scheduled_payments.form.title_placeholder"),
-        required: true %>
-
-    <%= f.collection_select :account_id,
-        Current.user.accessible_accounts.alphabetically,
-        :id, :name,
-        { prompt: t("scheduled_payments.form.select_account"),
-          label: t("scheduled_payments.form.account_label"),
-          variant: :logo },
-        { required: true } %>
-
-    <%= f.number_field :amount,
-        label: t("scheduled_payments.form.amount_label"),
-        required: true,
-        min: 0,
-        step: "0.01",
-        placeholder: "10.00" %>
-
-    <%= f.select :currency,
-        currency_picker_options_for_family,
-        { label: t("scheduled_payments.form.currency_label") } %>
-
-    <%= f.collection_select :category_id,
-        Current.family.categories.alphabetically,
-        :id, :name,
-        { prompt: t("scheduled_payments.form.select_category"),
-          label: t("scheduled_payments.form.category_label"),
-          variant: :badge,
-          searchable: true } %>
-
-    <%= f.collection_select :merchant_id,
-        Current.family.available_merchants_for(Current.user).alphabetically,
-        :id, :name,
-        { include_blank: t("scheduled_payments.form.no_merchant"),
-          label: t("scheduled_payments.form.merchant_label"),
-          variant: :logo,
-          searchable: true } %>
-
-    <%= f.select :payment_type,
-        ScheduledPayment.payment_types.keys.map { |k| [t("scheduled_payments.form.payment_types.#{k}"), k] },
-        { label: t("scheduled_payments.form.payment_type_label") },
-        { required: true,
-          data: { scheduled_payment_form_target: "paymentType",
-                  action: "change->scheduled-payment-form#toggleTransferFields" } } %>
-
-    <div data-scheduled-payment-form-target="transferFields"
-         class="<%= 'hidden' unless scheduled_payment.transfer? %>">
-      <%= f.collection_select :target_account_id,
-          Current.user.accessible_accounts.alphabetically,
-          :id, :name,
-          { prompt: t("scheduled_payments.form.select_target_account"),
-            label: t("scheduled_payments.form.target_account_label"),
-            variant: :logo } %>
-    </div>
-
-    <%= f.select :frequency,
-        ScheduledPayment.frequencies.keys.map { |k| [t("scheduled_payments.form.frequencies.#{k}"), k] },
-        { label: t("scheduled_payments.form.frequency_label") },
-        { required: true } %>
-
-    <%= f.number_field :frequency_day,
-        label: t("scheduled_payments.form.frequency_day_label"),
-        required: true,
-        min: 0,
-        max: 31,
-        placeholder: "1" %>
-
-    <%= f.date_field :start_date,
-        label: t("scheduled_payments.form.start_date_label"),
-        required: true %>
-
-    <%= f.date_field :end_date,
-        label: t("scheduled_payments.form.end_date_label") %>
-
-    <div class="flex items-center justify-between gap-4 p-2">
+  <section class="bg-container rounded-xl shadow-border-xs p-4 space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <%# Title %>
       <div>
-        <p class="text-sm font-medium text-primary"><%= t("scheduled_payments.form.auto_confirm_label") %></p>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.form.auto_confirm_hint") %></p>
+        <%= f.text_field :title,
+            label: t("scheduled_payments.form.title_label", default: "Title"),
+            placeholder: t("scheduled_payments.form.title_placeholder", default: "e.g. Netflix, Rent, Salary..."),
+            required: true %>
       </div>
-      <%= f.toggle :auto_confirm %>
-    </div>
-  </section>
 
-  <section>
-    <%= f.submit t("scheduled_payments.form.save") %>
+      <%# Account %>
+      <div>
+        <%= f.collection_select :account_id,
+            Current.user.accessible_accounts.alphabetically,
+            :id, :name,
+            { prompt: t("scheduled_payments.form.select_account", default: "Select account"),
+              label: t("scheduled_payments.form.account_label", default: "Account"),
+              variant: :logo },
+            { required: true } %>
+      </div>
+
+      <%# Amount %>
+      <div>
+        <%= f.number_field :amount,
+            label: t("scheduled_payments.form.amount_label", default: "Amount"),
+            required: true,
+            min: 0,
+            step: "0.01",
+            placeholder: "10.00" %>
+      </div>
+
+      <%# Currency %>
+      <div>
+        <%= f.select :currency,
+            currency_picker_options_for_family,
+            { label: t("scheduled_payments.form.currency_label", default: "Currency") } %>
+      </div>
+
+      <%# Category %>
+      <div>
+        <%= f.collection_select :category_id,
+            Current.family.categories.alphabetically,
+            :id, :name,
+            { prompt: t("scheduled_payments.form.select_category", default: "Select category (optional)"),
+              label: t("scheduled_payments.form.category_label", default: "Category"),
+              variant: :badge,
+              searchable: true } %>
+      </div>
+
+      <%# Merchant %>
+      <div>
+        <%= f.collection_select :merchant_id,
+            Current.family.available_merchants_for(Current.user).alphabetically,
+            :id, :name,
+            { include_blank: t("scheduled_payments.form.no_merchant", default: "None"),
+              label: t("scheduled_payments.form.merchant_label", default: "Merchant"),
+              variant: :logo,
+              searchable: true } %>
+      </div>
+
+      <%# Payment type — Use native select with form-field wrapper for Stimulus compatibility %>
+      <div class="form-field">
+        <div class="form-field__body">
+          <%= f.label :payment_type, t("scheduled_payments.form.payment_type_label", default: "Payment type"), class: "form-field__label" %>
+          <%= f.select :payment_type,
+              ScheduledPayment.payment_types.keys.map { |k| [t("scheduled_payments.form.payment_types.#{k}", default: k.humanize), k] },
+              {},
+              { class: "form-field__input",
+                data: { scheduled_payment_form_target: "paymentType",
+                        action: "change->scheduled-payment-form#toggleTransferFields" } } %>
+        </div>
+      </div>
+
+      <%# Target account (only visible for transfers) %>
+      <div data-scheduled-payment-form-target="transferFields"
+           class="<%= 'hidden' unless scheduled_payment.transfer? %>">
+        <%= f.collection_select :target_account_id,
+            Current.user.accessible_accounts.alphabetically,
+            :id, :name,
+            { prompt: t("scheduled_payments.form.select_target_account", default: "Select target account"),
+              label: t("scheduled_payments.form.target_account_label", default: "Target account"),
+              variant: :logo } %>
+      </div>
+
+      <%# Frequency %>
+      <div>
+        <%= f.select :frequency,
+            ScheduledPayment.frequencies.keys.map { |k| [t("scheduled_payments.form.frequencies.#{k}", default: k.humanize), k] },
+            { label: t("scheduled_payments.form.frequency_label", default: "Frequency") },
+            { required: true } %>
+      </div>
+
+      <%# Frequency day %>
+      <div>
+        <%= f.number_field :frequency_day,
+            label: t("scheduled_payments.form.frequency_day_label", default: "Day of cycle"),
+            required: true,
+            min: 0,
+            max: 31,
+            placeholder: "1" %>
+      </div>
+
+      <%# Start date %>
+      <div>
+        <%= f.date_field :start_date,
+            label: t("scheduled_payments.form.start_date_label", default: "Start date"),
+            required: true %>
+      </div>
+
+      <%# End date %>
+      <div>
+        <%= f.date_field :end_date,
+            label: t("scheduled_payments.form.end_date_label", default: "End date (optional)") %>
+      </div>
+
+      <%# Auto confirm toggle %>
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3 p-3 bg-container-inset rounded-lg">
+          <%= f.check_box :auto_confirm, class: "form-field__radio" %>
+          <div>
+            <%= f.label :auto_confirm, t("scheduled_payments.form.auto_confirm_label", default: "Auto confirm"), class: "form-field__label" %>
+            <p class="text-xs text-secondary">
+              <%= t("scheduled_payments.form.auto_confirm_hint", default: "Automatically create the transaction without manual confirmation") %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2">
+      <%= render DS::Link.new(variant: "outline", href: scheduled_payments_path, text: t("shared.cancel"), icon: "x") %>
+      <%= f.submit t("scheduled_payments.form.save", default: "Save") %>
+    </div>
   </section>
 <% end %>

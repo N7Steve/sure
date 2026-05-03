@@ -15,6 +15,7 @@ es:
     confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
     confirm_action: Confirmar
     reject_action: Rechazar
+    upcoming_this_month: Próximos este mes
     table:
       title: Título
       account: Cuenta

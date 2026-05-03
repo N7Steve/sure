@@ -1,0 +1,53 @@
+<%# locals: (pending:) %>
+<% sp = pending.scheduled_payment %>
+<div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4">
+  <%# Name + badge %>
+  <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-6 min-w-0">
+    <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+      <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+          class: "w-9 h-9 rounded-full", loading: "lazy" %>
+    <% else %>
+      <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "lg", rounded: true) %>
+    <% end %>
+    <div class="truncate">
+      <div class="flex items-center gap-1 min-w-0">
+        <div class="truncate flex-shrink"><%= sp.title %></div>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+          <%= t("scheduled_payments.badge_pending") %>
+        </span>
+      </div>
+      <div class="text-secondary text-xs font-normal">
+        <%= sp.account.name %>
+        <% if sp.transfer? && sp.target_account.present? %> → <%= sp.target_account.name %><% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Type badge %>
+  <div class="hidden lg:flex items-center gap-1 col-span-2">
+    <span class="text-xs text-secondary"><%= t("scheduled_payments.form.payment_types.#{sp.payment_type}", default: sp.payment_type.humanize) %></span>
+  </div>
+
+  <%# Amount %>
+  <div class="col-span-2 ml-auto text-right shrink-0">
+    <p class="font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-subdued' %>">
+      <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+    </p>
+  </div>
+
+  <%# Confirm / Reject buttons %>
+  <div class="col-span-2 flex items-center justify-end gap-1">
+    <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
+        method: :post,
+        class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors" do %>
+      <%= icon "check", size: "sm" %>
+      <span class="hidden lg:inline"><%= t("scheduled_payments.confirm_action", default: "Confirm") %></span>
+    <% end %>
+    <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: pending.id),
+        method: :post,
+        class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors" do %>
+      <%= icon "x", size: "sm" %>
+      <span class="hidden lg:inline"><%= t("scheduled_payments.reject_action", default: "Reject") %></span>
+    <% end %>
+  </div>
+</div>

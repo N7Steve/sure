@@ -75,7 +75,15 @@ class TransactionsController < ApplicationController
       .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
       .pending
       .where("scheduled_date <= ?", Date.current)
-      .includes(scheduled_payment: [:account, :merchant, :category])
+      .includes(scheduled_payment: [:account, :merchant, :category, :target_account])
+
+    # Load upcoming scheduled payments for this month (not yet generated)
+    @upcoming_scheduled = Current.family.scheduled_payments
+      .accessible_by(Current.user)
+      .active
+      .where("next_run_date <= ? AND next_run_date > ?", Date.current.end_of_month, Date.current)
+      .includes(:account, :merchant, :category, :target_account)
+      .order(next_run_date: :asc)
   end
 
   def clear_filter

@@ -52,6 +52,7 @@ es:
       tags_label: Etiquetas
       tab_transactions: Transacciones
       tab_upcoming: Próximas
+      tab_scheduled: Programados
       uncategorized: "(sin categorizar)"
     activity_labels:
       buy: Compra

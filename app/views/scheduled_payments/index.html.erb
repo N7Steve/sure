@@ -49,9 +49,17 @@
             <div class="col-span-2 flex items-center gap-2 justify-end">
               <%= render DS::Link.new(variant: "outline", icon: "pencil", href: edit_scheduled_payment_path(sp)) %>
               <% unless sp.completed? %>
-                <%= render DS::Link.new(variant: "outline", icon: sp.active? ? "pause" : "play", href: toggle_status_scheduled_payment_path(sp), method: :post) %>
+                <%= link_to toggle_status_scheduled_payment_path(sp),
+                    data: { turbo_method: :post },
+                    class: "text-secondary hover:text-primary" do %>
+                  <%= icon sp.active? ? "pause" : "play", size: "sm" %>
+                <% end %>
               <% end %>
-              <%= render DS::Link.new(variant: "destructive", icon: "trash", href: scheduled_payment_path(sp), method: :delete, data: { turbo_confirm: t("scheduled_payments.confirm_delete") }) %>
+              <%= link_to scheduled_payment_path(sp),
+                  data: { turbo_method: :delete, turbo_confirm: t("scheduled_payments.confirm_delete") },
+                  class: "text-secondary hover:text-destructive" do %>
+                <%= icon "trash-2", size: "sm" %>
+              <% end %>
             </div>
           </div>
         <% end %>

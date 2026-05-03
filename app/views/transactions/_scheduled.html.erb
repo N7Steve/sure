@@ -1,0 +1,94 @@
+<%# Scheduled payments tab - shows current month's scheduled entries %>
+<% if @pending_scheduled.any? || @upcoming_scheduled.any? %>
+  <div class="space-y-4">
+    <%# Pending confirmations (past due) %>
+    <% if @pending_scheduled.any? %>
+      <div id="scheduled-pending" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4">
+        <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">
+          <div class="pl-0.5 col-span-6 flex items-center gap-4">
+            <p><%= t("scheduled_payments.pending_section") %></p>
+            <span>&middot;</span>
+            <p><%= @pending_scheduled.size %></p>
+          </div>
+          <p class="col-span-2 md:block hidden"><%= t("scheduled_payments.table.status", default: "Status") %></p>
+          <p class="col-span-2 justify-self-end md:block"><%= t("transactions.show.amount") %></p>
+          <p class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></p>
+        </div>
+        <div class="space-y-1">
+          <% @pending_scheduled.group_by(&:scheduled_date).sort.each do |date, entries| %>
+            <div class="bg-container-inset rounded-xl p-1 w-full">
+              <div class="py-2 px-4 flex items-center justify-between font-medium text-xs text-secondary">
+                <p class="uppercase space-x-1.5">
+                  <%= tag.span I18n.l(date, format: :long) %>
+                  <span>&middot;</span>
+                  <%= tag.span entries.size %>
+                </p>
+              </div>
+              <div class="bg-container shadow-border-xs rounded-lg divide-y divide-subdued">
+                <% entries.each do |pending| %>
+                  <%= render "transactions/scheduled_entry_row", pending: pending %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Future scheduled entries this month (not yet generated — informational) %>
+    <% if @upcoming_scheduled.any? %>
+      <div id="scheduled-upcoming" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4">
+        <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">
+          <div class="pl-0.5 col-span-8 flex items-center gap-4">
+            <p><%= t("scheduled_payments.upcoming_this_month", default: "Upcoming this month") %></p>
+            <span>&middot;</span>
+            <p><%= @upcoming_scheduled.size %></p>
+          </div>
+          <p class="col-span-2 md:block hidden"><%= t("scheduled_payments.table.next_run") %></p>
+          <p class="col-span-2 justify-self-end md:block"><%= t("transactions.show.amount") %></p>
+        </div>
+        <div class="bg-container-inset rounded-xl p-1">
+          <div class="bg-container shadow-border-xs rounded-lg divide-y divide-subdued">
+            <% @upcoming_scheduled.each do |sp| %>
+              <div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4">
+                <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 min-w-0">
+                  <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "lg", rounded: true) %>
+                  <div class="truncate">
+                    <div class="flex items-center gap-1 min-w-0">
+                      <div class="truncate flex-shrink"><%= sp.title %></div>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-tint-10 text-link">
+                        <%= t("scheduled_payments.form.payment_types.#{sp.payment_type}", default: sp.payment_type.humanize) %>
+                      </span>
+                    </div>
+                    <div class="text-secondary text-xs font-normal">
+                      <%= sp.account.name %>
+                      <% if sp.transfer? && sp.target_account.present? %> → <%= sp.target_account.name %><% end %>
+                      · <%= sp.frequency.humanize %>
+                    </div>
+                  </div>
+                </div>
+                <div class="hidden lg:flex items-center gap-1 col-span-2">
+                  <span class="text-xs text-secondary"><%= l(sp.next_run_date, format: :short) %></span>
+                </div>
+                <div class="col-span-2 ml-auto text-right shrink-0">
+                  <p class="font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-subdued' %>">
+                    <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+                  </p>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="flex flex-col items-center justify-center py-40">
+    <div class="flex justify-center text-secondary mb-4">
+      <%= icon "calendar", size: "xl" %>
+    </div>
+    <p class="text-primary font-medium mb-2"><%= t("scheduled_payments.empty.title", default: "No scheduled payments") %></p>
+    <p class="text-subdued max-w-xs text-center mb-4"><%= t("scheduled_payments.empty.description", default: "Create a scheduled payment to automatically generate recurring transactions on a set schedule.") %></p>
+    <%= render DS::Link.new(text: t("scheduled_payments.new"), icon: "plus", variant: "primary", href: new_scheduled_payment_path) %>
+  </div>
+<% end %>

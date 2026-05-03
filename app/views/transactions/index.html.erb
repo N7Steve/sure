@@ -61,6 +61,7 @@
         <%= tabs.with_nav(classes: "flex bg-surface-inset p-1 rounded-lg max-w-fit") do |nav| %>
           <% nav.with_btn(id: "transactions", label: t("transactions.show.tab_transactions"), classes: "px-6") %>
           <% nav.with_btn(id: "upcoming", label: t("transactions.show.tab_upcoming"), classes: "px-6") %>
+          <% nav.with_btn(id: "scheduled", label: t("transactions.show.tab_scheduled"), classes: "px-6") %>
         <% end %>
 
         <div class="flex items-center gap-6">
@@ -79,6 +80,10 @@
         <div class="bg-container rounded-xl shadow-border-xs">
           <%= render "transactions/upcoming" %>
         </div>
+      <% end %>
+
+      <%= tabs.with_panel(tab_id: "scheduled") do %>
+        <%= render "transactions/scheduled" %>
       <% end %>
     <% end %>
   <% end %>
