@@ -8,6 +8,10 @@ nl:
       archive: Account archiveren
       unarchive: Account dearchiveren
       troubleshoot: Problemen oplossen
+      default_label: Standaard
+      disabled_label: Gedeactiveerd
+      excluded_label: Uitgesloten
+      archived_label: Gearchiveerd
     chart:
       data_not_available: Gegevens niet beschikbaar voor de geselecteerde periode
     create:
@@ -44,8 +48,6 @@ nl:
         active: Actief
         excluded: Uitgesloten
         archived: Gearchiveerd
-      manual_accounts:
-        other_accounts: Andere accounts
       new_account: Nieuw account
       sync: Synchroniseer alles
     sync_all:

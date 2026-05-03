@@ -20,8 +20,6 @@ nb:
       name_placeholder: Eksempel på kontonavn
     index:
       accounts: Kontoer
-      manual_accounts:
-        other_accounts: Andre kontoer
       new_account: Ny konto
       sync: Synkroniser alle
     new:

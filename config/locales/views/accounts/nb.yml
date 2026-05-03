@@ -5,6 +5,10 @@ nb:
       archive: Arkiver konto
       unarchive: Dearkiver konto
       troubleshoot: Feilsøk
+      default_label: Standard
+      disabled_label: Deaktivert
+      excluded_label: Ekskludert
+      archived_label: Arkivert
     chart:
       data_not_available: Data ikke tilgjengelig for den valgte perioden
     create:
@@ -33,8 +37,6 @@ nb:
         active: Aktiv
         excluded: Ekskludert
         archived: Arkivert
-      manual_accounts:
-        other_accounts: Andre kontoer
       new_account: Ny konto
       sync: Synkroniser alle
     new:

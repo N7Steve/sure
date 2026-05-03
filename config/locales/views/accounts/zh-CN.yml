@@ -12,6 +12,10 @@ zh-CN:
       unlink_provider: 解除提供商关联
       archive: 归档账户
       unarchive: 取消归档账户
+      default_label: 默认
+      disabled_label: 已停用
+      excluded_label: 已排除
+      archived_label: 已归档
     chart:
       data_not_available: 所选时间段内无可用数据
     confirm_unlink:
@@ -51,8 +55,6 @@ zh-CN:
         active: 活跃
         excluded: 已排除
         archived: 已归档
-      manual_accounts:
-        other_accounts: 其他账户
       new_account: 新建账户
       sync: 同步所有账户
     new:

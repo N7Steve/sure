@@ -8,6 +8,10 @@ zh-TW:
       archive: 封存帳戶
       unarchive: 取消封存帳戶
       troubleshoot: 疑難排解
+      default_label: 預設
+      disabled_label: 已停用
+      excluded_label: 已排除
+      archived_label: 已封存
     chart:
       data_not_available: 所選時段內無資料
     create:
@@ -44,8 +48,6 @@ zh-TW:
         active: 活躍
         excluded: 已排除
         archived: 已封存
-      manual_accounts:
-        other_accounts: 其他帳戶
       new_account: 新增帳戶
       sync: 全部同步
     sync_all:

@@ -14,6 +14,9 @@ fr:
       set_default: Définir par défaut
       remove_default: Retirer par défaut
       default_label: Par défaut
+      disabled_label: Désactivé
+      excluded_label: Exclu
+      archived_label: Archivé
       delete: Supprimer le compte
       sharing: Partage
       archive: Archiver le compte
@@ -58,8 +61,6 @@ fr:
         active: Actif
         excluded: Exclu
         archived: Archivé
-      manual_accounts:
-        other_accounts: Autres comptes
       new_account: Nouveau compte
       sync: Tout synchroniser
     sync_all:

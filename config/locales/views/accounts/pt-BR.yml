@@ -8,6 +8,10 @@ pt-BR:
       archive: Arquivar conta
       unarchive: Desarquivar conta
       troubleshoot: Solucionar problemas
+      default_label: Padrão
+      disabled_label: Desativada
+      excluded_label: Excluída
+      archived_label: Arquivada
     chart:
       data_not_available: Dados não disponíveis para o período selecionado
     create:
@@ -37,8 +41,6 @@ pt-BR:
         active: Ativa
         excluded: Excluída
         archived: Arquivada
-      manual_accounts:
-        other_accounts: Outras contas
       new_account: Nova conta
       sync: Sincronizar todas
     sync_all:

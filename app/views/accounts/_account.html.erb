@@ -29,12 +29,23 @@
               <span class="hidden sm:inline text-secondary">• <%= account.institution_name %></span>
             <% end %>
           </div>
-          <% if account.long_subtype_label %>
-            <p class="text-sm text-secondary truncate"><%= account.long_subtype_label %></p>
-          <% end %>
-          <% if account.supports_default? && is_default %>
-            <p class="text-xs text-secondary opacity-50"><%= t("accounts.account.default_label") %></p>
-          <% end %>
+          <div class="flex items-center gap-1">
+            <% if account.long_subtype_label %>
+              <p class="text-sm text-secondary truncate min-w-0"><%= account.long_subtype_label %></p>
+            <% end %>
+            <% if account.supports_default? && is_default %>
+              <%= icon("star", size: "xs", class: "text-amber-400 shrink-0", title: t("accounts.account.default_label")) %>
+            <% end %>
+            <% if account.disabled? %>
+              <%= icon("pause-circle", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.disabled_label")) %>
+            <% end %>
+            <% if account.excluded? %>
+              <%= icon("ban", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.excluded_label")) %>
+            <% end %>
+            <% if account.archived? %>
+              <%= icon("archive", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.archived_label")) %>
+            <% end %>
+          </div>
           <% if account.institution_name.present? %>
             <p class="sm:hidden text-sm text-secondary truncate"><%= account.institution_name %></p>
           <% end %>

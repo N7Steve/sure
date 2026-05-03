@@ -63,7 +63,7 @@
 
     <% if @manual_accounts.any? %>
       <div id="manual-accounts">
-        <%= render "accounts/index/manual_accounts", accounts: @manual_accounts %>
+        <%= render "accounts/index/account_groups", accounts: @manual_accounts %>
       </div>
     <% else %>
       <div id="manual-accounts"></div>

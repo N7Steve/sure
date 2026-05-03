@@ -14,6 +14,9 @@ en:
       set_default: Set as default
       remove_default: Unset default
       default_label: Default
+      disabled_label: Disabled
+      excluded_label: Excluded
+      archived_label: Archived
       delete: Delete account
       sharing: Sharing
       archive: Archive account
@@ -58,8 +61,6 @@ en:
         active: Active
         excluded: Excluded
         archived: Archived
-      manual_accounts:
-        other_accounts: Other accounts
       new_account: New account
       sync: Sync all
     sync_all:

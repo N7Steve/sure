@@ -6,6 +6,10 @@ ro:
       archive: Arhivează cont
       unarchive: Dezarhivează cont
       troubleshoot: Depanare
+      default_label: Implicit
+      disabled_label: Dezactivat
+      excluded_label: Exclus
+      archived_label: Arhivat
     chart:
       data_not_available: Date indisponibile pentru perioada selectată
     create:
@@ -34,8 +38,6 @@ ro:
         active: Activ
         excluded: Exclus
         archived: Arhivat
-      manual_accounts:
-        other_accounts: Alte conturi
       new_account: Cont nou
       sync: Sincronizează tot
     new:

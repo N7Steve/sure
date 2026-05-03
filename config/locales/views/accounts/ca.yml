@@ -12,6 +12,10 @@ ca:
       unlink_provider: Desenllaça del proveïdor
       archive: Arxivar compte
       unarchive: Desarxivar compte
+      default_label: Per defecte
+      disabled_label: Desactivat
+      excluded_label: Exclòs
+      archived_label: Arxivat
     chart:
       data_not_available: Dades no disponibles per al període seleccionat
     confirm_unlink:
@@ -62,8 +66,6 @@ ca:
         active: Actiu
         excluded: Exclòs
         archived: Arxivat
-      manual_accounts:
-        other_accounts: Altres comptes
       new_account: Nou compte
       sync: Sincronitza-ho tot
     new:

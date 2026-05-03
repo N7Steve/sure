@@ -12,6 +12,9 @@ de:
       set_default: Als Standard festlegen
       remove_default: Standard aufheben
       default_label: Standard
+      disabled_label: Deaktiviert
+      excluded_label: Ausgeschlossen
+      archived_label: Archiviert
       delete: Konto löschen
       archive: Konto archivieren
       unarchive: Konto dearchivieren
@@ -54,8 +57,6 @@ de:
         active: Aktiv
         excluded: Ausgeschlossen
         archived: Archiviert
-      manual_accounts:
-        other_accounts: Andere Konten
       new_account: Neues Konto
       sync: Alle synchronisieren
     sync_all:

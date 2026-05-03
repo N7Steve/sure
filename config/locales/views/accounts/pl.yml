@@ -13,6 +13,9 @@ pl:
       set_default: Ustaw jako domyślne
       remove_default: Usuń status domyślnego
       default_label: Domyślne
+      disabled_label: Wyłączone
+      excluded_label: Wykluczone
+      archived_label: Zarchiwizowane
       delete: Usuń konto
       sharing: Udostępnianie
       archive: Zarchiwizuj konto
@@ -56,8 +59,6 @@ pl:
         active: Aktywne
         excluded: Wykluczone
         archived: Zarchiwizowane
-      manual_accounts:
-        other_accounts: Inne konta
       new_account: Nowe konto
       sync: Synchronizuj wszystko
     sync_all:

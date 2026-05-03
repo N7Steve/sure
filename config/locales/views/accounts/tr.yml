@@ -5,6 +5,10 @@ tr:
       archive: Hesabı arşivle
       unarchive: Hesabı arşivden çıkar
       troubleshoot: Sorun Gider
+      default_label: Varsayılan
+      disabled_label: Devre dışı
+      excluded_label: Hariç tutulan
+      archived_label: Arşivlenen
     chart:
       data_not_available: Seçilen dönem için veri mevcut değil
     create:
@@ -33,8 +37,6 @@ tr:
         active: Aktif
         excluded: Hariç tutulan
         archived: Arşivlenen
-      manual_accounts:
-        other_accounts: Diğer hesaplar
       new_account: Yeni hesap
       sync: Tümünü senkronize et
     new:
