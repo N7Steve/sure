@@ -1,19 +1,28 @@
-<div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-  <div class="flex items-center gap-3">
-    <span class="text-sm font-medium"><%= entry.scheduled_payment.title %></span>
-    <span class="text-xs text-secondary"><%= l(entry.scheduled_date, format: :short) %></span>
-    <span class="badge bg-amber-100 text-amber-700"><%= t("scheduled_payments.badge_pending", default: "Pending") %></span>
-  </div>
-  <div class="flex items-center gap-2">
-    <span class="font-medium <%= entry.scheduled_payment.income? ? 'text-success' : '' %>">
-      <%= format_money(entry.scheduled_payment.expense? ? -entry.scheduled_payment.amount_money : entry.scheduled_payment.amount_money) %>
+<%# locals: (entry:) %>
+<% sp = entry.scheduled_payment %>
+<div class="flex items-center justify-between p-3 bg-container rounded-lg shadow-border-xs">
+  <div class="flex items-center gap-3 min-w-0">
+    <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "sm", rounded: true) %>
+    <div class="truncate">
+      <span class="text-sm font-medium text-primary"><%= sp.title %></span>
+      <span class="text-xs text-secondary ml-1"><%= l(entry.scheduled_date, format: :short) %></span>
+    </div>
+    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+      <%= t("scheduled_payments.badge_pending") %>
     </span>
-    <%= button_to confirm_entry_scheduled_payment_path(entry.scheduled_payment, entry_id: entry.id),
-        method: :post, class: "text-success hover:bg-green-50 rounded p-1" do %>
+  </div>
+  <div class="flex items-center gap-3 flex-shrink-0">
+    <span class="font-medium text-sm <%= sp.income? ? 'text-success' : '' %>">
+      <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+    </span>
+    <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: entry.id),
+        method: :post,
+        class: "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors" do %>
       <%= icon "check", size: "sm" %>
     <% end %>
-    <%= button_to reject_entry_scheduled_payment_path(entry.scheduled_payment, entry_id: entry.id),
-        method: :post, class: "text-destructive hover:bg-red-50 rounded p-1" do %>
+    <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: entry.id),
+        method: :post,
+        class: "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors" do %>
       <%= icon "x", size: "sm" %>
     <% end %>
   </div>

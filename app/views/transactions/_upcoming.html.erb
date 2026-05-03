@@ -1,15 +1,85 @@
 <% if defined?(@pending_scheduled) && @pending_scheduled.any? %>
-  <div class="bg-container-inset rounded-xl p-1 w-full mb-4">
-    <div class="py-2 px-4 flex items-center justify-between font-medium text-xs text-secondary">
-      <p class="uppercase space-x-1.5">
-        <%= tag.span t("scheduled_payments.pending_section") %>
+  <div id="pending-scheduled" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4 relative group mb-4">
+    <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">
+      <div class="pl-0.5 col-span-6 flex items-center gap-4">
+        <p><%= t("scheduled_payments.pending_section") %></p>
         <span>&middot;</span>
-        <%= tag.span @pending_scheduled.size %>
-      </p>
+        <p><%= @pending_scheduled.size %></p>
+      </div>
+      <p class="col-span-2 md:block hidden"><%= t("scheduled_payments.table.status") %></p>
+      <p class="col-span-2 justify-self-end md:block"><%= t("transactions.show.amount") %></p>
+      <p class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></p>
     </div>
-    <div class="bg-container shadow-border-xs rounded-lg space-y-2 p-2">
-      <% @pending_scheduled.each do |pending| %>
-        <%= render "transactions/pending_scheduled_entry", entry: pending %>
+    <div class="space-y-1">
+      <% @pending_scheduled.group_by(&:scheduled_date).sort.each do |date, entries| %>
+        <div class="bg-container-inset rounded-xl p-1 w-full">
+          <div class="py-2 px-4 flex items-center justify-between font-medium text-xs text-secondary">
+            <p class="uppercase space-x-1.5">
+              <%= tag.span I18n.l(date, format: :long) %>
+              <span>&middot;</span>
+              <%= tag.span entries.size %>
+            </p>
+          </div>
+          <div class="bg-container shadow-border-xs rounded-lg divide-y divide-subdued">
+            <% entries.each do |pending| %>
+              <% sp = pending.scheduled_payment %>
+              <div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4">
+                <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-6 min-w-0">
+                  <% if sp.merchant.present? && sp.merchant.logo_url.present? %>
+                    <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+                        class: "w-9 h-9 rounded-full", loading: "lazy" %>
+                  <% else %>
+                    <%= render DS::FilledIcon.new(
+                      variant: :text,
+                      text: sp.title,
+                      size: "lg",
+                      rounded: true
+                    ) %>
+                  <% end %>
+                  <div class="truncate">
+                    <div class="flex items-center gap-1 min-w-0">
+                      <div class="truncate flex-shrink"><%= sp.title %></div>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+                        <%= t("scheduled_payments.badge_pending") %>
+                      </span>
+                    </div>
+                    <div class="text-secondary text-xs font-normal">
+                      <%= sp.account.name %>
+                      <% if sp.transfer? && sp.target_account.present? %>
+                        → <%= sp.target_account.name %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hidden lg:flex items-center gap-1 col-span-2">
+                  <span class="text-xs text-secondary"><%= t("scheduled_payments.form.payment_types.#{sp.payment_type}") %></span>
+                </div>
+
+                <div class="col-span-2 ml-auto text-right shrink-0">
+                  <p class="font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-subdued' %>">
+                    <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+                  </p>
+                </div>
+
+                <div class="col-span-2 flex items-center justify-end gap-1">
+                  <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
+                      method: :post,
+                      class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors" do %>
+                    <%= icon "check", size: "sm" %>
+                    <span class="hidden lg:inline"><%= t("scheduled_payments.confirm_action") %></span>
+                  <% end %>
+                  <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: pending.id),
+                      method: :post,
+                      class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors" do %>
+                    <%= icon "x", size: "sm" %>
+                    <span class="hidden lg:inline"><%= t("scheduled_payments.reject_action") %></span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
       <% end %>
     </div>
   </div>
