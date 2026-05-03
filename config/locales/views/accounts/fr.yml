@@ -16,6 +16,8 @@ fr:
       default_label: Par défaut
       delete: Supprimer le compte
       sharing: Partage
+      archive: Archiver le compte
+      unarchive: Désarchiver le compte
     chart:
       data_not_available: Données non disponibles pour la période sélectionnée
     create:
@@ -44,14 +46,18 @@ fr:
       notes_placeholder: Stockez des informations supplémentaires comme les numéros de compte, codes de tri, IBAN, numéros de routage, etc.
       exclude_from_reports_label: Exclure des rapports et métriques
       exclude_from_reports_description: Les comptes exclus sont masqués dans les rapports et les calculs de valeur nette.
+      archive_label: Archiver le compte
+      archive_description: Les comptes archivés sont masqués dans la barre latérale mais continuent de compter dans votre valeur nette et vos rapports.
     accountable_group:
       excluded_badge: "(Exclu)"
+      archived_badge: "(Archivé)"
     index:
       accounts: Comptes
       account_groups:
         total: Total
         active: Actif
         excluded: Exclu
+        archived: Archivé
       manual_accounts:
         other_accounts: Autres comptes
       new_account: Nouveau compte

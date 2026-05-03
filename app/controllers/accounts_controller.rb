@@ -1,7 +1,7 @@
 class AccountsController < ApplicationController
   include StreamExtensions
 
-  before_action :set_account, only: %i[show sparkline sync set_default remove_default toggle_excluded]
+  before_action :set_account, only: %i[show sparkline sync set_default remove_default toggle_excluded toggle_archived]
   before_action :set_manageable_account, only: %i[toggle_active destroy unlink confirm_unlink select_provider]
   include Periodable
 
@@ -108,6 +108,17 @@ class AccountsController < ApplicationController
       @account.update!(excluded: cast_value)
     else
       @account.toggle!(:excluded)
+    end
+    redirect_to accounts_path
+  end
+
+  def toggle_archived
+    archived_param = params[:archived] || params.dig(:account, :archived)
+    if archived_param.present?
+      cast_value = ActiveModel::Type::Boolean.new.cast(archived_param)
+      @account.update!(archived: cast_value)
+    else
+      @account.toggle!(:archived)
     end
     redirect_to accounts_path
   end

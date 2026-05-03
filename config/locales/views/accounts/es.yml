@@ -16,6 +16,8 @@ es:
       default_label: Predeterminada
       delete: Eliminar cuenta
       sharing: Compartir
+      archive: Archivar cuenta
+      unarchive: Desarchivar cuenta
     chart:
       data_not_available: Datos no disponibles para el período seleccionado
     create:
@@ -37,6 +39,8 @@ es:
       name_placeholder: Ejemplo de nombre de cuenta
       exclude_from_reports_label: Excluir de informes y métricas
       exclude_from_reports_description: Las cuentas excluidas están ocultas en los informes y los cálculos de patrimonio neto.
+      archive_label: Archivar cuenta
+      archive_description: Las cuentas archivadas se ocultan de la barra lateral pero siguen contando en tu patrimonio neto e informes.
       additional_details: Detalles adicionales
       institution_name_label: Nombre de la institución
       institution_name_placeholder: ej. Chase Bank
@@ -46,12 +50,14 @@ es:
       notes_placeholder: Guarda información adicional como números de cuenta, códigos de sucursal, IBAN, números de ruta, etc.
     accountable_group:
       excluded_badge: "(Excluida)"
+      archived_badge: "(Archivada)"
     index:
       accounts: Cuentas
       account_groups:
         total: Total
         active: Activa
         excluded: Excluida
+        archived: Archivada
       manual_accounts:
         other_accounts: Otras cuentas
       new_account: Nueva cuenta

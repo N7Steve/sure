@@ -2,6 +2,8 @@
 nb:
   accounts:
     account:
+      archive: Arkiver konto
+      unarchive: Dearkiver konto
       troubleshoot: Feilsøk
     chart:
       data_not_available: Data ikke tilgjengelig for den valgte perioden
@@ -19,14 +21,18 @@ nb:
       name_placeholder: Eksempel på kontonavn
       exclude_from_reports_label: Ekskluder fra rapporter og målinger
       exclude_from_reports_description: Ekskluderte kontoer er skjult i rapporter og nettoformueberegninger.
+      archive_label: Arkiver konto
+      archive_description: Arkiverte kontoer er skjult fra sidepanelet, men teller fortsatt i nettoformuen og rapportene.
     accountable_group:
       excluded_badge: "(Ekskludert)"
+      archived_badge: "(Arkivert)"
     index:
       accounts: Kontoer
       account_groups:
         total: Totalt
         active: Aktiv
         excluded: Ekskludert
+        archived: Arkivert
       manual_accounts:
         other_accounts: Andre kontoer
       new_account: Ny konto

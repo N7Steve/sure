@@ -5,6 +5,8 @@ nl:
       link_lunchflow: Koppel met Lunch Flow
       link_provider: Koppel met provider
       unlink_provider: Verbreek verbinding met provider
+      archive: Account archiveren
+      unarchive: Account dearchiveren
       troubleshoot: Problemen oplossen
     chart:
       data_not_available: Gegevens niet beschikbaar voor de geselecteerde periode
@@ -30,14 +32,18 @@ nl:
       notes_placeholder: Sla aanvullende informatie op zoals rekeningnummers, sorteer codes, IBAN, routenummers, enz.
       exclude_from_reports_label: Uitsluiten van rapporten en statistieken
       exclude_from_reports_description: Uitgesloten accounts worden verborgen in rapporten en nettowaardeberekeningen.
+      archive_label: Account archiveren
+      archive_description: Gearchiveerde accounts worden verborgen in de zijbalk maar tellen nog steeds mee in uw nettowaarde en rapporten.
     accountable_group:
       excluded_badge: "(Uitgesloten)"
+      archived_badge: "(Gearchiveerd)"
     index:
       accounts: Accounts
       account_groups:
         total: Totaal
         active: Actief
         excluded: Uitgesloten
+        archived: Gearchiveerd
       manual_accounts:
         other_accounts: Andere accounts
       new_account: Nieuw account

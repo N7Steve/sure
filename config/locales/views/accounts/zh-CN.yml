@@ -10,6 +10,8 @@ zh-CN:
       link_provider: 关联服务提供商
       troubleshoot: 故障排查
       unlink_provider: 解除提供商关联
+      archive: 归档账户
+      unarchive: 取消归档账户
     chart:
       data_not_available: 所选时间段内无可用数据
     confirm_unlink:
@@ -37,14 +39,18 @@ zh-CN:
       name_placeholder: 例如：储蓄账户
       exclude_from_reports_label: 从报告和指标中排除
       exclude_from_reports_description: 被排除的账户将不显示在报告和净资产计算中。
+      archive_label: 归档账户
+      archive_description: 归档的账户将从侧边栏隐藏，但仍计入您的净资产和报告中。
     accountable_group:
       excluded_badge: （已排除）
+      archived_badge: （已归档）
     index:
       accounts: 账户管理
       account_groups:
         total: 总计
         active: 活跃
         excluded: 已排除
+        archived: 已归档
       manual_accounts:
         other_accounts: 其他账户
       new_account: 新建账户

@@ -37,7 +37,7 @@
            <span class="<%= item[:outflow_account].excluded? ? 'text-subdued' : 'text-primary font-medium' %> truncate">
              <%= item[:outflow_account].name %>
              <% if item[:outflow_account].excluded? %>
-               <%= icon "eye-off", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: "Excluded account" %>
+               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: "Excluded account" %>
              <% end %>
            </span>
            
@@ -47,7 +47,7 @@
            <span class="<%= item[:inflow_account].excluded? ? 'text-subdued' : 'text-primary font-medium' %> truncate">
              <%= item[:inflow_account].name %>
              <% if item[:inflow_account].excluded? %>
-               <%= icon "eye-off", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: "Excluded account" %>
+               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: "Excluded account" %>
              <% end %>
            </span>
            

@@ -51,6 +51,14 @@
           </div>
           <%= form.toggle :excluded %>
         </div>
+
+        <div class="flex cursor-pointer items-center gap-4 justify-between">
+          <div class="text-sm space-y-1">
+            <h4 class="text-primary"><%= t(".archive_label") %></h4>
+            <p class="text-secondary"><%= t(".archive_description") %></p>
+          </div>
+          <%= form.toggle :archived %>
+        </div>
       </div>
     </details>
   </div>

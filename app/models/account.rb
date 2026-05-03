@@ -2,6 +2,7 @@ class Account < ApplicationRecord
   include AASM, Syncable, Monetizable, Chartable, Linkable, Enrichable, Anchorable, Reconcileable, TaxTreatable
 
   after_save :invalidate_family_caches, if: :saved_change_to_excluded?
+  after_save :invalidate_family_caches, if: :saved_change_to_archived?
   before_validation :assign_default_owner, if: -> { owner_id.blank? }
 
   validates :name, :balance, :currency, presence: true
@@ -29,7 +30,7 @@ class Account < ApplicationRecord
   VISIBLE_STATUSES = %w[draft active].freeze
 
   scope :visible, -> { where(status: VISIBLE_STATUSES, excluded: false) }
-  scope :sidebar_visible, -> { where(status: VISIBLE_STATUSES) }
+  scope :sidebar_visible, -> { where(status: VISIBLE_STATUSES, archived: false) }
   scope :sync_enabled, -> { where(status: VISIBLE_STATUSES) }
   scope :assets, -> { where(classification: "asset") }
   scope :liabilities, -> { where(classification: "liability") }
@@ -41,6 +42,8 @@ class Account < ApplicationRecord
   }
   scope :excluded, -> { where(excluded: true) }
   scope :not_excluded, -> { where(excluded: false) }
+  scope :archived, -> { where(archived: true) }
+  scope :not_archived, -> { where(archived: false) }
 
   scope :visible_manual, -> {
     visible.manual

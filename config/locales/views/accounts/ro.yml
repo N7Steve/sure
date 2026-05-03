@@ -3,6 +3,8 @@ ro:
   accounts:
     account:
       link_lunchflow: Conectare cu Lunch Flow
+      archive: Arhivează cont
+      unarchive: Dezarhivează cont
       troubleshoot: Depanare
     chart:
       data_not_available: Date indisponibile pentru perioada selectată
@@ -20,14 +22,18 @@ ro:
       name_placeholder: Exemplu nume cont
       exclude_from_reports_label: Exclude din rapoarte și indicatori
       exclude_from_reports_description: Conturile excluse sunt ascunse din rapoarte și din calculele averii nete.
+      archive_label: Arhivează cont
+      archive_description: Conturile arhivate sunt ascunse din bara laterală, dar continuă să fie incluse în valoarea netă și rapoarte.
     accountable_group:
       excluded_badge: "(Exclus)"
+      archived_badge: "(Arhivat)"
     index:
       accounts: Conturi
       account_groups:
         total: Total
         active: Activ
         excluded: Exclus
+        archived: Arhivat
       manual_accounts:
         other_accounts: Alte conturi
       new_account: Cont nou

@@ -16,6 +16,8 @@ en:
       default_label: Default
       delete: Delete account
       sharing: Sharing
+      archive: Archive account
+      unarchive: Unarchive account
     chart:
       data_not_available: Data not available for the selected period
     create:
@@ -32,6 +34,7 @@ en:
       no_accounts: No accounts yet
     accountable_group:
       excluded_badge: "(Excluded)"
+      archived_badge: "(Archived)"
     form:
       balance: "Balance on date:"
       opening_balance_date_label: Opening balance date
@@ -46,12 +49,15 @@ en:
       notes_placeholder: Store additional information like account numbers, sort codes, IBAN, routing numbers, etc.
       exclude_from_reports_label: Exclude from reports and metrics
       exclude_from_reports_description: Excluded accounts are hidden from reports and net worth calculations.
+      archive_label: Archive account
+      archive_description: Archived accounts are hidden from the sidebar but still count in your net worth and reports.
     index:
       accounts: Accounts
       account_groups:
         total: Total
         active: Active
         excluded: Excluded
+        archived: Archived
       manual_accounts:
         other_accounts: Other accounts
       new_account: New account

@@ -10,6 +10,8 @@ ca:
       link_provider: Enllaça amb proveïdor
       troubleshoot: Resolució de problemes
       unlink_provider: Desenllaça del proveïdor
+      archive: Arxivar compte
+      unarchive: Desarxivar compte
     chart:
       data_not_available: Dades no disponibles per al període seleccionat
     confirm_unlink:
@@ -48,14 +50,18 @@ ca:
         IBAN, números de ruta, etc.
       exclude_from_reports_label: Excloure dels informes i les mètriques
       exclude_from_reports_description: Els comptes exclosos estan ocults als informes i als càlculs del patrimoni net.
+      archive_label: Arxivar compte
+      archive_description: Els comptes arxivats s'oculten de la barra lateral però continuen comptant al patrimoni net i els informes.
     accountable_group:
       excluded_badge: "(Exclòs)"
+      archived_badge: "(Arxivat)"
     index:
       accounts: Comptes
       account_groups:
         total: Total
         active: Actiu
         excluded: Exclòs
+        archived: Arxivat
       manual_accounts:
         other_accounts: Altres comptes
       new_account: Nou compte

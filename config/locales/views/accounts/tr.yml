@@ -2,6 +2,8 @@
 tr:
   accounts:
     account:
+      archive: Hesabı arşivle
+      unarchive: Hesabı arşivden çıkar
       troubleshoot: Sorun Gider
     chart:
       data_not_available: Seçilen dönem için veri mevcut değil
@@ -19,14 +21,18 @@ tr:
       name_placeholder: Örnek hesap adı
       exclude_from_reports_label: Raporlardan ve ölçümlerden hariç tut
       exclude_from_reports_description: Hariç tutulan hesaplar raporlarda ve net değer hesaplamalarında gizlenir.
+      archive_label: Hesabı arşivle
+      archive_description: Arşivlenen hesaplar kenar çubuğundan gizlenir ancak net değerinizde ve raporlarda sayılmaya devam eder.
     accountable_group:
       excluded_badge: "(Hariç tutulan)"
+      archived_badge: "(Arşivlenen)"
     index:
       accounts: Hesaplar
       account_groups:
         total: Toplam
         active: Aktif
         excluded: Hariç tutulan
+        archived: Arşivlenen
       manual_accounts:
         other_accounts: Diğer hesaplar
       new_account: Yeni hesap

@@ -5,6 +5,8 @@ pt-BR:
       link_lunchflow: Vincular ao Lunch Flow
       link_provider: Vincular ao provedor
       unlink_provider: Desvincular do provedor
+      archive: Arquivar conta
+      unarchive: Desarquivar conta
       troubleshoot: Solucionar problemas
     chart:
       data_not_available: Dados não disponíveis para o período selecionado
@@ -23,14 +25,18 @@ pt-BR:
       name_placeholder: Nome da conta exemplo
       exclude_from_reports_label: Excluir de relatórios e métricas
       exclude_from_reports_description: Contas excluídas ficam ocultas nos relatórios e nos cálculos de patrimônio líquido.
+      archive_label: Arquivar conta
+      archive_description: Contas arquivadas ficam ocultas na barra lateral mas ainda contam no seu patrimônio líquido e relatórios.
     accountable_group:
       excluded_badge: "(Excluída)"
+      archived_badge: "(Arquivada)"
     index:
       accounts: Contas
       account_groups:
         total: Total
         active: Ativa
         excluded: Excluída
+        archived: Arquivada
       manual_accounts:
         other_accounts: Outras contas
       new_account: Nova conta
