@@ -5,7 +5,9 @@
     <span class="badge bg-amber-100 text-amber-700"><%= t("scheduled_payments.badge_pending", default: "Pending") %></span>
   </div>
   <div class="flex items-center gap-2">
-    <span class="font-medium"><%= format_money(entry.scheduled_payment.amount_money) %></span>
+    <span class="font-medium <%= entry.scheduled_payment.income? ? 'text-success' : '' %>">
+      <%= format_money(entry.scheduled_payment.expense? ? -entry.scheduled_payment.amount_money : entry.scheduled_payment.amount_money) %>
+    </span>
     <%= button_to confirm_entry_scheduled_payment_path(entry.scheduled_payment, entry_id: entry.id),
         method: :post, class: "text-success hover:bg-green-50 rounded p-1" do %>
       <%= icon "check", size: "sm" %>

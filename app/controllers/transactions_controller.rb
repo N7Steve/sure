@@ -72,7 +72,7 @@ class TransactionsController < ApplicationController
     # Load pending scheduled payment entries due up to today
     @pending_scheduled = ScheduledPaymentEntry
       .joins(:scheduled_payment)
-      .where(scheduled_payments: { family_id: Current.family.id })
+      .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
       .pending
       .where("scheduled_date <= ?", Date.current)
       .includes(scheduled_payment: [:account, :merchant, :category])

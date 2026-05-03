@@ -9,6 +9,7 @@ es:
     entry_confirmed: Entrada confirmada
     entry_rejected: Entrada rechazada
     badge_pending: Pendiente
+    confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
     table:
       title: Título
       account: Cuenta

@@ -8,7 +8,7 @@ class ScheduledPaymentsController < ApplicationController
 
     @pending_entries = ScheduledPaymentEntry
       .joins(:scheduled_payment)
-      .where(scheduled_payments: { family_id: Current.family.id })
+      .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
       .pending
       .where("scheduled_date <= ?", Date.current)
       .includes(scheduled_payment: [:account, :merchant, :category])
@@ -58,7 +58,15 @@ class ScheduledPaymentsController < ApplicationController
 
   def toggle_status
     sp = find_scheduled_payment
+
+    if sp.completed?
+      flash[:alert] = t("scheduled_payments.cannot_toggle_completed", default: "Cannot reactivate a completed scheduled payment")
+      redirect_to scheduled_payments_path
+      return
+    end
+
     sp.active? ? sp.update!(status: "paused") : sp.update!(status: "active")
+    flash[:notice] = sp.active? ? t("scheduled_payments.activated", default: "Scheduled payment activated") : t("scheduled_payments.paused", default: "Scheduled payment paused")
     redirect_to scheduled_payments_path
   end
 
@@ -83,8 +91,11 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def find_pending_entry
+    accessible_sp_ids = Current.family.scheduled_payments
+                              .accessible_by(Current.user)
+                              .select(:id)
     ScheduledPaymentEntry.joins(:scheduled_payment)
-      .where(scheduled_payments: { family_id: Current.family.id })
+      .where(scheduled_payment_id: accessible_sp_ids)
       .pending
       .find(params[:entry_id])
   end

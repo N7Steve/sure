@@ -41,6 +41,6 @@
       <% end %>
     </div>
   </div>
-<% else %>
+<% elsif !(defined?(@pending_scheduled) && @pending_scheduled.any?) %>
   <%= render "recurring_transactions/empty" %>
 <% end %>

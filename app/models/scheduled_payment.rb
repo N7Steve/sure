@@ -26,6 +26,7 @@ class ScheduledPayment < ApplicationRecord
   validates :frequency_day, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :target_account, presence: true, if: :transfer?
   validate :target_account_different_from_source, if: :transfer?
+  validate :frequency_day_within_range
 
   scope :due_on_or_before, ->(date) { active.where("next_run_date <= ?", date) }
   scope :accessible_by, ->(user) {
@@ -35,12 +36,12 @@ class ScheduledPayment < ApplicationRecord
   def generate_pending_entry!
     return if end_date.present? && next_run_date > end_date
 
-    entry_record = scheduled_payment_entries.create!(
-      scheduled_date: next_run_date,
-      status: "pending"
-    )
+    entry_record = scheduled_payment_entries
+      .find_or_create_by!(scheduled_date: next_run_date) do |e|
+        e.status = "pending"
+      end
 
-    entry_record.confirm! if auto_confirm
+    entry_record.confirm! if auto_confirm && entry_record.pending?
 
     advance_next_run_date!
     entry_record
@@ -58,9 +59,9 @@ class ScheduledPayment < ApplicationRecord
 
   def calculate_next_date(from_date)
     case frequency
-    when "daily"    then from_date + 1.day
-    when "weekly"   then from_date + 1.week
-    when "biweekly" then from_date + 2.weeks
+    when "daily"     then from_date + 1.day
+    when "weekly"    then next_weekday_from(from_date, 1)
+    when "biweekly"  then next_weekday_from(from_date, 2)
     when "monthly"  then safe_next_month(from_date, frequency_day)
     when "quarterly" then safe_advance_months(from_date, 3, frequency_day)
     when "yearly"   then safe_advance_months(from_date, 12, frequency_day)
@@ -70,6 +71,27 @@ class ScheduledPayment < ApplicationRecord
   end
 
   private
+
+  def frequency_day_within_range
+    return unless frequency.present? && frequency_day.present?
+
+    max = case frequency
+          when "weekly", "biweekly" then 6
+          when "monthly", "quarterly", "yearly" then 31
+          when "daily" then 0
+          end
+
+    if max && frequency_day > max
+      errors.add(:frequency_day, "must be between 0 and #{max} for #{frequency} frequency")
+    end
+  end
+
+  def next_weekday_from(from_date, weeks)
+    target_wday = frequency_day
+    candidate = from_date + weeks.weeks
+    diff = (target_wday - candidate.wday) % 7
+    candidate + diff.days
+  end
 
   def safe_next_month(from, day)
     next_m = from.next_month

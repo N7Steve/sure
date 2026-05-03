@@ -36,9 +36,10 @@
         <%= f.select :payment_type, ScheduledPayment.payment_types.keys, {}, class: "input" %>
       </div>
 
-      <div>
-        <%= f.label :target_account_id, class: "label" %>
+      <div data-payment-type-field="transfer">
+        <%= f.label :target_account_id, t("scheduled_payments.form.target_account", default: "Target Account (transfers only)"), class: "label" %>
         <%= f.collection_select :target_account_id, Current.user.accessible_accounts.alphabetically, :id, :name, { include_blank: true }, class: "input" %>
+        <p class="text-xs text-secondary mt-1"><%= t("scheduled_payments.form.target_account_hint", default: "Only required for transfer-type payments") %></p>
       </div>
 
       <div>

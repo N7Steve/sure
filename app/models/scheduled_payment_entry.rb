@@ -70,10 +70,13 @@ class ScheduledPaymentEntry < ApplicationRecord
       category: sp.category,
       kind: Transfer.inflow_kind_for(sp.account, sp.target_account)
     )
+    inflow_currency = sp.target_account.currency
+    inflow_amount = -sp.amount.abs
+
     inflow_entry = sp.target_account.entries.create!(
       date: scheduled_date,
-      amount: -sp.amount.abs,
-      currency: sp.currency,
+      amount: inflow_amount,
+      currency: inflow_currency,
       name: sp.title,
       entryable: inflow_txn
     )

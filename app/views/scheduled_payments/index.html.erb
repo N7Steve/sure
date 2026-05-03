@@ -32,7 +32,9 @@
           </div>
           <div class="col-span-2 text-secondary"><%= sp.account.name %></div>
           <div class="col-span-2 text-secondary"><%= l(sp.next_run_date) %></div>
-          <div class="col-span-1 font-medium"><%= format_money(sp.amount_money) %></div>
+          <div class="col-span-1 font-medium <%= sp.income? ? 'text-success' : '' %>">
+            <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+          </div>
           <div class="col-span-2 flex items-center gap-2 justify-end">
             <%= render DS::Link.new(variant: "outline", icon: "pencil", href: edit_scheduled_payment_path(sp)) %>
             <%= render DS::Link.new(variant: "outline", icon: sp.active? ? "pause" : "play", href: toggle_status_scheduled_payment_path(sp), method: :post) %>
