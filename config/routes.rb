@@ -234,7 +234,7 @@ Rails.application.routes.draw do
     get :print, on: :collection
   end
 
-  resources :budgets, only: %i[index show edit update], param: :month_year do
+  resources :budgets, only: %i[index show edit update destroy], param: :month_year do
     post :copy_previous, on: :member
     get :picker, on: :collection
 

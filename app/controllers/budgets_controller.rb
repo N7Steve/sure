@@ -1,5 +1,6 @@
 class BudgetsController < ApplicationController
   before_action :set_budget, only: %i[show edit update copy_previous]
+  before_action :set_budget_for_destroy, only: %i[destroy]
 
   def index
     redirect_to_current_month_budget
@@ -34,6 +35,11 @@ class BudgetsController < ApplicationController
     end
   end
 
+  def destroy
+    @budget.destroy!
+    redirect_to budgets_path, notice: t("budgets.destroy.success")
+  end
+
   def picker
     render partial: "budgets/picker", locals: {
       family: Current.family,
@@ -55,6 +61,11 @@ class BudgetsController < ApplicationController
       start_date = Budget.param_to_date(params[:month_year], family: Current.family)
       @budget = Budget.find_or_bootstrap(Current.family, start_date: start_date, user: Current.user)
       raise ActiveRecord::RecordNotFound unless @budget
+    end
+
+    def set_budget_for_destroy
+      start_date = Budget.param_to_date(params[:month_year], family: Current.family)
+      @budget = Current.family.budgets.find_by!(start_date: start_date)
     end
 
     def redirect_to_current_month_budget

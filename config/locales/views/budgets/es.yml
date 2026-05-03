@@ -31,3 +31,6 @@ es:
       success: "Presupuesto copiado de %{source_name}"
       no_source: "No se encontró un presupuesto anterior del que copiar"
       already_initialized: "Este presupuesto ya ha sido configurado"
+    destroy:
+      success: "Presupuesto eliminado correctamente"
+      delete_button: "Eliminar presupuesto"
