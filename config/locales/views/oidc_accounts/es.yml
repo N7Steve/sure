@@ -18,6 +18,7 @@ es:
       info_email: "Correo electrónico:"
       info_name: "Nombre:"
       submit_create: Crear cuenta
+      submit_accept_invitation: Aceptar invitación
       account_creation_disabled: La creación de cuentas mediante inicio de sesión único está desactivada. Contacte a un administrador.
       cancel: Cancelar
     new_user:

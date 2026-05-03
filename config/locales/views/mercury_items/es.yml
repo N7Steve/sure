@@ -33,6 +33,12 @@ es:
       error: Error
       no_accounts_description: Esta conexión aún no tiene cuentas vinculadas.
       no_accounts_title: Sin cuentas
+      sync_status:
+        no_accounts: No se encontraron cuentas
+        all_synced:
+          one: "%{count} cuenta sincronizada"
+          other: "%{count} cuentas sincronizadas"
+        partial_sync: "%{linked_count} sincronizadas, %{unlinked_count} necesitan configuración"
       setup_action: Configurar nuevas cuentas
       setup_description: "%{linked} de %{total} cuentas vinculadas. Elige los tipos de cuenta para tus cuentas de Mercury recién importadas."
       setup_needed: Nuevas cuentas listas para configurar

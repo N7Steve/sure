@@ -1,0 +1,14 @@
+---
+es:
+  pending_duplicate_merges:
+    new:
+      title: Fusionar con transacción confirmada
+      warning_title: Fusión manual de duplicados
+      warning_description: Usa esto para fusionar manualmente una transacción pendiente con su versión confirmada. Se eliminará la transacción pendiente y solo se conservará la confirmada.
+      pending_transaction: Transacción pendiente
+      select_posted: Seleccionar transacción confirmada para fusionar
+      showing_range: "Mostrando %{start} - %{end}"
+      previous: "← 10 anteriores"
+      next: "10 siguientes →"
+      no_candidates: No se encontraron transacciones confirmadas en esta cuenta.
+      submit_button: Fusionar transacciones

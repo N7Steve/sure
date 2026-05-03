@@ -1,9 +1,15 @@
 ---
 es:
   enable_banking_items:
+    errors:
+      api_error: "Se produjo un error de comunicación con el banco."
+      network_unreachable: "El servicio bancario no está disponible temporalmente. Inténtalo más tarde."
+      session_invalid: "La sesión ha caducado. Reconecta tu banco."
+      unexpected: "Ha ocurrido un error inesperado durante la sincronización."
     authorize:
       authorization_failed: Error al iniciar la autorización
       bank_required: Por favor, selecciona un banco.
+      decoupled_not_supported: Este banco usa autenticación en dispositivo independiente que aún no es compatible. Añade esta cuenta manualmente.
       invalid_redirect: La URL de autorización recibida no es válida. Por favor, inténtalo de nuevo.
       redirect_uri_not_allowed: Redirección no permitida. Por favor, configura `%{callback_url}` en los ajustes de tu aplicación de Enable Banking.
       unexpected_error: Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.
@@ -44,6 +50,12 @@ es:
       credentials_required: Por favor, configura primero tus credenciales de Enable Banking.
       description: Selecciona el banco que quieres conectar a tus cuentas.
       no_banks: No hay bancos disponibles para este país/región.
+      beta_label: Beta
+      no_search_results: Ningún banco coincide con tu búsqueda.
+      search_label: Busca tu banco
+      search_placeholder: Busca tu banco...
       title: Selecciona tu banco
+    setup_accounts:
+      psd2_savings_notice: "Nota: Algunas cuentas de ahorro reguladas francesas (Livret A, PEL, LEP, LDDS) pueden tener acceso limitado a través de Open Banking (PSD2). Si falta una cuenta de ahorro, añádela manualmente."
     update:
       success: Configuración de Enable Banking actualizada.

@@ -69,6 +69,11 @@ es:
       search_security_placeholder: Buscar por ticker o nombre
       cancel: Cancelar
       remap_security: Guardar
+      provider_disabled_warning: "Actualización de precios en pausa — el proveedor %{provider} está deshabilitado. Cambia a otro proveedor o reactívalo en Ajustes."
+      truncated_history_warning: "El historial de precios solo está disponible desde %{date}. Las fechas anteriores no tienen datos del proveedor seleccionado."
+      switch_provider_label: Cambiar proveedor
+      switch_provider_description: "%{provider} está deshabilitado. Busca este valor en otro proveedor habilitado."
+      switch_provider_button: Cambiar
       no_security_provider: Proveedor de valores no configurado. No se pueden buscar valores.
       security_remapped_label: Valor reasignado
       provider_sent: "El proveedor envió: %{ticker}"

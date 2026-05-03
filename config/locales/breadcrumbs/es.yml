@@ -3,4 +3,6 @@ es:
   breadcrumbs:
     exports: Exportaciones
     home: Inicio
+    categorize: Categorizar
     imports: Importaciones
+    transactions: Transacciones

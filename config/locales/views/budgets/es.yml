@@ -22,3 +22,12 @@ es:
       tabs:
         actual: Real
         budgeted: Presupuestado
+    copy_previous_prompt:
+      title: "Configura tu presupuesto"
+      description: "Puedes copiar tu presupuesto de %{source_name} o empezar de cero."
+      copy_button: "Copiar de %{source_name}"
+      fresh_button: "Empezar de cero"
+    copy_previous:
+      success: "Presupuesto copiado de %{source_name}"
+      no_source: "No se encontró un presupuesto anterior del que copiar"
+      already_initialized: "Este presupuesto ya ha sido configurado"

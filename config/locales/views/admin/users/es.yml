@@ -10,6 +10,9 @@ es:
         trial_ends_at: "La prueba finaliza"
         not_available: "n/a"
         no_users: "No se han encontrado usuarios."
+        unnamed_family: "Familia/Grupo sin nombre"
+        no_subscription: "Sin suscripción"
+        family_summary: "%{members} miembros · %{accounts} cuentas · %{transactions} transacciones"
         filters:
           role: "Rol"
           role_all: "Todos los roles"
@@ -35,6 +38,11 @@ es:
           member: "Miembro"
           admin: "Administrador"
           super_admin: "Superadministrador"
+        invitations:
+          pending_label: "Invitado (pendiente)"
+          expires: "Caduca el %{date}"
+          delete: "Eliminar"
+          delete_all: "Eliminar todas"
         role_descriptions:
           guest: "Experiencia centrada en el asistente con permisos restringidos intencionadamente para flujos de introducción."
           member: "Acceso de usuario básico. Pueden gestionar sus propias cuentas, transacciones y ajustes."

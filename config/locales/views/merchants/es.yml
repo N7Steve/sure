@@ -24,6 +24,10 @@ es:
       provider_empty: "Aún no hay comercios del proveedor vinculados a %{moniker}"
       provider_read_only: Los comercios del proveedor se sincronizan desde tus instituciones conectadas. No se pueden editar aquí.
       provider_info: Estos comercios han sido detectados automáticamente por tus conexiones bancarias o por IA. Puedes editarlos para crear tu propia copia o eliminarlos para desvincularlos de tus transacciones.
+      enhance_info:
+        one: "A %{count} comercio del proveedor le falta información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar duplicados."
+        other: "A %{count} comercios del proveedor les falta información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar duplicados."
+      enhance_button: Mejorar con IA
       unlinked_title: Desvinculados recientemente
       unlinked_info: Estos comercios se han eliminado recientemente de tus transacciones. Desaparecerán de esta lista tras 30 días, a menos que se vuelvan a asignar a una transacción.
       table:
@@ -48,7 +52,9 @@ es:
     new:
       title: Nuevo comercio
     perform_merge:
-      success: Se han fusionado %{count} comercios correctamente
+      success:
+        one: "%{count} comercio fusionado correctamente"
+        other: "%{count} comercios fusionados correctamente"
       no_merchants_selected: No se han seleccionado comercios para fusionar
       target_not_found: No se ha encontrado el comercio de destino
       invalid_merchants: Se han seleccionado comercios no válidos
@@ -60,3 +66,6 @@ es:
     update:
       success: Comercio actualizado con éxito
       converted_success: Comercio convertido y actualizado con éxito
+    enhance:
+      success: Mejora de comercios iniciada. Los comercios se mejorarán y los duplicados se fusionarán en breve.
+      already_running: La mejora ya está en curso. Espera a que finalice.
