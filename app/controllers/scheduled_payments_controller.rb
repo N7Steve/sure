@@ -16,7 +16,7 @@ class ScheduledPaymentsController < ApplicationController
       .order(scheduled_date: :desc)
 
     # Preload pending counts per scheduled payment for inline display
-    @pending_counts = @pending_entries.group(:scheduled_payment_id).count
+    @pending_counts = @pending_entries.reorder("").group(:scheduled_payment_id).count
   end
 
   def new
