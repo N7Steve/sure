@@ -73,6 +73,7 @@ de:
     merge_duplicate: Ja, zusammenführen
     keep_both: Nein, beide behalten
     transaction:
+      general_merchant: "General"
       pending: Ausstehend
       pending_tooltip: Ausstehende Transaktion — kann sich bei Buchung ändern
       linked_with_provider: Mit %{provider} verknüpft

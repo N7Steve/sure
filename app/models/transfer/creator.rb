@@ -64,8 +64,13 @@ class Transfer::Creator
     def inflow_transaction
       name = "#{name_prefix} from #{source_account.name}"
 
+      resolved_category = if category_id.present?
+        family.categories.find_by(id: category_id)
+      end
+
       Transaction.new(
         kind: Transfer.inflow_kind_for(source_account, destination_account),
+        category: resolved_category,
         entry: destination_account.entries.build(
           amount: inflow_converted_money.amount.abs * -1,
           currency: destination_account.currency,

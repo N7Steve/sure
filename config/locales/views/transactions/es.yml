@@ -76,6 +76,7 @@ es:
       merge_duplicate: Sí, combinarlas
       keep_both: No, mantener ambas
     transaction:
+      general_merchant: "General"
       pending: Pendiente
       pending_tooltip: Transacción pendiente — puede cambiar al confirmarse
       linked_with_provider: Vinculado con %{provider}

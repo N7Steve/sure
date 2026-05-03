@@ -85,6 +85,7 @@ pl:
     split_parent_row:
       split_label: Podział
     transaction:
+      general_merchant: "General"
       pending: Oczekująca
       pending_tooltip: Transakcja oczekująca — może się zmienić po zaksięgowaniu
       linked_with_provider: Połączono z %{provider}

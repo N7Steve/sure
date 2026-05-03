@@ -24,14 +24,14 @@
             <%= entry.date.strftime(Current.family.date_format) %>
           </td>
           <td class="px-4 py-2 hidden md:table-cell text-secondary truncate max-w-[150px] align-middle">
-             <% if entry.entryable_type == "Transaction" && entry.entryable.merchant.present? %>
+             <% if entry.entryable_type == "Transaction" %>
                 <div class="flex items-center gap-2">
-                  <% if entry.entryable.merchant.logo_url.present? %>
+                  <% if entry.entryable.merchant&.logo_url.present? %>
                     <%= image_tag Setting.transform_brand_fetch_url(entry.entryable.merchant.logo_url),
                         class: "w-5 h-5 rounded-full border border-secondary",
                         loading: "lazy" %>
                   <% end %>
-                  <span class="truncate"><%= entry.entryable.merchant.name %></span>
+                  <span class="truncate"><%= entry.entryable.merchant&.present? ? entry.entryable.merchant.name : t("transactions.transaction.general_merchant") %></span>
                 </div>
              <% end %>
           </td>

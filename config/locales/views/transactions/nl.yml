@@ -72,6 +72,7 @@ nl:
     merge_duplicate: Ja, voeg ze samen
     keep_both: Nee, bewaar beide
     transaction:
+      general_merchant: "General"
       pending: Wachtend
       pending_tooltip: Wachtende transactie — kan wijzigen bij posting
       linked_with_provider: Gekoppeld met %{provider}

@@ -47,6 +47,7 @@ nb:
       edit_tags: Rediger tagger
       import: Importer
     transaction:
+      general_merchant: "General"
       linked_with_provider: Koblet med %{provider}
     index:
       include_excluded_accounts: Inkluder ekskluderte kontoer

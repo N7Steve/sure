@@ -83,6 +83,7 @@ fr:
     split_parent_row:
       split_label: "Fractionner"
     transaction:
+      general_merchant: "General"
       pending: En attente
       pending_tooltip: Transaction en attente — peut changer une fois validée
       linked_with_provider: Lié avec %{provider}

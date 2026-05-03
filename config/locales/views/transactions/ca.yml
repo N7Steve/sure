@@ -121,6 +121,7 @@ ca:
       transfer: Transferència
     toggle_recurring_section: Mostra/Amaga les transaccions recurrents properes
     transaction:
+      general_merchant: "General"
       pending: Pendent
       pending_tooltip: Transacció pendent — pot canviar quan es publiqui
       linked_with_provider: Vinculat amb %{provider}

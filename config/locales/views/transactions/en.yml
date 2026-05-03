@@ -91,6 +91,7 @@ en:
     split_parent_row:
       split_label: "Split"
     transaction:
+      general_merchant: "General"
       pending: Pending
       pending_tooltip: Pending transaction — may change when posted
       linked_with_provider: Linked with %{provider}

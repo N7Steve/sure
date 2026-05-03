@@ -46,6 +46,7 @@ tr:
       edit_tags: Etiketleri düzenle
       import: İçe aktar
     transaction:
+      general_merchant: "General"
       linked_with_provider: "%{provider} ile bağlantılı"
     index:
       include_excluded_accounts: Hariç tutulan hesapları dahil et

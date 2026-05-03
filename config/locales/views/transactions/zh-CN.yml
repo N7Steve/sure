@@ -26,6 +26,7 @@ zh-CN:
       edit_tags: 编辑标签
       import: 导入
     transaction:
+      general_merchant: "General"
       linked_with_provider: 已与 %{provider} 关联
     index:
       import: 导入

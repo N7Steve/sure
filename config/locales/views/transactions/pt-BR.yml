@@ -50,6 +50,7 @@ pt-BR:
       edit_tags: Editar tags
       import: Importar
     transaction:
+      general_merchant: "General"
       linked_with_provider: Vinculado com %{provider}
     index:
       include_excluded_accounts: Incluir contas excluídas

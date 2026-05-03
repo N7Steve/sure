@@ -49,6 +49,7 @@ zh-TW:
       edit_tags: 編輯標籤
       import: 匯入
     transaction:
+      general_merchant: "General"
       linked_with_provider: 已與 %{provider} 連結
     index:
       include_excluded_accounts: 包含已排除的帳戶
