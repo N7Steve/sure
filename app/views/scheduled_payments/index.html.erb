@@ -27,16 +27,41 @@
       <div class="divide-y">
         <% @scheduled_payments.each do |sp| %>
           <div class="grid grid-cols-12 px-5 py-3 items-center">
-            <div class="col-span-4 flex items-center gap-2">
-              <%= icon("calendar", size: :sm, color: :current) %>
-              <span class="font-medium"><%= sp.title %></span>
-              <span class="text-xs text-secondary uppercase"><%= sp.frequency %></span>
-              <% pending_count = @pending_counts[sp.id] || 0 %>
-              <% if pending_count > 0 %>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                  <%= pending_count %> <%= t("scheduled_payments.badge_pending") %>
-                </span>
+            <div class="col-span-4 flex items-center gap-2 min-w-0">
+              <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+                <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+                    class: "w-6 h-6 rounded-full flex-shrink-0",
+                    loading: "lazy" %>
+              <% elsif sp.merchant.present? %>
+                <%= render DS::FilledIcon.new(
+                  variant: :text,
+                  text: sp.merchant.name,
+                  size: "sm",
+                  rounded: true
+                ) %>
+              <% else %>
+                <%= render DS::FilledIcon.new(
+                  variant: :text,
+                  text: sp.title,
+                  size: "sm",
+                  rounded: true
+                ) %>
               <% end %>
+              <div class="truncate">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-medium truncate"><%= sp.title %></span>
+                  <span class="text-xs text-secondary uppercase flex-shrink-0"><%= sp.frequency %></span>
+                  <% pending_count = @pending_counts[sp.id] || 0 %>
+                  <% if pending_count > 0 %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+                      <%= pending_count %> <%= t("scheduled_payments.badge_pending") %>
+                    </span>
+                  <% end %>
+                </div>
+                <% if sp.merchant.present? %>
+                  <span class="text-xs text-secondary"><%= sp.merchant.name %></span>
+                <% end %>
+              </div>
             </div>
             <div class="col-span-2 text-secondary"><%= sp.account.name %></div>
             <div class="col-span-2 text-secondary"><%= l(sp.next_run_date) %></div>
@@ -53,6 +78,21 @@
               <% end %>
             </div>
             <div class="col-span-2 flex items-center gap-2 justify-end">
+              <% oldest_pending = @oldest_pending_per_sp[sp.id] %>
+              <% if oldest_pending %>
+                <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
+                    method: :post,
+                    class: "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors",
+                    title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+                  <%= icon "check", size: "sm" %>
+                <% end %>
+                <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
+                    method: :post,
+                    class: "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors",
+                    title: t("scheduled_payments.reject_action", default: "Reject") do %>
+                  <%= icon "x", size: "sm" %>
+                <% end %>
+              <% end %>
               <%= render DS::Link.new(variant: "outline", icon: "pencil", href: edit_scheduled_payment_path(sp)) %>
               <% unless sp.completed? %>
                 <%= link_to toggle_status_scheduled_payment_path(sp),

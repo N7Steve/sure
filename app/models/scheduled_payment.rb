@@ -26,6 +26,7 @@ class ScheduledPayment < ApplicationRecord
   validates :frequency_day, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :set_frequency_day_from_start_date, if: -> { start_date.present? }
+  before_validation :sync_next_run_date_with_start_date, if: -> { start_date_changed? && !next_run_date_changed? }
   validates :target_account, presence: true, if: :transfer?
   validate :target_account_different_from_source, if: :transfer?
   validate :frequency_day_within_range
@@ -131,5 +132,11 @@ class ScheduledPayment < ApplicationRecord
                          when "monthly", "quarterly", "yearly" then start_date.day
                          else 0
                          end
+  end
+
+  def sync_next_run_date_with_start_date
+    # Reset next_run_date to match the new start_date
+    # If start_date is in the past, the job will catch up and generate entries
+    self.next_run_date = start_date
   end
 end

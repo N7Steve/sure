@@ -17,6 +17,15 @@ class ScheduledPaymentsController < ApplicationController
 
     # Preload pending counts per scheduled payment for inline display
     @pending_counts = @pending_entries.reorder("").group(:scheduled_payment_id).count
+
+    # Build a hash of scheduled_payment_id => oldest pending entry (for inline confirm/reject)
+    @oldest_pending_per_sp = {}
+    @pending_entries.each do |entry|
+      sp_id = entry.scheduled_payment_id
+      if @oldest_pending_per_sp[sp_id].nil? || entry.scheduled_date < @oldest_pending_per_sp[sp_id].scheduled_date
+        @oldest_pending_per_sp[sp_id] = entry
+      end
+    end
   end
 
   def new
