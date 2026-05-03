@@ -36,12 +36,19 @@ class ScheduledPayment < ApplicationRecord
   def generate_pending_entry!
     return if end_date.present? && next_run_date > end_date
 
-    entry_record = scheduled_payment_entries
-      .find_or_create_by!(scheduled_date: next_run_date) do |e|
-        e.status = "pending"
-      end
+    existing = scheduled_payment_entries.find_by(scheduled_date: next_run_date)
 
-    entry_record.confirm! if auto_confirm && entry_record.pending?
+    if existing
+      existing.confirm! if auto_confirm && existing.pending?
+      return existing
+    end
+
+    entry_record = scheduled_payment_entries.create!(
+      scheduled_date: next_run_date,
+      status: "pending"
+    )
+
+    entry_record.confirm! if auto_confirm
 
     advance_next_run_date!
     entry_record
@@ -88,9 +95,13 @@ class ScheduledPayment < ApplicationRecord
 
   def next_weekday_from(from_date, weeks)
     target_wday = frequency_day
-    candidate = from_date + weeks.weeks
-    diff = (target_wday - candidate.wday) % 7
-    candidate + diff.days
+    # Find next occurrence of target_wday strictly after from_date
+    days_ahead = (target_wday - from_date.wday) % 7
+    days_ahead = 7 if days_ahead == 0
+    first_occurrence = from_date + days_ahead.days
+    # For biweekly, add extra week(s)
+    first_occurrence += (weeks - 1).weeks
+    first_occurrence
   end
 
   def safe_next_month(from, day)

@@ -17,5 +17,12 @@ en:
       amount: Amount
       actions: Actions
     new: New
+    empty:
+      title: No scheduled payments
+      description: Create a scheduled payment to automatically generate recurring transactions on a set schedule.
+    status:
+      active: Active
+      paused: Paused
+      completed: Completed
     form:
       auto_confirm: Auto confirm

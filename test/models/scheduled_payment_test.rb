@@ -80,9 +80,20 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       payment_type: "expense"
     )
 
+    original_next = sp.next_run_date
     sp.generate_pending_entry!
+    advanced_next = sp.reload.next_run_date
 
-    assert_nothing_raised { sp.generate_pending_entry! }
+    # Simulate retry: reset next_run_date to original (as if advance didn't persist)
+    sp.update_column(:next_run_date, original_next)
+    sp.reload
+
+    assert_no_difference -> { sp.scheduled_payment_entries.count } do
+      sp.generate_pending_entry!
+    end
+
+    # next_run_date should NOT have advanced again
+    assert_equal original_next, sp.reload.next_run_date
   end
 
   test "completed payment stops generating entries" do

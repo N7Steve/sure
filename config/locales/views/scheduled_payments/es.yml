@@ -17,5 +17,12 @@ es:
       amount: Importe
       actions: Acciones
     new: Nuevo
+    empty:
+      title: No hay pagos programados
+      description: Crea un pago programado para generar automáticamente transacciones recurrentes en una programación definida.
+    status:
+      active: Activo
+      paused: Pausado
+      completed: Completado
     form:
       auto_confirm: Confirmación automática

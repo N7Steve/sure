@@ -91,13 +91,8 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def find_pending_entry
-    accessible_sp_ids = Current.family.scheduled_payments
-                              .accessible_by(Current.user)
-                              .select(:id)
-    ScheduledPaymentEntry.joins(:scheduled_payment)
-      .where(scheduled_payment_id: accessible_sp_ids)
-      .pending
-      .find(params[:entry_id])
+    sp = find_scheduled_payment
+    sp.scheduled_payment_entries.pending.find(params[:entry_id])
   end
 
   def scheduled_payment_params
