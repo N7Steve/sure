@@ -4,6 +4,7 @@ class ScheduledPaymentsController < ApplicationController
   def index
     @scheduled_payments = Current.family.scheduled_payments
                                 .accessible_by(Current.user)
+                                .includes(:account, :merchant, :category, :target_account)
                                 .order(next_run_date: :asc)
 
     @pending_entries = ScheduledPaymentEntry
@@ -11,8 +12,11 @@ class ScheduledPaymentsController < ApplicationController
       .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
       .pending
       .where("scheduled_date <= ?", Date.current)
-      .includes(scheduled_payment: [:account, :merchant, :category])
+      .includes(scheduled_payment: [:account, :merchant, :category, :target_account])
       .order(scheduled_date: :desc)
+
+    # Preload pending counts per scheduled payment for inline display
+    @pending_counts = @pending_entries.group(:scheduled_payment_id).count
   end
 
   def new
@@ -97,7 +101,7 @@ class ScheduledPaymentsController < ApplicationController
 
   def scheduled_payment_params
     params.require(:scheduled_payment).permit(
-      :title, :amount, :currency, :frequency, :frequency_day,
+      :title, :amount, :currency, :frequency,
       :start_date, :end_date, :account_id, :category_id,
       :merchant_id, :target_account_id, :payment_type, :auto_confirm
     )

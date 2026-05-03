@@ -31,6 +31,12 @@
               <%= icon("calendar", size: :sm, color: :current) %>
               <span class="font-medium"><%= sp.title %></span>
               <span class="text-xs text-secondary uppercase"><%= sp.frequency %></span>
+              <% pending_count = @pending_counts[sp.id] || 0 %>
+              <% if pending_count > 0 %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                  <%= pending_count %> <%= t("scheduled_payments.badge_pending") %>
+                </span>
+              <% end %>
             </div>
             <div class="col-span-2 text-secondary"><%= sp.account.name %></div>
             <div class="col-span-2 text-secondary"><%= l(sp.next_run_date) %></div>

@@ -48,7 +48,7 @@
       <%# Category %>
       <div>
         <%= f.collection_select :category_id,
-            Current.family.categories.alphabetically,
+            Current.family.categories.alphabetically_by_hierarchy,
             :id, :name,
             { prompt: t("scheduled_payments.form.select_category", default: "Select category (optional)"),
               label: t("scheduled_payments.form.category_label", default: "Category"),
@@ -67,17 +67,13 @@
               searchable: true } %>
       </div>
 
-      <%# Payment type — Use native select with form-field wrapper for Stimulus compatibility %>
-      <div class="form-field">
-        <div class="form-field__body">
-          <%= f.label :payment_type, t("scheduled_payments.form.payment_type_label", default: "Payment type"), class: "form-field__label" %>
-          <%= f.select :payment_type,
-              ScheduledPayment.payment_types.keys.map { |k| [t("scheduled_payments.form.payment_types.#{k}", default: k.humanize), k] },
-              {},
-              { class: "form-field__input",
-                data: { scheduled_payment_form_target: "paymentType",
-                        action: "change->scheduled-payment-form#toggleTransferFields" } } %>
-        </div>
+      <%# Payment type %>
+      <div>
+        <%= f.select :payment_type,
+            ScheduledPayment.payment_types.keys.map { |k| [t("scheduled_payments.form.payment_types.#{k}", default: k.humanize), k] },
+            { label: t("scheduled_payments.form.payment_type_label", default: "Payment type") },
+            { data: { scheduled_payment_form_target: "paymentType",
+                      action: "change->scheduled-payment-form#toggleTransferFields" } } %>
       </div>
 
       <%# Target account (only visible for transfers) %>
@@ -97,16 +93,6 @@
             ScheduledPayment.frequencies.keys.map { |k| [t("scheduled_payments.form.frequencies.#{k}", default: k.humanize), k] },
             { label: t("scheduled_payments.form.frequency_label", default: "Frequency") },
             { required: true } %>
-      </div>
-
-      <%# Frequency day %>
-      <div>
-        <%= f.number_field :frequency_day,
-            label: t("scheduled_payments.form.frequency_day_label", default: "Day of cycle"),
-            required: true,
-            min: 0,
-            max: 31,
-            placeholder: "1" %>
       </div>
 
       <%# Start date %>

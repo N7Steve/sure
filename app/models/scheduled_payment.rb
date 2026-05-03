@@ -23,7 +23,9 @@ class ScheduledPayment < ApplicationRecord
   enum :payment_type, { expense: "expense", income: "income", transfer: "transfer" }
 
   validates :title, :amount, :currency, :frequency, :start_date, :next_run_date, presence: true
-  validates :frequency_day, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :frequency_day, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+  before_validation :set_frequency_day_from_start_date, if: -> { start_date.present? }
   validates :target_account, presence: true, if: :transfer?
   validate :target_account_different_from_source, if: :transfer?
   validate :frequency_day_within_range
@@ -120,5 +122,14 @@ class ScheduledPayment < ApplicationRecord
 
   def monetizable_currency
     currency
+  end
+
+  def set_frequency_day_from_start_date
+    self.frequency_day = case frequency
+                         when "daily" then 0
+                         when "weekly", "biweekly" then start_date.wday
+                         when "monthly", "quarterly", "yearly" then start_date.day
+                         else 0
+                         end
   end
 end

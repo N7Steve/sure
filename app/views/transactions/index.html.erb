@@ -49,19 +49,23 @@
   <%= render "summary", totals: @search.totals %>
   <% include_excluded = @q && @q[:active_accounts_only] == "false" %>
 
-  <% if Current.family.recurring_transactions_disabled? %>
-    <div class="flex items-center justify-end gap-6 mb-4">
-      <%= render "transactions/compact_view_toggle" %>
-      <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
-    </div>
-    <%= render "transactions/list", transactions: @transactions, projected_recurring: @projected_recurring, q: params[:q], pagy: @pagy %>
-  <% else %>
+  <%
+    show_upcoming_tab = !Current.family.recurring_transactions_disabled?
+    show_scheduled_tab = Current.family.scheduled_payments.accessible_by(Current.user).any?
+    show_tabs = show_upcoming_tab || show_scheduled_tab
+  %>
+
+  <% if show_tabs %>
     <%= render DS::Tabs.new(active_tab: params[:tab].presence || "transactions", variant: :unstyled) do |tabs| %>
       <div class="flex flex-wrap items-center justify-between gap-y-4 mb-4">
         <%= tabs.with_nav(classes: "flex bg-surface-inset p-1 rounded-lg max-w-fit") do |nav| %>
           <% nav.with_btn(id: "transactions", label: t("transactions.show.tab_transactions"), classes: "px-6") %>
-          <% nav.with_btn(id: "upcoming", label: t("transactions.show.tab_upcoming"), classes: "px-6") %>
-          <% nav.with_btn(id: "scheduled", label: t("transactions.show.tab_scheduled"), classes: "px-6") %>
+          <% if show_upcoming_tab %>
+            <% nav.with_btn(id: "upcoming", label: t("transactions.show.tab_upcoming"), classes: "px-6") %>
+          <% end %>
+          <% if show_scheduled_tab %>
+            <% nav.with_btn(id: "scheduled", label: t("transactions.show.tab_scheduled"), classes: "px-6") %>
+          <% end %>
         <% end %>
 
         <div class="flex items-center gap-6">
@@ -76,15 +80,25 @@
         </div>
       <% end %>
 
-      <%= tabs.with_panel(tab_id: "upcoming") do %>
-        <div class="bg-container rounded-xl shadow-border-xs">
-          <%= render "transactions/upcoming" %>
-        </div>
+      <% if show_upcoming_tab %>
+        <%= tabs.with_panel(tab_id: "upcoming") do %>
+          <div class="bg-container rounded-xl shadow-border-xs">
+            <%= render "transactions/upcoming" %>
+          </div>
+        <% end %>
       <% end %>
 
-      <%= tabs.with_panel(tab_id: "scheduled") do %>
-        <%= render "transactions/scheduled" %>
+      <% if show_scheduled_tab %>
+        <%= tabs.with_panel(tab_id: "scheduled") do %>
+          <%= render "transactions/scheduled" %>
+        <% end %>
       <% end %>
     <% end %>
+  <% else %>
+    <div class="flex items-center justify-end gap-6 mb-4">
+      <%= render "transactions/compact_view_toggle" %>
+      <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
+    </div>
+    <%= render "transactions/list", transactions: @transactions, projected_recurring: @projected_recurring, q: params[:q], pagy: @pagy %>
   <% end %>
 </div>
