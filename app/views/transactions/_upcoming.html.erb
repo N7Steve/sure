@@ -1,3 +1,20 @@
+<% if defined?(@pending_scheduled) && @pending_scheduled.any? %>
+  <div class="bg-container-inset rounded-xl p-1 w-full mb-4">
+    <div class="py-2 px-4 flex items-center justify-between font-medium text-xs text-secondary">
+      <p class="uppercase space-x-1.5">
+        <%= tag.span t("scheduled_payments.pending_section") %>
+        <span>&middot;</span>
+        <%= tag.span @pending_scheduled.size %>
+      </p>
+    </div>
+    <div class="bg-container shadow-border-xs rounded-lg space-y-2 p-2">
+      <% @pending_scheduled.each do |pending| %>
+        <%= render "transactions/pending_scheduled_entry", entry: pending %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <% if @projected_recurring.any? %>
   <div id="upcoming" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4 relative group">
     <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">

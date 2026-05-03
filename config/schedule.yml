@@ -42,3 +42,9 @@ refresh_demo_family:
   class: "DemoFamilyRefreshJob"
   queue: "scheduled"
   description: "Refreshes demo family data and emails super admins with daily usage summary"
+
+generate_scheduled_payments:
+  cron: "0 1 * * *" # daily at 1:00 AM UTC
+  class: "GenerateScheduledPaymentsJob"
+  queue: "scheduled"
+  description: "Generates pending scheduled payments due up to today"

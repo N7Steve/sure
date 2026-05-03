@@ -65,6 +65,22 @@ Sidekiq.configure_server do |config|
     Rails.logger.info("[AutoSyncScheduler] Initialized sync_all_accounts cron job")
   rescue => e
     Rails.logger.error("[AutoSyncScheduler] Failed to initialize: #{e.message}")
+  ensure
+    # Load cron jobs from config/schedule.yml (idempotent)
+    begin
+      schedule_path = Rails.root.join("config", "schedule.yml")
+      if File.exist?(schedule_path)
+        schedule = YAML.load_file(schedule_path)
+        if schedule.is_a?(Hash)
+          Sidekiq::Cron::Job.load_from_hash(schedule)
+          Rails.logger.info("[Sidekiq::Cron] Loaded #{schedule.size} job(s) from config/schedule.yml")
+        else
+          Rails.logger.warn("[Sidekiq::Cron] config/schedule.yml is not a Hash, skipping load")
+        end
+      end
+    rescue => e
+      Rails.logger.error("[Sidekiq::Cron] Failed to load schedule: #{e.message}")
+    end
   end
 end
 

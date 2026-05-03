@@ -1,0 +1,20 @@
+---
+es:
+  scheduled_payments:
+    title: Pagos Programados
+    pending_section: Confirmaciones pendientes
+    created: Pago programado creado
+    updated: Pago programado actualizado
+    deleted: Pago programado eliminado
+    entry_confirmed: Entrada confirmada
+    entry_rejected: Entrada rechazada
+    badge_pending: Pendiente
+    table:
+      title: Título
+      account: Cuenta
+      next_run: Próxima ejecución
+      amount: Importe
+      actions: Acciones
+    new: Nuevo
+    form:
+      auto_confirm: Confirmación automática

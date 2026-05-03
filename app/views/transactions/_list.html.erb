@@ -18,6 +18,14 @@
     <%= render "transactions/selection_bar" %>
   </div>
 
+  <% if defined?(@pending_scheduled) && @pending_scheduled.any? %>
+    <div class="space-y-2 mb-4">
+      <% @pending_scheduled.each do |pending| %>
+        <%= render "transactions/pending_scheduled_entry", entry: pending %>
+      <% end %>
+    </div>
+  <% end %>
+
   <% if @pagy.count > 0 || (@projected_recurring.any? && @q.blank?) %>
     <div class="grow overflow-y-auto">
       <% if @transactions.any? %>

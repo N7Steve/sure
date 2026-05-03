@@ -1,0 +1,45 @@
+<%= content_for :page_title, t("scheduled_payments.title") %>
+<div class="space-y-6">
+  <header class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold"><%= t("scheduled_payments.title") %></h1>
+    <%= render DS::Link.new(text: t("scheduled_payments.new"), icon: "plus", variant: "primary", href: new_scheduled_payment_path) %>
+  </header>
+
+  <% if @pending_entries.any? %>
+    <section class="space-y-2">
+      <h2 class="text-sm font-medium text-secondary uppercase"><%= t("scheduled_payments.pending_section") %></h2>
+      <% @pending_entries.each do |e| %>
+        <%= render "transactions/pending_scheduled_entry", entry: e %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="bg-container rounded-xl shadow-border-xs">
+    <div class="grid grid-cols-12 bg-container-inset rounded-t-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center">
+      <div class="col-span-5"><%= t("scheduled_payments.table.title") %></div>
+      <div class="col-span-2"><%= t("scheduled_payments.table.account") %></div>
+      <div class="col-span-2"><%= t("scheduled_payments.table.next_run") %></div>
+      <div class="col-span-1"><%= t("scheduled_payments.table.amount") %></div>
+      <div class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></div>
+    </div>
+    <div class="divide-y">
+      <% @scheduled_payments.each do |sp| %>
+        <div class="grid grid-cols-12 px-5 py-3 items-center">
+          <div class="col-span-5 flex items-center gap-2">
+            <%= icon("calendar", size: :sm, color: :current) %>
+            <span class="font-medium"><%= sp.title %></span>
+            <span class="text-xs text-secondary uppercase"><%= sp.frequency %></span>
+          </div>
+          <div class="col-span-2 text-secondary"><%= sp.account.name %></div>
+          <div class="col-span-2 text-secondary"><%= l(sp.next_run_date) %></div>
+          <div class="col-span-1 font-medium"><%= format_money(sp.amount_money) %></div>
+          <div class="col-span-2 flex items-center gap-2 justify-end">
+            <%= render DS::Link.new(variant: "outline", icon: "pencil", href: edit_scheduled_payment_path(sp)) %>
+            <%= render DS::Link.new(variant: "outline", icon: sp.active? ? "pause" : "play", href: toggle_status_scheduled_payment_path(sp), method: :post) %>
+            <%= render DS::Link.new(variant: "destructive", icon: "trash", href: scheduled_payment_path(sp), method: :delete, data: { turbo_confirm: t("scheduled_payments.confirm_delete") }) %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</div>

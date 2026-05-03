@@ -1,0 +1,21 @@
+---
+en:
+  scheduled_payments:
+    title: Scheduled Payments
+    pending_section: Pending confirmations
+    created: Scheduled payment created
+    updated: Scheduled payment updated
+    deleted: Scheduled payment deleted
+    entry_confirmed: Entry confirmed
+    entry_rejected: Entry rejected
+    badge_pending: Pending
+    confirm_delete: Are you sure you want to delete this scheduled payment?
+    table:
+      title: Title
+      account: Account
+      next_run: Next run
+      amount: Amount
+      actions: Actions
+    new: New
+    form:
+      auto_confirm: Auto confirm

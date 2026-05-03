@@ -68,6 +68,14 @@ class TransactionsController < ApplicationController
                                          10.days.from_now.to_date,
                                          Date.current)
                                   .includes(:merchant)
+
+    # Load pending scheduled payment entries due up to today
+    @pending_scheduled = ScheduledPaymentEntry
+      .joins(:scheduled_payment)
+      .where(scheduled_payments: { family_id: Current.family.id })
+      .pending
+      .where("scheduled_date <= ?", Date.current)
+      .includes(scheduled_payment: [:account, :merchant, :category])
   end
 
   def clear_filter

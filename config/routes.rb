@@ -333,6 +333,14 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :scheduled_payments do
+    member do
+      post :toggle_status
+      post :confirm_entry
+      post :reject_entry
+    end
+  end
+
   resources :accountable_sparklines, only: :show, param: :accountable_type
 
   direct :entry do |entry, options|
