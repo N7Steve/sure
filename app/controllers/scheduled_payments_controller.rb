@@ -97,6 +97,22 @@ class ScheduledPaymentsController < ApplicationController
     redirect_back_or_to scheduled_payments_path
   end
 
+  def confirm_early
+    sp = find_scheduled_payment
+    entry = sp.generate_pending_entry!
+    entry.confirm! if entry.pending?
+    flash[:notice] = t("scheduled_payments.entry_confirmed")
+    redirect_back_or_to transactions_path(tab: "scheduled")
+  end
+
+  def skip_upcoming
+    sp = find_scheduled_payment
+    entry = sp.generate_pending_entry!
+    entry.reject!(t("scheduled_payments.skipped_early", default: "Skipped by user"))
+    flash[:notice] = t("scheduled_payments.entry_rejected")
+    redirect_back_or_to transactions_path(tab: "scheduled")
+  end
+
   private
 
   def find_scheduled_payment

@@ -338,6 +338,8 @@ Rails.application.routes.draw do
       post :toggle_status
       post :confirm_entry
       post :reject_entry
+      post :confirm_early
+      post :skip_upcoming
     end
   end
 

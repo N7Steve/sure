@@ -15,6 +15,12 @@ es:
     confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
     confirm_action: Confirmar
     reject_action: Rechazar
+    confirm_early_action: Confirmar ahora
+    skip_action: Omitir
+    skipped_early: Omitido por el usuario
+    days_left:
+      one: "en %{count} día"
+      other: "en %{count} días"
     upcoming_this_month: Próximos este mes
     table:
       title: Título

@@ -39,41 +39,88 @@
     <% if @upcoming_scheduled.any? %>
       <div id="scheduled-upcoming" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4">
         <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">
-          <div class="pl-0.5 col-span-8 flex items-center gap-4">
+          <div class="pl-0.5 col-span-6 flex items-center gap-4">
             <p><%= t("scheduled_payments.upcoming_this_month", default: "Upcoming this month") %></p>
             <span>&middot;</span>
             <p><%= @upcoming_scheduled.size %></p>
           </div>
           <p class="col-span-2 md:block hidden"><%= t("scheduled_payments.table.next_run") %></p>
           <p class="col-span-2 justify-self-end md:block"><%= t("transactions.show.amount") %></p>
+          <p class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></p>
         </div>
         <div class="bg-container-inset rounded-xl p-1">
           <div class="bg-container shadow-border-xs rounded-lg divide-y divide-subdued">
             <% @upcoming_scheduled.each do |sp| %>
               <div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4">
-                <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 min-w-0">
-                  <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "lg", rounded: true) %>
+                <%# Merchant photo + title %>
+                <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-6 min-w-0">
+                  <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+                    <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+                        class: "w-9 h-9 rounded-full flex-shrink-0", loading: "lazy" %>
+                  <% elsif sp.merchant.present? %>
+                    <%= render DS::FilledIcon.new(
+                      variant: :text,
+                      text: sp.merchant.name,
+                      size: "lg",
+                      rounded: true
+                    ) %>
+                  <% else %>
+                    <%= render DS::FilledIcon.new(
+                      variant: :text,
+                      text: sp.title,
+                      size: "lg",
+                      rounded: true
+                    ) %>
+                  <% end %>
                   <div class="truncate">
                     <div class="flex items-center gap-1 min-w-0">
                       <div class="truncate flex-shrink"><%= sp.title %></div>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-tint-10 text-link">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-tint-10 text-link flex-shrink-0">
                         <%= t("scheduled_payments.form.payment_types.#{sp.payment_type}", default: sp.payment_type.humanize) %>
                       </span>
                     </div>
                     <div class="text-secondary text-xs font-normal">
+                      <% if sp.merchant.present? %>
+                        <%= sp.merchant.name %> ·
+                      <% end %>
                       <%= sp.account.name %>
                       <% if sp.transfer? && sp.target_account.present? %> → <%= sp.target_account.name %><% end %>
-                      · <%= sp.frequency.humanize %>
+                      · <%= l(sp.next_run_date, format: :short) %>
                     </div>
                   </div>
                 </div>
+
+                <%# Next run date (desktop) %>
                 <div class="hidden lg:flex items-center gap-1 col-span-2">
-                  <span class="text-xs text-secondary"><%= l(sp.next_run_date, format: :short) %></span>
+                  <span class="text-xs text-secondary">
+                    <% days_left = (sp.next_run_date - Date.current).to_i %>
+                    <%= t("scheduled_payments.days_left", count: days_left, default: "in %{count} days") %>
+                  </span>
                 </div>
-                <div class="col-span-2 ml-auto text-right shrink-0">
+
+                <%# Amount %>
+                <div class="col-span-2 text-right shrink-0">
                   <p class="font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-subdued' %>">
                     <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
                   </p>
+                </div>
+
+                <%# Confirm early / Skip buttons %>
+                <div class="col-span-2 flex items-center justify-end gap-1">
+                  <%= button_to confirm_early_scheduled_payment_path(sp),
+                      method: :post,
+                      class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors",
+                      title: t("scheduled_payments.confirm_early_action", default: "Confirm now") do %>
+                    <%= icon "check", size: "sm" %>
+                    <span class="hidden lg:inline"><%= t("scheduled_payments.confirm_early_action", default: "Confirm now") %></span>
+                  <% end %>
+                  <%= button_to skip_upcoming_scheduled_payment_path(sp),
+                      method: :post,
+                      class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors",
+                      title: t("scheduled_payments.skip_action", default: "Skip") do %>
+                    <%= icon "x", size: "sm" %>
+                    <span class="hidden lg:inline"><%= t("scheduled_payments.skip_action", default: "Skip") %></span>
+                  <% end %>
                 </div>
               </div>
             <% end %>
