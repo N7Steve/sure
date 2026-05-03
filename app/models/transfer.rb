@@ -49,12 +49,14 @@ class Transfer < ApplicationRecord
     end
   end
 
-  # Once transfer is destroyed, we need to mark the denormalized kind fields on the transactions
   def destroy!
+    inflow_entry = inflow_transaction.entry
+    outflow_entry = outflow_transaction.entry
+
     Transfer.transaction do
-      inflow_transaction.update!(kind: "standard")
-      outflow_transaction.update!(kind: "standard")
       super
+      inflow_entry.destroy!
+      outflow_entry.destroy!
     end
   end
 

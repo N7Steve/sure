@@ -8,6 +8,8 @@ module Transaction::Transferable
     # We keep track of rejected transfers to avoid auto-matching them again
     has_one :rejected_transfer_as_inflow, class_name: "RejectedTransfer", foreign_key: "inflow_transaction_id", dependent: :destroy
     has_one :rejected_transfer_as_outflow, class_name: "RejectedTransfer", foreign_key: "outflow_transaction_id", dependent: :destroy
+
+    after_save :sync_transfer_category, if: :saved_change_to_category_id?
   end
 
   def transfer
@@ -30,6 +32,22 @@ module Transaction::Transferable
   end
 
   private
+    def sync_transfer_category
+      xfer = transfer
+      return unless xfer
+
+      sibling = if xfer.inflow_transaction_id == id
+        xfer.outflow_transaction
+      else
+        xfer.inflow_transaction
+      end
+
+      return unless sibling
+      return if sibling.category_id == category_id
+
+      sibling.update_column(:category_id, category_id)
+    end
+
     def family_matches_scope(date_window:)
       self.entry.account.family.transfer_match_candidates(date_window: date_window)
     end

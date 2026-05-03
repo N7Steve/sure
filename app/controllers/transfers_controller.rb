@@ -69,10 +69,18 @@ class TransfersController < ApplicationController
   end
 
   def destroy
-    outflow_account = @transfer.outflow_transaction.entry.account
+    outflow_entry = @transfer.outflow_transaction.entry
+    inflow_entry = @transfer.inflow_transaction.entry
+    outflow_account = outflow_entry.account
+    inflow_account = inflow_entry.account
+
     return unless require_account_permission!(outflow_account, redirect_path: transactions_url)
 
     @transfer.destroy!
+
+    outflow_account.sync_later
+    inflow_account.sync_later
+
     redirect_back_or_to transactions_url, notice: t(".success")
   end
 
