@@ -113,6 +113,12 @@ class ScheduledPaymentsController < ApplicationController
     redirect_back_or_to transactions_path(tab: "scheduled")
   end
 
+  def run_now
+    GenerateScheduledPaymentsJob.perform_now
+    flash[:notice] = t("scheduled_payments.job_ran", default: "Scheduled payments job executed successfully")
+    redirect_to scheduled_payments_path
+  end
+
   private
 
   def find_scheduled_payment

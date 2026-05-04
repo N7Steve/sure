@@ -334,6 +334,9 @@ Rails.application.routes.draw do
   end
 
   resources :scheduled_payments, only: %i[index new create edit update destroy] do
+    collection do
+      post :run_now
+    end
     member do
       post :toggle_status
       post :confirm_entry

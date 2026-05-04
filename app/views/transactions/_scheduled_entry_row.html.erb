@@ -35,19 +35,19 @@
     </p>
   </div>
 
-  <%# Confirm / Reject buttons %>
-  <div class="col-span-2 flex items-center justify-end gap-1">
+  <%# Confirm / Reject buttons — icon only %>
+  <div class="col-span-2 flex items-center justify-end gap-2">
     <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
         method: :post,
-        class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-success bg-green-50 hover:bg-green-100 transition-colors" do %>
-      <%= icon "check", size: "sm" %>
-      <span class="hidden lg:inline"><%= t("scheduled_payments.confirm_action", default: "Confirm") %></span>
+        class: "text-success hover:text-green-700 transition-colors",
+        title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+      <%= icon "circle-check", size: "sm" %>
     <% end %>
     <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: pending.id),
         method: :post,
-        class: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-destructive bg-red-50 hover:bg-red-100 transition-colors" do %>
-      <%= icon "x", size: "sm" %>
-      <span class="hidden lg:inline"><%= t("scheduled_payments.reject_action", default: "Reject") %></span>
+        class: "text-destructive hover:text-red-700 transition-colors",
+        title: t("scheduled_payments.reject_action", default: "Reject") do %>
+      <%= icon "circle-x", size: "sm" %>
     <% end %>
   </div>
 </div>
