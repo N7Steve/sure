@@ -73,7 +73,12 @@ class ScheduledPaymentsController < ApplicationController
     if @scheduled_payment.save
       # Link matching historical entries if created from an existing transaction
       if params[:scheduled_payment][:from_entry_id].present?
-        @scheduled_payment.link_matching_entries!(Current.user)
+        begin
+          @scheduled_payment.link_matching_entries!(Current.user)
+        rescue => e
+          Rails.logger.error("Failed to link matching entries for SP #{@scheduled_payment.id}: #{e.message}")
+          # SP is already created, just skip linking
+        end
       end
 
       flash[:notice] = t("scheduled_payments.created")

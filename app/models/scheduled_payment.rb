@@ -168,7 +168,7 @@ class ScheduledPayment < ApplicationRecord
       .where(currency: currency)
       .where("ABS(amount) BETWEEN ? AND ?", min_amount, max_amount)
       .where("LOWER(name) = LOWER(?)", title)
-      .includes(:entryable)
+      .preload(:entryable)
 
     # If merchant is set, also filter by merchant
     if merchant_id.present?
