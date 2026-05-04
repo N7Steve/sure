@@ -151,9 +151,10 @@ class ScheduledPaymentsController < ApplicationController
       entry.confirm!
       flash[:notice] = t("scheduled_payments.entry_confirmed")
     else
-      # Date hasn't arrived — just set back to pending
-      entry.update!(status: "pending", rejection_reason: nil)
-      flash[:notice] = t("scheduled_payments.entry_restored", default: "Entry restored to pending")
+      # Date hasn't arrived — destroy the SPE so it reverts to "Programado"
+      # (in the unified table, "Programado" = no SPE exists for that date)
+      entry.destroy!
+      flash[:notice] = t("scheduled_payments.entry_restored", default: "Entry restored")
     end
 
     redirect_back_or_to transactions_path(tab: "scheduled")
