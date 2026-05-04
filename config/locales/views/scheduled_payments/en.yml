@@ -18,22 +18,26 @@ en:
     restore_action: Restore
     today: Today
     confirm_delete: Are you sure you want to delete this scheduled payment?
-    confirm_action: Confirm
-    reject_action: Reject
-    confirm_early_action: Confirm now
-    skip_action: Skip
-    skipped_early: Skipped by user
-    days_left:
-      one: "in %{count} day"
-      other: "in %{count} days"
-    upcoming_this_month: Upcoming this month
+    status:
+      scheduled: Scheduled
+      pending: Pending
+      skipped: Skipped
+      confirmed: Confirmed
     table:
+      payment: Payment
+      date: Date
       title: Title
       account: Account
       next_run: Next run
       amount: Amount
       status: Status
       actions: Actions
+    confirm_action: Confirm
+    skip_action: Skip
+    retract_confirm: "This will delete the linked transaction. Continue?"
+    entry_skipped: "Entry skipped"
+    entry_retracted: "Confirmation undone, transaction removed"
+    empty_month: "No scheduled payments for this month"
     status:
       active: Active
       paused: Paused

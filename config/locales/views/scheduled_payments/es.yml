@@ -18,22 +18,26 @@ es:
     restore_action: Restaurar
     today: Hoy
     confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
-    confirm_action: Confirmar
-    reject_action: Rechazar
-    confirm_early_action: Confirmar ahora
-    skip_action: Omitir
-    skipped_early: Omitido por el usuario
-    days_left:
-      one: "en %{count} día"
-      other: "en %{count} días"
-    upcoming_this_month: Próximos este mes
+    status:
+      scheduled: Programado
+      pending: Pendiente
+      skipped: Omitido
+      confirmed: Confirmado
     table:
+      payment: Pago
+      date: Fecha
       title: Título
       account: Cuenta
       next_run: Próxima ejecución
       amount: Importe
       status: Estado
       actions: Acciones
+    confirm_action: Confirmar
+    skip_action: Omitir
+    retract_confirm: "Esto eliminará la transacción asociada. ¿Continuar?"
+    entry_skipped: "Entrada omitida"
+    entry_retracted: "Confirmación deshecha, transacción eliminada"
+    empty_month: "No hay pagos programados este mes"
     status:
       active: Activo
       paused: Pausado

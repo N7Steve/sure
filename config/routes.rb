@@ -342,9 +342,10 @@ Rails.application.routes.draw do
       post :toggle_status
       post :confirm_entry
       post :reject_entry
-      post :confirm_early
-      post :skip_upcoming
       post :restore_entry
+      post :retract_entry
+      post :confirm_scheduled_date
+      post :skip_scheduled_date
     end
   end
 

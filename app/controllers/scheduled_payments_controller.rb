@@ -97,11 +97,48 @@ class ScheduledPaymentsController < ApplicationController
     redirect_back_or_to scheduled_payments_path
   end
 
-  def confirm_early
+  def confirm_scheduled_date
     sp = find_scheduled_payment
-    entry = sp.generate_pending_entry!
-    entry.confirm! if entry.pending?
+    date = Date.parse(params[:scheduled_date])
+
+    ActiveRecord::Base.transaction do
+      spe = sp.scheduled_payment_entries.find_or_initialize_by(scheduled_date: date)
+      if spe.new_record?
+        spe.status = "pending"
+        spe.save!
+      end
+      spe.confirm! unless spe.confirmed?
+
+      sp.advance_next_run_date! if sp.next_run_date == date
+    end
+
     flash[:notice] = t("scheduled_payments.entry_confirmed")
+    redirect_back_or_to transactions_path(tab: "scheduled")
+  end
+
+  def skip_scheduled_date
+    sp = find_scheduled_payment
+    date = Date.parse(params[:scheduled_date])
+
+    ActiveRecord::Base.transaction do
+      spe = sp.scheduled_payment_entries.find_or_initialize_by(scheduled_date: date)
+      spe.assign_attributes(status: "skipped", rejection_reason: "skipped_by_user")
+      spe.save!
+
+      # If this skipped date matches the SP's next_run_date, advance it so the
+      # cron doesn't try to generate this entry again.
+      sp.advance_next_run_date! if sp.next_run_date == date
+    end
+
+    flash[:notice] = t("scheduled_payments.entry_skipped", default: "Entry skipped")
+    redirect_back_or_to transactions_path(tab: "scheduled")
+  end
+
+  def retract_entry
+    sp = find_scheduled_payment
+    entry = sp.scheduled_payment_entries.confirmed.find(params[:entry_id])
+    entry.retract!
+    flash[:notice] = t("scheduled_payments.entry_retracted", default: "Confirmation undone, transaction removed")
     redirect_back_or_to transactions_path(tab: "scheduled")
   end
 
@@ -119,14 +156,6 @@ class ScheduledPaymentsController < ApplicationController
       flash[:notice] = t("scheduled_payments.entry_restored", default: "Entry restored to pending")
     end
 
-    redirect_back_or_to transactions_path(tab: "scheduled")
-  end
-
-  def skip_upcoming
-    sp = find_scheduled_payment
-    entry = sp.generate_pending_entry!
-    entry.reject!(t("scheduled_payments.skipped_early", default: "Skipped by user"))
-    flash[:notice] = t("scheduled_payments.entry_rejected")
     redirect_back_or_to transactions_path(tab: "scheduled")
   end
 

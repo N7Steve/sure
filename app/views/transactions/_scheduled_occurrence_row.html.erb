@@ -1,0 +1,107 @@
+<%# locals: (occurrence:) %>
+<%
+  sp = occurrence.scheduled_payment
+  date = occurrence.scheduled_date
+  entry_id = occurrence.entry_id
+  is_dimmed = occurrence.skipped? || occurrence.confirmed?
+%>
+<div class="group flex lg:grid lg:grid-cols-12 items-center text-sm font-medium p-3 lg:p-4 <%= is_dimmed ? 'opacity-60' : 'text-primary' %>">
+
+  <%# Payment info: logo + title + account %>
+  <div class="pr-4 lg:pr-6 flex items-center gap-3 col-span-5 min-w-0">
+    <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+      <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+          class: "w-9 h-9 rounded-full flex-shrink-0", loading: "lazy" %>
+    <% else %>
+      <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "lg", rounded: true) %>
+    <% end %>
+    <div class="truncate">
+      <div class="truncate"><%= sp.title %></div>
+      <div class="text-secondary text-xs font-normal truncate">
+        <%= sp.account.name %>
+        <% if sp.transfer? && sp.target_account.present? %> → <%= sp.target_account.name %><% end %>
+        <% if sp.merchant.present? %> · <%= sp.merchant.name %><% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Date %>
+  <div class="hidden lg:flex items-center col-span-2">
+    <span class="text-xs text-secondary"><%= I18n.l(date, format: :long) %></span>
+  </div>
+
+  <%# Status badge %>
+  <div class="hidden lg:flex items-center col-span-1">
+    <% case occurrence.status %>
+    <% when :scheduled %>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-tint-10 text-link"><%= t("scheduled_payments.status.scheduled", default: "Scheduled") %></span>
+    <% when :pending %>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700"><%= t("scheduled_payments.status.pending", default: "Pending") %></span>
+    <% when :skipped %>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"><%= t("scheduled_payments.status.skipped", default: "Skipped") %></span>
+    <% when :confirmed %>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><%= t("scheduled_payments.status.confirmed", default: "Confirmed") %></span>
+    <% end %>
+  </div>
+
+  <%# Amount %>
+  <div class="col-span-2 ml-auto text-right shrink-0">
+    <p class="font-medium privacy-sensitive <%= occurrence.skipped? ? 'text-secondary line-through' : (sp.income? ? 'text-success' : 'text-subdued') %>">
+      <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
+    </p>
+  </div>
+
+  <%# Actions %>
+  <div class="col-span-2 flex items-center justify-end gap-2">
+    <% case occurrence.status %>
+    <% when :scheduled %>
+      <%# Future, no SPE: confirm-now + skip %>
+      <%= button_to confirm_scheduled_date_scheduled_payment_path(sp, scheduled_date: date.to_s),
+          method: :post,
+          class: "text-success hover:text-green-700 transition-colors",
+          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+        <%= icon "circle-check", size: "sm" %>
+      <% end %>
+      <%= button_to skip_scheduled_date_scheduled_payment_path(sp, scheduled_date: date.to_s),
+          method: :post,
+          class: "text-destructive hover:text-red-700 transition-colors",
+          title: t("scheduled_payments.skip_action", default: "Skip") do %>
+        <%= icon "circle-x", size: "sm" %>
+      <% end %>
+
+    <% when :pending %>
+      <%# SPE pending: confirm + skip %>
+      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: entry_id),
+          method: :post,
+          class: "text-success hover:text-green-700 transition-colors",
+          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+        <%= icon "circle-check", size: "sm" %>
+      <% end %>
+      <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: entry_id),
+          method: :post,
+          class: "text-destructive hover:text-red-700 transition-colors",
+          title: t("scheduled_payments.skip_action", default: "Skip") do %>
+        <%= icon "circle-x", size: "sm" %>
+      <% end %>
+
+    <% when :skipped %>
+      <%# SPE skipped/rejected: restore %>
+      <%= button_to restore_entry_scheduled_payment_path(sp, entry_id: entry_id),
+          method: :post,
+          class: "text-link hover:opacity-80 transition-colors",
+          title: t("scheduled_payments.restore_action", default: "Restore") do %>
+        <%= icon "rotate-ccw", size: "sm" %>
+      <% end %>
+
+    <% when :confirmed %>
+      <%# SPE confirmed: skip (= retract, deletes transaction) %>
+      <%= button_to retract_entry_scheduled_payment_path(sp, entry_id: entry_id),
+          method: :post,
+          form: { data: { turbo_confirm: t("scheduled_payments.retract_confirm", default: "This will delete the linked transaction. Continue?") } },
+          class: "text-destructive hover:text-red-700 transition-colors",
+          title: t("scheduled_payments.skip_action", default: "Skip & remove transaction") do %>
+        <%= icon "circle-x", size: "sm" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

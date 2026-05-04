@@ -128,6 +128,27 @@ class ScheduledPayment < ApplicationRecord
     end
   end
 
+  def occurrences_in(date_range)
+    return [] if start_date.blank?
+
+    occurrences = []
+    current = start_date
+    iterations = 0
+    max_iterations = 10_000
+
+    while current <= date_range.end && iterations < max_iterations
+      break if end_date.present? && current > end_date
+      occurrences << current if date_range.cover?(current)
+
+      next_date = calculate_next_date(current)
+      break if next_date <= current
+      current = next_date
+      iterations += 1
+    end
+
+    occurrences
+  end
+
   private
 
   def frequency_day_within_range
