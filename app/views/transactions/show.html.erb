@@ -88,11 +88,11 @@
       <% end %>
     <% end %>
     <%= render "entries/protection_indicator", entry: @entry, unlock_path: (@entry.transaction ? unlock_transaction_path(@entry.transaction) : "#") %>
+    <% split_locked = @entry.split_child? || @entry.split_parent? %>
+    <% edit_locked = !can_edit_entry? || scheduled_payment_locked %>
+    <% annotate_locked = !can_annotate_entry? || scheduled_payment_locked %>
     <% dialog.with_section(title: t(".overview"), open: true) do %>
       <div>
-        <% split_locked = @entry.split_child? || @entry.split_parent? %>
-        <% edit_locked = !can_edit_entry? || scheduled_payment_locked %>
-        <% annotate_locked = !can_annotate_entry? || scheduled_payment_locked %>
         <%= styled_form_with model: @entry,
               url: transaction_path(@entry),
               class: "space-y-2",
