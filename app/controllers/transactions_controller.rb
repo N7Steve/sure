@@ -2,7 +2,7 @@ class TransactionsController < ApplicationController
   include EntryableResource
 
   before_action :set_entry_for_unlock, only: :unlock
-  before_action :set_entry, only: [:retract_scheduled]
+  before_action :set_entry, only: %i[show update destroy retract_scheduled]
   before_action :store_params!, only: :index
 
   def new
