@@ -19,7 +19,7 @@
             } %>
 
         <div class="flex md:hidden items-center gap-1 col-span-2 relative shrink-0">
-          <%= render "transactions/transaction_category", transaction: transaction, variant: "mobile" %>
+          <%= render "transactions/transaction_category", transaction: transaction, variant: "mobile", entry: entry %>
           <% if transaction.merchant&.logo_url.present? %>
             <%= image_tag Setting.transform_brand_fetch_url(transaction.merchant.logo_url),
                 class: "w-5 h-5 rounded-full absolute -bottom-1 -right-1 border border-secondary pointer-events-none",
@@ -185,27 +185,29 @@
           <% end %>
         <% end %>
 
-        <%= render DS::Menu.new do |menu| %>
-          <% menu.with_button(class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center justify-center whitespace-nowrap border border-dashed border-secondary text-secondary hover:bg-surface-hover hover:text-primary transition-colors", style: "width: 24px; height: 24px;") do %>
-            <%= icon "plus", size: "sm" %>
-          <% end %>
-          <% menu.with_custom_content do %>
-            <div class="p-3 w-64">
-              <%= styled_form_with model: entry,
-                    url: transaction_path(entry),
-                    data: { controller: "auto-submit-form" } do |f| %>
-                <%= f.fields_for :entryable do |ef| %>
-                  <%= ef.select :tag_ids,
-                        Current.family.tags.alphabetically.pluck(:name, :id),
-                        {
-                          include_blank: t("transactions.show.none", default: "None"),
-                          multiple: true,
-                          label: t("transactions.show.tags_label", default: "Tags")
-                        },
-                        { "data-controller": "multi-select", "data-auto-submit-form-target": "auto" } %>
+        <% unless entry.from_scheduled_payment? %>
+          <%= render DS::Menu.new do |menu| %>
+            <% menu.with_button(class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center justify-center whitespace-nowrap border border-dashed border-secondary text-secondary hover:bg-surface-hover hover:text-primary transition-colors", style: "width: 24px; height: 24px;") do %>
+              <%= icon "plus", size: "sm" %>
+            <% end %>
+            <% menu.with_custom_content do %>
+              <div class="p-3 w-64">
+                <%= styled_form_with model: entry,
+                      url: transaction_path(entry),
+                      data: { controller: "auto-submit-form" } do |f| %>
+                  <%= f.fields_for :entryable do |ef| %>
+                    <%= ef.select :tag_ids,
+                          Current.family.tags.alphabetically.pluck(:name, :id),
+                          {
+                            include_blank: t("transactions.show.none", default: "None"),
+                            multiple: true,
+                            label: t("transactions.show.tags_label", default: "Tags")
+                          },
+                          { "data-controller": "multi-select", "data-auto-submit-form-target": "auto" } %>
+                  <% end %>
                 <% end %>
-              <% end %>
-            </div>
+              </div>
+            <% end %>
           <% end %>
         <% end %>
       </div>
@@ -215,7 +217,7 @@
           <%# For investment accounts with trades, show activity label instead of category %>
           <%= render "investment_activity/quick_edit_badge", entry: entry, entryable: transaction %>
         <% else %>
-          <%= render "transactions/transaction_category", transaction: transaction, variant: "desktop" %>
+          <%= render "transactions/transaction_category", transaction: transaction, variant: "desktop", entry: entry %>
         <% end %>
       </div>
 
