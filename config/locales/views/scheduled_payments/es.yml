@@ -49,6 +49,8 @@ es:
       select_category: Seleccionar categoría (opcional)
       merchant_label: Comerciante
       no_merchant: Ninguno
+      tags_label: Etiquetas
+      no_tags: Ninguna
       payment_type_label: Tipo de pago
       payment_types:
         expense: Gasto
@@ -69,3 +71,5 @@ es:
       end_date_label: Fecha de fin (opcional)
       auto_confirm_label: Confirmación automática
       auto_confirm_hint: Crear automáticamente la transacción sin confirmación manual
+    retracted: Transacción programada omitida
+    retract_error: Esta transacción no está vinculada a un pago programado

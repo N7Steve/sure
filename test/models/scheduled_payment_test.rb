@@ -169,4 +169,22 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
 
     assert Entry.exists?(linked_entry_id), "Entry should survive SP deletion"
   end
+
+  test "sync_confirmed_entries! syncs tags to linked entries" do
+    sp = @family.scheduled_payments.create!(
+      account: @account, title: "Rent", amount: 500, currency: "USD",
+      frequency: "monthly", frequency_day: 1,
+      start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense", category: @category, merchant: nil
+    )
+
+    spe = sp.generate_pending_entry!
+    spe.confirm!
+
+    tag = @family.tags.create!(name: "Updated Tag")
+    sp.tags = [tag]
+    sp.sync_confirmed_entries!
+
+    assert_includes spe.reload.entry.entryable.tags, tag
+  end
 end

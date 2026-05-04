@@ -50,6 +50,9 @@ es:
       scheduled_payment_title: "Transacción de Pago Programado"
       scheduled_payment_description: "Esta transacción fue generada automáticamente por un pago programado. Para editarla, modifica el pago programado directamente."
       scheduled_payment_edit_link: "Editar pago programado: %{title}"
+      retract_scheduled: "Omitir esta transacción"
+      retract_scheduled_confirm_title: "¿Omitir la transacción del pago programado?"
+      retract_scheduled_confirm_body: "Esto eliminará permanentemente esta transacción y marcará la entrada del pago programado como rechazada. El pago programado en sí no se verá afectado."
       overview: Resumen
       settings: Configuración
       tags_label: Etiquetas

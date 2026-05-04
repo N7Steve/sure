@@ -315,6 +315,7 @@ Rails.application.routes.draw do
       get :convert_to_trade
       post :create_trade_from_transaction
       post :mark_as_recurring
+      delete :retract_scheduled
       post :merge_duplicate
       post :dismiss_duplicate
       post :unlock

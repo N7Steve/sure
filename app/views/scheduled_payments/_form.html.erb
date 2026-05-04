@@ -67,6 +67,18 @@
               searchable: true } %>
       </div>
 
+      <%# Tags %>
+      <div>
+        <%= f.select :tag_ids,
+            Current.family.tags.alphabetically.pluck(:name, :id),
+            {
+              include_blank: t("scheduled_payments.form.no_tags", default: "None"),
+              multiple: true,
+              label: t("scheduled_payments.form.tags_label", default: "Tags")
+            },
+            { "data-controller": "multi-select" } %>
+      </div>
+
       <%# Payment type %>
       <div>
         <%= f.select :payment_type,

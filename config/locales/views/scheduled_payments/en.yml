@@ -49,6 +49,8 @@ en:
       select_category: Select category (optional)
       merchant_label: Merchant
       no_merchant: None
+      tags_label: Tags
+      no_tags: None
       payment_type_label: Payment type
       payment_types:
         expense: Expense
@@ -69,3 +71,5 @@ en:
       end_date_label: End date (optional)
       auto_confirm_label: Auto confirm
       auto_confirm_hint: Automatically create the transaction without manual confirmation
+    retracted: Scheduled transaction omitted
+    retract_error: This transaction is not linked to a scheduled payment

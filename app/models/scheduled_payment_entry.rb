@@ -29,6 +29,27 @@ class ScheduledPaymentEntry < ApplicationRecord
     update!(status: "skipped")
   end
 
+  def retract!
+    return unless confirmed?
+
+    ActiveRecord::Base.transaction do
+      entry_to_destroy = entry
+      transfer_entry_to_destroy = transfer_entry
+
+      # Release FK constraints before destroying entries
+      update_columns(
+        entry_id: nil,
+        transfer_entry_id: nil,
+        status: "rejected",
+        rejection_reason: "retracted_by_user",
+        updated_at: Time.current
+      )
+
+      entry_to_destroy&.destroy!
+      transfer_entry_to_destroy&.destroy!
+    end
+  end
+
   private
 
   def create_transaction_entry!
@@ -49,6 +70,12 @@ class ScheduledPaymentEntry < ApplicationRecord
     )
 
     update!(entry: created_entry)
+
+    # Apply scheduled payment tags to the created transaction
+    if sp.tags.any?
+      created_entry.entryable.tags = sp.tags
+      created_entry.entryable.save!
+    end
   end
 
   def create_transfer_entries!

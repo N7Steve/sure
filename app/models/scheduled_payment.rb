@@ -8,6 +8,8 @@ class ScheduledPayment < ApplicationRecord
   belongs_to :target_account, class_name: "Account", optional: true
 
   has_many :scheduled_payment_entries, dependent: :destroy
+  has_many :taggings, as: :taggable, dependent: :destroy
+  has_many :tags, through: :taggings
 
   monetize :amount
 
@@ -86,6 +88,9 @@ class ScheduledPayment < ApplicationRecord
               merchant_id: merchant_id,
               updated_at: Time.current
             )
+            # Sync tags (uses association, not update_columns)
+            spe.entry.entryable.tags = tags
+            spe.entry.entryable.save!
           end
         end
 

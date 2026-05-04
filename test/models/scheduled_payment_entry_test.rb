@@ -122,4 +122,36 @@ class ScheduledPaymentEntryTest < ActiveSupport::TestCase
     pending_spe.confirm!
     assert_equal @sp, pending_spe.reload.entry.source_scheduled_payment
   end
+
+  test "confirm applies scheduled payment tags to created entry" do
+    tag = @family.tags.create!(name: "Recurring Bills")
+    @sp.tags << tag
+
+    spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    spe.confirm!
+
+    assert_includes spe.reload.entry.entryable.tags, tag
+  end
+
+  test "retract! destroys the confirmed entry and marks SPE as rejected" do
+    spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    spe.confirm!
+    entry_id = spe.reload.entry.id
+
+    spe.retract!
+
+    assert_not Entry.exists?(entry_id), "Entry should be destroyed after retract"
+    assert_equal "rejected", spe.reload.status
+    assert_equal "retracted_by_user", spe.reload.rejection_reason
+    assert_nil spe.reload.entry_id
+  end
+
+  test "retract! does nothing if SPE is not confirmed" do
+    spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+
+    assert_no_difference -> { Entry.count } do
+      spe.retract!
+    end
+    assert_equal "pending", spe.reload.status
+  end
 end

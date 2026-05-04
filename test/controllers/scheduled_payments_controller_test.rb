@@ -180,4 +180,11 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "rejected", pending.status
     assert_equal "Not needed", pending.rejection_reason
   end
+
+  test "new page does not include duplicate h1 header" do
+    get new_scheduled_payment_path
+    assert_response :success
+    # Should only have page title via content_for, not visible h1
+    assert_select "h1", count: 0
+  end
 end
