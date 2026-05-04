@@ -11,9 +11,8 @@ class ScheduledPaymentsController < ApplicationController
       .joins(:scheduled_payment)
       .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
       .pending
-      .where("scheduled_date <= ?", Date.current)
       .includes(scheduled_payment: [:account, :merchant, :category, :target_account])
-      .order(scheduled_date: :desc)
+      .order(scheduled_date: :asc)
 
     # Preload pending counts per scheduled payment for inline display
     @pending_counts = @pending_entries.reorder("").group(:scheduled_payment_id).count
