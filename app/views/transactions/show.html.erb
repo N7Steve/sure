@@ -88,9 +88,9 @@
       <% end %>
     <% end %>
     <%= render "entries/protection_indicator", entry: @entry, unlock_path: (@entry.transaction ? unlock_transaction_path(@entry.transaction) : "#") %>
-    <% split_locked = @entry.split_child? || @entry.split_parent? %>
-    <% edit_locked = !can_edit_entry? || scheduled_payment_locked %>
-    <% annotate_locked = !can_annotate_entry? || scheduled_payment_locked %>
+    <% @split_locked = @entry.split_child? || @entry.split_parent? %>
+    <% @edit_locked = !can_edit_entry? || scheduled_payment_locked %>
+    <% @annotate_locked = !can_annotate_entry? || scheduled_payment_locked %>
     <% dialog.with_section(title: t(".overview"), open: true) do %>
       <div>
         <%= styled_form_with model: @entry,
@@ -100,7 +100,7 @@
           <div data-controller="autocomplete" data-autocomplete-url-value="<%= descriptions_transactions_path %>" data-autocomplete-account-id-value="<%= @entry.account_id %>">
             <%= f.text_field :name,
                   label: t(".name_label"),
-                  disabled: @entry.split_child? || edit_locked,
+                  disabled: @entry.split_child? || @edit_locked,
                   "data-auto-submit-form-target": "auto",
                   data: {
                     autocomplete_target: "input",
@@ -111,21 +111,21 @@
           <%= f.date_field :date,
                 label: t(".date_label"),
                 max: Date.current,
-                disabled: @entry.linked? || split_locked || edit_locked,
+                disabled: @entry.linked? || @split_locked || @edit_locked,
                 "data-auto-submit-form-target": "auto" %>
           <% unless @entry.transaction.transfer? %>
             <div class="flex items-center gap-2">
               <%= f.select :nature,
                     [["Expense", "outflow"], ["Income", "inflow"]],
                     { container_class: "w-1/3", label: t(".nature"), selected: @entry.amount.negative? ? "inflow" : "outflow" },
-                    { data: { "auto-submit-form-target": "auto" }, disabled: @entry.linked? || split_locked || edit_locked } %>
+                    { data: { "auto-submit-form-target": "auto" }, disabled: @entry.linked? || @split_locked || @edit_locked } %>
               <%= f.money_field :amount, label: t(".amount"),
                     container_class: "w-2/3",
                     auto_submit: true,
                     min: 0,
                     value: @entry.amount.abs,
-                    disabled: @entry.linked? || split_locked || edit_locked,
-                    disable_currency: @entry.linked? || split_locked || edit_locked %>
+                    disabled: @entry.linked? || @split_locked || @edit_locked,
+                    disable_currency: @entry.linked? || @split_locked || @edit_locked %>
             </div>
             <%= f.fields_for :entryable do |ef| %>
               <%= ef.collection_select :category_id,
@@ -133,7 +133,7 @@
                     :id, :name,
                     { label: t(".category_label"),
                       class: "text-subdued", include_blank: t(".uncategorized"),
-                      variant: :badge, searchable: true, disabled: @entry.split_child? || annotate_locked },
+                      variant: :badge, searchable: true, disabled: @entry.split_child? || @annotate_locked },
                     "data-auto-submit-form-target": "auto" %>
             <% end %>
           <% end %>
@@ -159,7 +159,7 @@
                   :id, :name,
                   { include_blank: t(".none"),
                     label: t(".merchant_label"),
-                    variant: :logo, searchable: true, menu_placement: :auto, disabled: @entry.split_child? || annotate_locked },
+                    variant: :logo, searchable: true, menu_placement: :auto, disabled: @entry.split_child? || @annotate_locked },
                   "data-auto-submit-form-target": "auto" %>
             <%= ef.select :tag_ids,
                   Current.family.tags.alphabetically.pluck(:name, :id),
@@ -167,13 +167,13 @@
                     include_blank: t(".none"),
                     multiple: true,
                     label:    t(".tags_label"),
-                    disabled: annotate_locked
+                    disabled: @annotate_locked
                   },
                   { "data-controller": "multi-select", "data-auto-submit-form-target": "auto" } %>
           <% end %>
         <% end %>
       <% end %>
-      <%= render "transactions/notes", entry: @entry, can_annotate: !annotate_locked %>
+      <%= render "transactions/notes", entry: @entry, can_annotate: !@annotate_locked %>
     <% end %>
 
     <% dialog.with_section(title: t(".attachments")) do %>

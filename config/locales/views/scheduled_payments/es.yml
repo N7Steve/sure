@@ -11,10 +11,11 @@ es:
     cannot_toggle_completed: No se puede reactivar un pago programado completado
     entry_confirmed: Entrada confirmada
     entry_rejected: Entrada rechazada
+    entry_restored: "Entrada restaurada a pendiente"
     badge_pending: Pendiente
     badge_skipped: Omitido
     entries_section: Entradas programadas
-    restore_action: Restaurar y confirmar
+    restore_action: Restaurar
     today: Hoy
     confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
     confirm_action: Confirmar

@@ -46,10 +46,10 @@
   <div class="col-span-2 flex items-center justify-end gap-2">
     <% if is_dismissed %>
       <%# Re-confirm button for dismissed entries %>
-      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
+      <%= button_to restore_entry_scheduled_payment_path(sp, entry_id: pending.id),
           method: :post,
           class: "text-success hover:text-green-700 transition-colors",
-          title: t("scheduled_payments.restore_action", default: "Restore & confirm") do %>
+          title: t("scheduled_payments.restore_action", default: "Restore") do %>
         <%= icon "rotate-ccw", size: "sm" %>
       <% end %>
     <% else %>

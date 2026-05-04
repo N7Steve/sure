@@ -344,6 +344,7 @@ Rails.application.routes.draw do
       post :reject_entry
       post :confirm_early
       post :skip_upcoming
+      post :restore_entry
     end
   end
 

@@ -105,6 +105,23 @@ class ScheduledPaymentsController < ApplicationController
     redirect_back_or_to transactions_path(tab: "scheduled")
   end
 
+  def restore_entry
+    sp = find_scheduled_payment
+    entry = sp.scheduled_payment_entries.where(status: %w[skipped rejected]).find(params[:entry_id])
+
+    if entry.scheduled_date <= Date.current
+      # Date has passed — auto-confirm (creates the transaction)
+      entry.confirm!
+      flash[:notice] = t("scheduled_payments.entry_confirmed")
+    else
+      # Date hasn't arrived — just set back to pending
+      entry.update!(status: "pending", rejection_reason: nil)
+      flash[:notice] = t("scheduled_payments.entry_restored", default: "Entry restored to pending")
+    end
+
+    redirect_back_or_to transactions_path(tab: "scheduled")
+  end
+
   def skip_upcoming
     sp = find_scheduled_payment
     entry = sp.generate_pending_entry!
