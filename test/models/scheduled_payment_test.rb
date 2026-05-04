@@ -187,4 +187,72 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
 
     assert_includes spe.reload.entry.entryable.tags, tag
   end
+
+  test "link_matching_entries! finds and links historical entries" do
+    # Create entries to match
+    e1 = @family.entries.create!(
+      account: @account,
+      date: Date.new(2026, 1, 14),
+      name: "Netflix",
+      amount: -15,
+      currency: "USD",
+      entryable: Transaction.new
+    )
+
+    e2 = @family.entries.create!(
+      account: @account,
+      date: Date.new(2026, 2, 16),
+      name: "Netflix",
+      amount: -15,
+      currency: "USD",
+      entryable: Transaction.new
+    )
+
+    # SP day 15, starting Jan 2026
+    sp = @family.scheduled_payments.create!(
+      account: @account,
+      title: "Netflix",
+      amount: 15,
+      currency: "USD",
+      frequency: "monthly",
+      frequency_day: 15,
+      start_date: Date.new(2026, 1, 1),
+      next_run_date: Date.new(2026, 1, 1),
+      payment_type: "expense"
+    )
+
+    assert_difference -> { sp.scheduled_payment_entries.confirmed.count }, 2 do
+      sp.link_matching_entries!(users(:dylan))
+    end
+
+    assert_equal Date.new(2026, 3, 15), sp.reload.next_run_date
+  end
+
+  test "link_matching_entries! respects ±5 day tolerance" do
+    # Entry on Jan 22 with SP day 15 → should NOT match (7 days off)
+    e1 = @family.entries.create!(
+      account: @account,
+      date: Date.new(2026, 1, 22),
+      name: "Netflix",
+      amount: -15,
+      currency: "USD",
+      entryable: Transaction.new
+    )
+
+    sp = @family.scheduled_payments.create!(
+      account: @account,
+      title: "Netflix",
+      amount: 15,
+      currency: "USD",
+      frequency: "monthly",
+      frequency_day: 15,
+      start_date: Date.new(2026, 1, 1),
+      next_run_date: Date.new(2026, 1, 1),
+      payment_type: "expense"
+    )
+
+    assert_no_difference -> { sp.scheduled_payment_entries.confirmed.count } do
+      sp.link_matching_entries!(users(:dylan))
+    end
+  end
 end

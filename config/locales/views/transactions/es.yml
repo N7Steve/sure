@@ -55,6 +55,9 @@ es:
       retract_scheduled_confirm_body: "Esto eliminará permanentemente esta transacción y marcará la entrada del pago programado como rechazada. El pago programado en sí no se verá afectado."
       overview: Resumen
       settings: Configuración
+      create_recurring_title: "Crear pago recurrente"
+      create_recurring_description: "Crea un pago programado basado en esta transacción y vincula entradas pasadas similares"
+      create_recurring_button: "Crear"
       tags_label: Etiquetas
       tab_transactions: Transacciones
       tab_upcoming: Próximas

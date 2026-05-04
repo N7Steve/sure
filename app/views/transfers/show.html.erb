@@ -19,6 +19,50 @@
     </div>
   <% end %>
   <% dialog.with_body do %>
+    <% outflow_entry = @transfer.outflow_transaction.entry %>
+    <% inflow_entry = @transfer.inflow_transaction.entry %>
+    <% transfer_sp_locked = outflow_entry.from_scheduled_payment? || inflow_entry.from_scheduled_payment? %>
+    <% source_sp = transfer_sp_locked ? (outflow_entry.source_scheduled_payment || inflow_entry.source_scheduled_payment) : nil %>
+
+    <%# Scheduled payment info banner %>
+    <% if transfer_sp_locked %>
+      <div class="mx-4 my-3 p-4 rounded-lg border border-accent bg-accent/5">
+        <div class="flex items-start gap-3">
+          <%= icon "repeat", size: "md", color: "accent" %>
+          <div class="flex-1 space-y-2">
+            <h4 class="text-sm font-medium text-primary"><%= t("transactions.show.scheduled_payment_title") %></h4>
+            <p class="text-sm text-secondary"><%= t("transactions.show.scheduled_payment_description") %></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <% if source_sp %>
+                <%= render DS::Link.new(
+                  text: t("transactions.show.scheduled_payment_edit_link", title: source_sp.title),
+                  icon: "external-link",
+                  variant: "ghost",
+                  size: :sm,
+                  href: edit_scheduled_payment_path(source_sp),
+                  frame: "_top"
+                ) %>
+              <% end %>
+              <%= render DS::Button.new(
+                text: t("transactions.show.retract_scheduled"),
+                icon: "skip-forward",
+                variant: "outline-destructive",
+                size: :sm,
+                href: retract_scheduled_transaction_path(outflow_entry),
+                method: :delete,
+                confirm: CustomConfirm.new(
+                  title: t("transactions.show.retract_scheduled_confirm_title"),
+                  body: t("transactions.show.retract_scheduled_confirm_body"),
+                  btn_text: t("transactions.show.retract_scheduled"),
+                  destructive: true
+                ),
+                frame: "_top"
+              ) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
     <% dialog.with_section(title: t(".overview"), open: true) do %>
       <div class="pb-4 px-3 pt-2 text-sm space-y-3 text-primary">
         <div class="space-y-3">
@@ -59,49 +103,114 @@
       </div>
     <% end %>
     <% dialog.with_section(title: t(".details")) do %>
-      <%= styled_form_with model: @transfer,
-              data: { controller: "auto-submit-form" }, class: "space-y-2" do |f| %>
-        <%= f.text_field :name,
-              label: t("transactions.show.name_label", default: "Name"),
-              "data-auto-submit-form-target": "auto" %>
-        <% if @transfer.categorizable? %>
-          <%= f.collection_select :category_id, @categories, :id, :name, { label: "Category", include_blank: "Uncategorized", selected: @transfer.outflow_transaction.category&.id, variant: :badge, searchable: true }, "data-auto-submit-form-target": "auto" %>
-        <% end %>
-        <% if @transfer.from_account.currency == @transfer.to_account.currency %>
-          <%= f.number_field :amount,
-                label: t("transactions.show.amount_label", default: "Amount"),
-                value: @transfer.amount_abs.amount,
-                step: 0.01,
-                min: 0,
+      <% if transfer_sp_locked %>
+        <%# Read-only display for scheduled payment transfers %>
+        <div class="pb-4 px-3 pt-2 text-sm space-y-3 text-primary">
+          <div class="form-field">
+            <div class="form-field__body">
+              <label class="form-field__label"><%= t("transactions.show.name_label", default: "Name") %></label>
+              <p class="text-sm text-primary py-1"><%= @transfer.outflow_transaction.entry.name %></p>
+            </div>
+          </div>
+          <% if @transfer.categorizable? && @transfer.outflow_transaction.category.present? %>
+            <div class="form-field">
+              <div class="form-field__body">
+                <label class="form-field__label"><%= t("transactions.show.category_label", default: "Category") %></label>
+                <% cat = @transfer.outflow_transaction.category %>
+                <% hex_color = cat.respond_to?(:color) ? cat.color : "#737373" %>
+                <span class="inline-flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1 border"
+                      style="background-color: color-mix(in oklab, <%= hex_color %> 10%, transparent);
+                             border-color: color-mix(in oklab, <%= hex_color %> 20%, transparent);
+                             color: <%= hex_color %>;">
+                  <% if cat.respond_to?(:lucide_icon) && cat.lucide_icon.present? %>
+                    <%= icon cat.lucide_icon, size: "sm", color: "current" %>
+                  <% else %>
+                    <span class="size-1.5 rounded-full" style="background-color: <%= hex_color %>;"></span>
+                  <% end %>
+                  <%= cat.name %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+          <div class="form-field">
+            <div class="form-field__body">
+              <label class="form-field__label"><%= t("transactions.show.amount_label", default: "Amount") %></label>
+              <p class="text-sm text-primary py-1 privacy-sensitive"><%= format_money @transfer.amount_abs %></p>
+            </div>
+          </div>
+          <% if @transfer.notes.present? %>
+            <div class="form-field">
+              <div class="form-field__body">
+                <label class="form-field__label"><%= t(".note_label") %></label>
+                <p class="text-sm text-secondary py-1"><%= @transfer.notes %></p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <%# Editable form for normal transfers %>
+        <%= styled_form_with model: @transfer,
+                data: { controller: "auto-submit-form" }, class: "space-y-2" do |f| %>
+          <%= f.text_field :name,
+                label: t("transactions.show.name_label", default: "Name"),
                 "data-auto-submit-form-target": "auto" %>
-        <% else %>
-          <%= f.number_field :amount,
-                label: t("transactions.show.amount_label", default: "Amount"),
-                value: @transfer.amount_abs.amount,
-                disabled: true,
-                title: "Multi-currency transfer amounts cannot be edited here" %>
-        <% end %>
-        <%= f.text_area :notes,
-                  label: t(".note_label"),
-                  placeholder: t(".note_placeholder"),
-                  rows: 5,
+          <% if @transfer.categorizable? %>
+            <%= f.collection_select :category_id, @categories, :id, :name, { label: "Category", include_blank: "Uncategorized", selected: @transfer.outflow_transaction.category&.id, variant: :badge, searchable: true }, "data-auto-submit-form-target": "auto" %>
+          <% end %>
+          <% if @transfer.from_account.currency == @transfer.to_account.currency %>
+            <%= f.number_field :amount,
+                  label: t("transactions.show.amount_label", default: "Amount"),
+                  value: @transfer.amount_abs.amount,
+                  step: 0.01,
+                  min: 0,
                   "data-auto-submit-form-target": "auto" %>
+          <% else %>
+            <%= f.number_field :amount,
+                  label: t("transactions.show.amount_label", default: "Amount"),
+                  value: @transfer.amount_abs.amount,
+                  disabled: true,
+                  title: "Multi-currency transfer amounts cannot be edited here" %>
+          <% end %>
+          <%= f.text_area :notes,
+                    label: t(".note_label"),
+                    placeholder: t(".note_placeholder"),
+                    rows: 5,
+                    "data-auto-submit-form-target": "auto" %>
+        <% end %>
       <% end %>
     <% end %>
     <% dialog.with_section(title: t(".settings")) do %>
       <div class="pb-4">
-        <div class="flex items-center justify-between gap-2 p-3">
-          <div class="text-sm space-y-1">
-            <h4 class="text-primary"><%= t(".delete_title") %></h4>
-            <p class="text-secondary"><%= t(".delete_subtitle") %></p>
+        <% outflow_entry = @transfer.outflow_transaction.entry %>
+        <% unless outflow_entry.from_scheduled_payment? %>
+          <div class="flex items-center justify-between gap-2 p-3">
+            <div class="text-sm space-y-1">
+              <h4 class="text-primary"><%= t("transactions.show.create_recurring_title", default: "Create recurring payment") %></h4>
+              <p class="text-secondary"><%= t("transactions.show.create_recurring_description", default: "Set up a scheduled payment based on this transfer and link similar past entries") %></p>
+            </div>
+            <%= render DS::Link.new(
+              text: t("transactions.show.create_recurring_button", default: "Create"),
+              icon: "repeat",
+              variant: "outline",
+              href: new_scheduled_payment_path(from_entry_id: outflow_entry.id),
+              frame: "_top"
+            ) %>
           </div>
-          <%= button_to t(".delete"),
-                transfer_path(@transfer),
-                method: :delete,
-                class:  "rounded-lg px-3 py-2 whitespace-nowrap text-red-500 text-sm
-                          font-medium border border-secondary",
-                data:   { turbo_confirm: true, turbo_frame: "_top" } %>
-        </div>
+        <% end %>
+        <% unless transfer_sp_locked %>
+          <div class="flex items-center justify-between gap-2 p-3">
+            <div class="text-sm space-y-1">
+              <h4 class="text-primary"><%= t(".delete_title") %></h4>
+              <p class="text-secondary"><%= t(".delete_subtitle") %></p>
+            </div>
+            <%= button_to t(".delete"),
+                  transfer_path(@transfer),
+                  method: :delete,
+                  class:  "rounded-lg px-3 py-2 whitespace-nowrap text-red-500 text-sm
+                            font-medium border border-secondary",
+                  data:   { turbo_confirm: true, turbo_frame: "_top" } %>
+          </div>
+        <% end %>
       </div>
     <% end %>
   <% end %>

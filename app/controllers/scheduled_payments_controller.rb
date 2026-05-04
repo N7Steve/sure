@@ -28,21 +28,56 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def new
-    @scheduled_payment = Current.family.scheduled_payments.build(
-      currency: Current.family.primary_currency_code,
-      start_date: Date.current,
-      frequency: "monthly",
-      payment_type: "expense"
-    )
+    if params[:from_entry_id].present?
+      source_entry = Current.family.entries
+        .joins(:account)
+        .merge(Account.accessible_by(Current.user))
+        .find(params[:from_entry_id])
+
+      transaction = source_entry.entryable
+      is_transfer = transaction.transfer.present?
+
+      @scheduled_payment = Current.family.scheduled_payments.build(
+        title: source_entry.name,
+        amount: source_entry.amount.abs,
+        currency: source_entry.currency,
+        account_id: source_entry.account_id,
+        category_id: transaction.category_id,
+        merchant_id: transaction.respond_to?(:merchant_id) ? transaction.merchant_id : nil,
+        start_date: source_entry.date,
+        frequency: "monthly",
+        payment_type: is_transfer ? "transfer" : (source_entry.amount.positive? ? "expense" : "income"),
+        target_account_id: is_transfer ? transaction.transfer.to_account&.id : nil
+      )
+
+      # Pre-select tags
+      if transaction.respond_to?(:tags)
+        @scheduled_payment.tag_ids = transaction.tag_ids
+      end
+
+      @from_entry_id = source_entry.id
+    else
+      @scheduled_payment = Current.family.scheduled_payments.build(
+        currency: Current.family.primary_currency_code,
+        start_date: Date.current,
+        frequency: "monthly",
+        payment_type: "expense"
+      )
+    end
   end
 
   def create
     @scheduled_payment = Current.family.scheduled_payments.build(scheduled_payment_params)
-    @scheduled_payment.next_run_date = @scheduled_payment.start_date
+    @scheduled_payment.next_run_date ||= @scheduled_payment.start_date
 
     if @scheduled_payment.save
+      # Link matching historical entries if created from an existing transaction
+      if params[:scheduled_payment][:from_entry_id].present?
+        @scheduled_payment.link_matching_entries!(Current.user)
+      end
+
       flash[:notice] = t("scheduled_payments.created")
-      redirect_to scheduled_payments_path
+      redirect_to transactions_path(tab: "scheduled")
     else
       render :new, status: :unprocessable_entity
     end

@@ -379,6 +379,22 @@
 
     <% if can_edit_entry? && !scheduled_payment_locked %>
       <% dialog.with_section(title: t(".settings")) do %>
+        <%# Create recurring payment from this transaction — only for non-SP, non-transfer entries %>
+        <% unless @entry.from_scheduled_payment? || @entry.transaction.transfer? %>
+          <div class="flex items-center justify-between gap-2 p-3">
+            <div class="text-sm space-y-1">
+              <h4 class="text-primary"><%= t(".create_recurring_title", default: "Create recurring payment") %></h4>
+              <p class="text-secondary"><%= t(".create_recurring_description", default: "Set up a scheduled payment based on this transaction and link similar past entries") %></p>
+            </div>
+            <%= render DS::Link.new(
+              text: t(".create_recurring_button", default: "Create"),
+              icon: "repeat",
+              variant: "outline",
+              href: new_scheduled_payment_path(from_entry_id: @entry.id),
+              frame: "_top"
+            ) %>
+          </div>
+        <% end %>
         <% unless @entry.split_parent? || @entry.split_child? %>
           <div class="pb-4">
             <%= styled_form_with model: @entry,

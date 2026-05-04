@@ -7,6 +7,10 @@
     <%= render "shared/form_errors", model: scheduled_payment %>
   <% end %>
 
+  <% if @from_entry_id.present? %>
+    <%= f.hidden_field :from_entry_id, value: @from_entry_id %>
+  <% end %>
+
   <section class="bg-container rounded-xl shadow-border-xs p-4 space-y-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <%# Title %>

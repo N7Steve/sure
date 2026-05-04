@@ -69,6 +69,9 @@ en:
       retract_scheduled_confirm_body: "This will permanently delete this transaction and mark the scheduled payment entry as rejected. The scheduled payment itself will not be affected."
       overview: Overview
       settings: Settings
+      create_recurring_title: "Create recurring payment"
+      create_recurring_description: "Set up a scheduled payment based on this transaction and link similar past entries"
+      create_recurring_button: "Create"
       tags_label: Tags
       tab_transactions: Transactions
       tab_upcoming: Upcoming

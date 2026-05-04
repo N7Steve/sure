@@ -149,6 +149,80 @@ class ScheduledPayment < ApplicationRecord
     occurrences
   end
 
+  # Links existing entries that match this SP's pattern to create confirmed SPEs.
+  # Searches by: same name, same account, same merchant, similar amount,
+  # and date within ±5 days of any computed occurrence date.
+  def link_matching_entries!(user)
+    return unless persisted?
+
+    # Build base query: same account, same name, similar amount, same currency
+    amount_value = amount.abs
+    tolerance = amount_value * 0.05  # 5% tolerance on amount
+    min_amount = amount_value - tolerance
+    max_amount = amount_value + tolerance
+
+    candidates = family.entries
+      .joins(:account)
+      .merge(Account.accessible_by(user))
+      .where(account_id: account_id)
+      .where(currency: currency)
+      .where("ABS(amount) BETWEEN ? AND ?", min_amount, max_amount)
+      .where("LOWER(name) = LOWER(?)", title)
+      .includes(:entryable)
+
+    # If merchant is set, also filter by merchant
+    if merchant_id.present?
+      candidates = candidates
+        .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+        .where(transactions: { merchant_id: merchant_id })
+    end
+
+    # For each candidate, check if its date is within ±5 days of any occurrence
+    candidates.find_each do |entry|
+      # Skip if already linked to any SP
+      next if entry.from_scheduled_payment?
+
+      # Compute occurrences in a ±5 day window around the entry date
+      search_range = (entry.date - 5.days)..(entry.date + 5.days)
+      matching_occurrences = occurrences_in(search_range)
+
+      next if matching_occurrences.empty?
+
+      # Find the nearest occurrence
+      nearest_date = matching_occurrences.min_by { |d| (d - entry.date).abs }
+
+      # Create or find an SPE for that occurrence date, link it to this entry
+      spe = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
+      next if spe.persisted? && spe.confirmed?  # Don't overwrite existing confirmed SPE
+
+      if entry.entryable.is_a?(Transaction) && entry.entryable.transfer.present?
+        # For transfers, link both outflow and inflow entries
+        transfer = entry.entryable.transfer
+        outflow_entry = transfer.outflow_transaction.entry
+        inflow_entry = transfer.inflow_transaction.entry
+        spe.assign_attributes(
+          status: "confirmed",
+          entry: outflow_entry,
+          transfer_entry: inflow_entry
+        )
+      else
+        spe.assign_attributes(
+          status: "confirmed",
+          entry: entry
+        )
+      end
+
+      spe.save!
+    end
+
+    # Advance next_run_date past all linked occurrences
+    latest_linked = scheduled_payment_entries.confirmed.maximum(:scheduled_date)
+    if latest_linked.present?
+      next_date = calculate_next_date(latest_linked)
+      update!(next_run_date: next_date) if next_date > next_run_date
+    end
+  end
+
   private
 
   def frequency_day_within_range
