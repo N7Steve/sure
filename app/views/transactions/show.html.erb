@@ -50,7 +50,7 @@
     <% end %>
 
     <%# Potential duplicate alert %>
-    <% if @entry.transaction.has_potential_duplicate? %>
+    <% if @entry.transaction&.has_potential_duplicate? %>
       <% potential_match = @entry.transaction.potential_duplicate_entry %>
       <% if potential_match %>
         <div class="mx-4 my-3 p-4 rounded-lg border border-warning bg-warning/5">
@@ -87,7 +87,7 @@
         </div>
       <% end %>
     <% end %>
-    <%= render "entries/protection_indicator", entry: @entry, unlock_path: unlock_transaction_path(@entry.transaction) %>
+    <%= render "entries/protection_indicator", entry: @entry, unlock_path: (@entry.transaction ? unlock_transaction_path(@entry.transaction) : "#") %>
     <% dialog.with_section(title: t(".overview"), open: true) do %>
       <div>
         <% split_locked = @entry.split_child? || @entry.split_parent? %>

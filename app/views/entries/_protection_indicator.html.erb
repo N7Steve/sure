@@ -1,7 +1,7 @@
 <%# locals: (entry:, unlock_path:) %>
 
 <%# Protection indicator - shows when entry is protected from sync overwrites %>
-<%= turbo_frame_tag dom_id(entry, :protection) do %>
+<%= turbo_frame_tag (entry ? dom_id(entry, :protection) : "protection_fallback") do %>
   <% if entry.protected_from_sync? && !entry.excluded? %>
   <details class="group shadow-border-xs bg-container rounded-xl mb-3 text-xs text-secondary">
     <summary class="flex items-center justify-between gap-2 cursor-pointer px-3 py-2">
