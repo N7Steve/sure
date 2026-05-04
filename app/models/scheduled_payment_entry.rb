@@ -6,7 +6,7 @@ class ScheduledPaymentEntry < ApplicationRecord
   enum :status, { pending: "pending", confirmed: "confirmed", rejected: "rejected", skipped: "skipped" }
 
   def confirm!
-    return unless pending?
+    return unless pending? || skipped? || rejected?
 
     sp = scheduled_payment
     ActiveRecord::Base.transaction do
@@ -40,7 +40,7 @@ class ScheduledPaymentEntry < ApplicationRecord
       update_columns(
         entry_id: nil,
         transfer_entry_id: nil,
-        status: "rejected",
+        status: "skipped",
         rejection_reason: "retracted_by_user",
         updated_at: Time.current
       )

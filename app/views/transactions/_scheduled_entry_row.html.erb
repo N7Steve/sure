@@ -1,6 +1,7 @@
 <%# locals: (pending:) %>
 <% sp = pending.scheduled_payment %>
-<div class="group flex lg:grid lg:grid-cols-12 items-center text-primary text-sm font-medium p-3 lg:p-4">
+<% is_dismissed = pending.skipped? || pending.rejected? %>
+<div class="group flex lg:grid lg:grid-cols-12 items-center text-sm font-medium p-3 lg:p-4 <%= is_dismissed ? 'opacity-50 bg-surface-inset' : 'text-primary' %>">
   <%# Name + badge %>
   <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-6 min-w-0">
     <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
@@ -12,9 +13,15 @@
     <div class="truncate">
       <div class="flex items-center gap-1 min-w-0">
         <div class="truncate flex-shrink"><%= sp.title %></div>
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
-          <%= t("scheduled_payments.badge_pending") %>
-        </span>
+        <% if is_dismissed %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 flex-shrink-0">
+            <%= t("scheduled_payments.badge_skipped", default: "Skipped") %>
+          </span>
+        <% else %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+            <%= t("scheduled_payments.badge_pending") %>
+          </span>
+        <% end %>
       </div>
       <div class="text-secondary text-xs font-normal">
         <%= sp.account.name %>
@@ -30,24 +37,35 @@
 
   <%# Amount %>
   <div class="col-span-2 ml-auto text-right shrink-0">
-    <p class="font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-subdued' %>">
+    <p class="font-medium privacy-sensitive <%= is_dismissed ? 'text-secondary line-through' : (sp.income? ? 'text-success' : 'text-subdued') %>">
       <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
     </p>
   </div>
 
-  <%# Confirm / Reject buttons — icon only %>
+  <%# Action buttons %>
   <div class="col-span-2 flex items-center justify-end gap-2">
-    <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
-        method: :post,
-        class: "text-success hover:text-green-700 transition-colors",
-        title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
-      <%= icon "circle-check", size: "sm" %>
-    <% end %>
-    <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: pending.id),
-        method: :post,
-        class: "text-destructive hover:text-red-700 transition-colors",
-        title: t("scheduled_payments.reject_action", default: "Reject") do %>
-      <%= icon "circle-x", size: "sm" %>
+    <% if is_dismissed %>
+      <%# Re-confirm button for dismissed entries %>
+      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
+          method: :post,
+          class: "text-success hover:text-green-700 transition-colors",
+          title: t("scheduled_payments.restore_action", default: "Restore & confirm") do %>
+        <%= icon "rotate-ccw", size: "sm" %>
+      <% end %>
+    <% else %>
+      <%# Confirm / Reject buttons for pending entries %>
+      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: pending.id),
+          method: :post,
+          class: "text-success hover:text-green-700 transition-colors",
+          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+        <%= icon "circle-check", size: "sm" %>
+      <% end %>
+      <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: pending.id),
+          method: :post,
+          class: "text-destructive hover:text-red-700 transition-colors",
+          title: t("scheduled_payments.reject_action", default: "Reject") do %>
+        <%= icon "circle-x", size: "sm" %>
+      <% end %>
     <% end %>
   </div>
 </div>

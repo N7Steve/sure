@@ -12,6 +12,10 @@ es:
     entry_confirmed: Entrada confirmada
     entry_rejected: Entrada rechazada
     badge_pending: Pendiente
+    badge_skipped: Omitido
+    entries_section: Entradas programadas
+    restore_action: Restaurar y confirmar
+    today: Hoy
     confirm_delete: "¿Estás seguro de que deseas eliminar este pago programado?"
     confirm_action: Confirmar
     reject_action: Rechazar

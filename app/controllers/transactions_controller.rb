@@ -70,19 +70,31 @@ class TransactionsController < ApplicationController
                                          Date.current)
                                   .includes(:merchant)
 
-    # Load pending scheduled payment entries (all pending, regardless of date)
+    # Determine selected month for scheduled tab
+    @scheduled_month = if params[:scheduled_month].present?
+      Date.parse(params[:scheduled_month])
+    else
+      Date.current
+    end
+    @scheduled_month_start = @scheduled_month.beginning_of_month
+    @scheduled_month_end = @scheduled_month.end_of_month
+
+    accessible_sp_ids = Current.family.scheduled_payments.accessible_by(Current.user).select(:id)
+
+    # Load scheduled payment entries for the selected month (pending + skipped + rejected)
     @pending_scheduled = ScheduledPaymentEntry
       .joins(:scheduled_payment)
-      .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
-      .pending
+      .where(scheduled_payment_id: accessible_sp_ids)
+      .where(status: %w[pending skipped rejected])
+      .where(scheduled_date: @scheduled_month_start..@scheduled_month_end)
       .includes(scheduled_payment: [:account, :merchant, :category, :target_account])
       .order(scheduled_date: :asc)
 
-    # Load upcoming scheduled payments for this month (not yet generated)
+    # Load upcoming scheduled payments for the selected month (not yet generated)
     @upcoming_scheduled = Current.family.scheduled_payments
       .accessible_by(Current.user)
       .active
-      .where("next_run_date <= ? AND next_run_date > ?", Date.current.end_of_month, Date.current)
+      .where("next_run_date <= ? AND next_run_date > ?", @scheduled_month_end, [ @scheduled_month_start, Date.current ].max)
       .includes(:account, :merchant, :category, :target_account)
       .order(next_run_date: :asc)
   end

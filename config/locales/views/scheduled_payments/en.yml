@@ -12,6 +12,10 @@ en:
     entry_confirmed: Entry confirmed
     entry_rejected: Entry rejected
     badge_pending: Pending
+    badge_skipped: Skipped
+    entries_section: Scheduled entries
+    restore_action: Restore & confirm
+    today: Today
     confirm_delete: Are you sure you want to delete this scheduled payment?
     confirm_action: Confirm
     reject_action: Reject

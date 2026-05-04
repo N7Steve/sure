@@ -127,7 +127,7 @@ class ScheduledPaymentsController < ApplicationController
 
   def find_pending_entry
     sp = find_scheduled_payment
-    sp.scheduled_payment_entries.pending.find(params[:entry_id])
+    sp.scheduled_payment_entries.where(status: %w[pending skipped rejected]).find(params[:entry_id])
   end
 
   def scheduled_payment_params

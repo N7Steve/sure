@@ -1,4 +1,30 @@
-<%# Scheduled payments tab - shows current month's scheduled entries %>
+<%# Scheduled payments tab - shows selected month's scheduled entries %>
+<div class="flex items-center justify-between mb-4">
+  <div class="flex items-center gap-2">
+    <%= link_to transactions_path(tab: "scheduled", scheduled_month: (@scheduled_month - 1.month).beginning_of_month.to_s),
+        class: "p-1.5 rounded-md hover:bg-surface-hover text-secondary",
+        data: { turbo_frame: "_top" } do %>
+      <%= icon "chevron-left", size: "sm" %>
+    <% end %>
+
+    <h3 class="text-sm font-medium text-primary min-w-[120px] text-center">
+      <%= I18n.l(@scheduled_month, format: "%B %Y").capitalize %>
+    </h3>
+
+    <%= link_to transactions_path(tab: "scheduled", scheduled_month: (@scheduled_month + 1.month).beginning_of_month.to_s),
+        class: "p-1.5 rounded-md hover:bg-surface-hover text-secondary",
+        data: { turbo_frame: "_top" } do %>
+      <%= icon "chevron-right", size: "sm" %>
+    <% end %>
+  </div>
+
+  <% if @scheduled_month.beginning_of_month != Date.current.beginning_of_month %>
+    <%= link_to t("scheduled_payments.today", default: "Today"),
+        transactions_path(tab: "scheduled"),
+        class: "text-xs text-link hover:underline" %>
+  <% end %>
+</div>
+
 <% if @pending_scheduled.any? || @upcoming_scheduled.any? %>
   <div class="space-y-4">
     <%# Pending confirmations (past due) %>
@@ -6,7 +32,7 @@
       <div id="scheduled-pending" class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4">
         <div class="grid-cols-12 bg-container-inset rounded-xl px-5 py-3 text-xs uppercase font-medium text-secondary items-center mb-4 grid">
           <div class="pl-0.5 col-span-6 flex items-center gap-4">
-            <p><%= t("scheduled_payments.pending_section") %></p>
+            <p><%= t("scheduled_payments.entries_section", default: "Scheduled entries") %></p>
             <span>&middot;</span>
             <p><%= @pending_scheduled.size %></p>
           </div>
@@ -128,7 +154,7 @@
     <% end %>
   </div>
 <% else %>
-  <div class="flex flex-col items-center justify-center py-40">
+  <div class="flex flex-col items-center justify-center py-20">
     <div class="flex justify-center text-secondary mb-4">
       <%= icon "calendar", size: "xl" %>
     </div>
