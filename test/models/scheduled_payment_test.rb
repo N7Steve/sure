@@ -128,4 +128,45 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
     assert_includes results, sp_due
     assert_not_includes results, sp_future
   end
+
+  test "sync_confirmed_entries! updates name, category, and merchant on linked entries" do
+    category2 = categories(:housing)
+    merchant  = FamilyMerchant.find_or_create_by!(family: @family, name: "New Merchant")
+
+    sp = @family.scheduled_payments.create!(
+      account: @account, title: "Rent", amount: 500, currency: "USD",
+      frequency: "monthly", frequency_day: 1,
+      start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense", category: @category, merchant: nil
+    )
+
+    spe = sp.generate_pending_entry!
+    spe.confirm!
+    linked_entry = spe.reload.entry
+
+    sp.update!(title: "Updated Title", category: category2, merchant: merchant)
+    sp.sync_confirmed_entries!
+
+    linked_entry.reload
+    assert_equal "Updated Title", linked_entry.name
+    assert_equal category2.id, linked_entry.entryable.category_id
+    assert_equal merchant.id, linked_entry.entryable.merchant_id
+  end
+
+  test "destroying SP does not destroy confirmed entries" do
+    sp = @family.scheduled_payments.create!(
+      account: @account, title: "Test", amount: 10, currency: "USD",
+      frequency: "monthly", frequency_day: 1,
+      start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense"
+    )
+
+    spe = sp.generate_pending_entry!
+    spe.confirm!
+    linked_entry_id = spe.reload.entry.id
+
+    sp.destroy!
+
+    assert Entry.exists?(linked_entry_id), "Entry should survive SP deletion"
+  end
 end

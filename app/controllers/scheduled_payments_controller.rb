@@ -55,6 +55,7 @@ class ScheduledPaymentsController < ApplicationController
   def update
     @scheduled_payment = find_scheduled_payment
     if @scheduled_payment.update(scheduled_payment_params)
+      @scheduled_payment.sync_confirmed_entries!
       flash[:notice] = t("scheduled_payments.updated")
       redirect_to scheduled_payments_path
     else

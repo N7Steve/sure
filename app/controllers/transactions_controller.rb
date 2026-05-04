@@ -21,7 +21,7 @@ class TransactionsController < ApplicationController
     base_scope = @search.transactions_scope
                        .reverse_chronological
                        .includes(
-                         { entry: :account },
+                         { entry: [:account, :scheduled_payment_entry] },
                          :category, :tags,
                          :merchant,
                          :transfer_as_inflow, :transfer_as_outflow

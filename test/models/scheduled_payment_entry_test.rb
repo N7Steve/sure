@@ -80,4 +80,46 @@ class ScheduledPaymentEntryTest < ActiveSupport::TestCase
     assert pending_entry.entry.present?
     assert pending_entry.transfer_entry.present?
   end
+
+  test "cannot destroy an entry linked to a confirmed scheduled payment entry" do
+    pending_spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    pending_spe.confirm!
+    linked_entry = pending_spe.reload.entry
+
+    assert_raises(ActiveRecord::RecordNotDestroyed) do
+      linked_entry.destroy!
+    end
+  end
+
+  test "can destroy an entry after its scheduled payment is deleted" do
+    pending_spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    pending_spe.confirm!
+    linked_entry = pending_spe.reload.entry
+
+    @sp.destroy!
+
+    assert_nothing_raised do
+      linked_entry.reload.destroy!
+    end
+  end
+
+  test "from_scheduled_payment? returns false for a new unlinked entry" do
+    entry = @sp.account.entries.create!(
+      date: Date.current, amount: 10, currency: "USD",
+      name: "Manual entry", entryable: Transaction.create!
+    )
+    assert_not entry.from_scheduled_payment?
+  end
+
+  test "from_scheduled_payment? returns true for a confirmed scheduled payment entry" do
+    pending_spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    pending_spe.confirm!
+    assert pending_spe.reload.entry.from_scheduled_payment?
+  end
+
+  test "source_scheduled_payment returns the linked ScheduledPayment" do
+    pending_spe = @sp.scheduled_payment_entries.create!(scheduled_date: Date.current, status: "pending")
+    pending_spe.confirm!
+    assert_equal @sp, pending_spe.reload.entry.source_scheduled_payment
+  end
 end

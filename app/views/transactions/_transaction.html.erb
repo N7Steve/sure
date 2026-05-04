@@ -8,7 +8,7 @@
 
       <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 xl:col-span-5 min-w-0">
         <%= check_box_tag dom_id(entry, "selection"),
-            disabled: transaction.transfer.present?,
+            disabled: transaction.transfer.present? || entry.from_scheduled_payment?,
             class: "checkbox checkbox--light hidden lg:block",
             data: {
               id: entry.id,
@@ -120,6 +120,14 @@
                     <% if entry.split_child? && !in_split_group %>
                       <span class="text-secondary" title="<%= t("transactions.transaction.split_child_tooltip") %>">
                         <%= icon "corner-down-right", size: "sm", color: "current" %>
+                      </span>
+                    <% end %>
+
+                    <%# Scheduled payment indicator %>
+                    <% if entry.from_scheduled_payment? %>
+                      <span class="inline-flex items-center gap-1 text-xs font-medium rounded-full px-1.5 py-0.5 border border-secondary text-secondary" title="<%= t("transactions.transaction.scheduled_payment_tooltip") %>">
+                        <%= icon "repeat", size: "sm", color: "current" %>
+                        <%= t("transactions.transaction.scheduled_payment") %>
                       </span>
                     <% end %>
 

@@ -21,4 +21,24 @@ class Transactions::BulkDeletionsControllerTest < ActionDispatch::IntegrationTes
     assert_redirected_to transactions_url
     assert_equal "#{delete_count} transactions deleted", flash[:notice]
   end
+
+  test "bulk delete skips entries linked to scheduled payments" do
+    family  = @user.family
+    account = family.accounts.first
+    sp = ScheduledPayment.create!(
+      family: family, account: account,
+      title: "Rent", amount: 500, currency: "USD",
+      frequency: "monthly", frequency_day: 1,
+      start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense"
+    )
+    spe = sp.generate_pending_entry!
+    spe.confirm!
+    sp_entry_id = spe.reload.entry.id
+
+    post transactions_bulk_deletion_url,
+         params: { bulk_delete: { entry_ids: [sp_entry_id] } }
+
+    assert Entry.exists?(sp_entry_id), "Scheduled payment entry should not be deleted in bulk"
+  end
 end

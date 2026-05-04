@@ -6,6 +6,32 @@
     </div>
   <% end %>
   <% dialog.with_body do %>
+    <% scheduled_payment_locked = @entry.from_scheduled_payment? %>
+    <% source_sp = scheduled_payment_locked ? @entry.source_scheduled_payment : nil %>
+
+    <%# Scheduled payment info banner %>
+    <% if scheduled_payment_locked %>
+      <div class="mx-4 my-3 p-4 rounded-lg border border-accent bg-accent/5">
+        <div class="flex items-start gap-3">
+          <%= icon "repeat", size: "md", color: "accent" %>
+          <div class="flex-1 space-y-2">
+            <h4 class="text-sm font-medium text-primary"><%= t("transactions.show.scheduled_payment_title") %></h4>
+            <p class="text-sm text-secondary"><%= t("transactions.show.scheduled_payment_description") %></p>
+            <% if source_sp %>
+              <%= render DS::Link.new(
+                text: t("transactions.show.scheduled_payment_edit_link", title: source_sp.title),
+                icon: "external-link",
+                variant: "ghost",
+                size: :sm,
+                href: edit_scheduled_payment_path(source_sp),
+                frame: "_top"
+              ) %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
     <%# Potential duplicate alert %>
     <% if @entry.transaction.has_potential_duplicate? %>
       <% potential_match = @entry.transaction.potential_duplicate_entry %>
@@ -48,8 +74,8 @@
     <% dialog.with_section(title: t(".overview"), open: true) do %>
       <div>
         <% split_locked = @entry.split_child? || @entry.split_parent? %>
-        <% edit_locked = !can_edit_entry? %>
-        <% annotate_locked = !can_annotate_entry? %>
+        <% edit_locked = !can_edit_entry? || scheduled_payment_locked %>
+        <% annotate_locked = !can_annotate_entry? || scheduled_payment_locked %>
         <%= styled_form_with model: @entry,
               url: transaction_path(@entry),
               class: "space-y-2",
@@ -267,7 +293,7 @@
       <% end %>
     <% end %>
 
-    <% if can_edit_entry? %>
+    <% if can_edit_entry? && !scheduled_payment_locked %>
       <% dialog.with_section(title: t(".settings")) do %>
         <% unless @entry.split_parent? || @entry.split_child? %>
           <div class="pb-4">

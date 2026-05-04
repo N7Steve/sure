@@ -67,6 +67,49 @@ class ScheduledPayment < ApplicationRecord
     end
   end
 
+  def sync_confirmed_entries!
+    confirmed_spes = scheduled_payment_entries
+      .confirmed
+      .includes(:entry, :transfer_entry)
+
+    return if confirmed_spes.empty?
+
+    ActiveRecord::Base.transaction do
+      confirmed_spes.each do |spe|
+        if spe.entry.present?
+          amount_value = expense? ? amount.abs : -amount.abs
+          spe.entry.update_columns(name: title, amount: amount_value, currency: currency, updated_at: Time.current)
+
+          if spe.entry.entryable.is_a?(Transaction)
+            spe.entry.entryable.update_columns(
+              category_id: category_id,
+              merchant_id: merchant_id,
+              updated_at: Time.current
+            )
+          end
+        end
+
+        if spe.transfer_entry.present?
+          spe.transfer_entry.update_columns(name: title, updated_at: Time.current)
+
+          if spe.transfer_entry.entryable.is_a?(Transaction)
+            spe.transfer_entry.entryable.update_columns(
+              category_id: category_id,
+              updated_at: Time.current
+            )
+          end
+        end
+      end
+    end
+
+    # Re-sync account balances for affected accounts
+    affected_account_ids = confirmed_spes.flat_map { |spe|
+      [spe.entry&.account_id, spe.transfer_entry&.account_id]
+    }.compact.uniq
+
+    Account.where(id: affected_account_ids).find_each(&:sync_later)
+  end
+
   def calculate_next_date(from_date)
     case frequency
     when "daily"     then from_date + 1.day

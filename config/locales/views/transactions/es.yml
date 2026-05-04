@@ -47,6 +47,9 @@ es:
       none: "(ninguno)"
       note_label: Notas
       note_placeholder: Introduce una nota
+      scheduled_payment_title: "Transacción de Pago Programado"
+      scheduled_payment_description: "Esta transacción fue generada automáticamente por un pago programado. Para editarla, modifica el pago programado directamente."
+      scheduled_payment_edit_link: "Editar pago programado: %{title}"
       overview: Resumen
       settings: Configuración
       tags_label: Etiquetas
@@ -86,6 +89,11 @@ es:
       potential_duplicate_tooltip: Esto puede ser un duplicado de otra transacción
       review_recommended: Revisar
       review_recommended_tooltip: Gran diferencia de importe — se recomienda revisar para comprobar si es un duplicado
+      split: "Dividida"
+      split_tooltip: "Esta transacción se ha dividido en múltiples entradas"
+      split_child_tooltip: "Parte de una transacción dividida"
+      scheduled_payment: "Programado"
+      scheduled_payment_tooltip: "Esta transacción fue generada por un pago programado"
     merge_duplicate:
       success: Transacciones combinadas correctamente
       failure: No se pudieron combinar las transacciones
