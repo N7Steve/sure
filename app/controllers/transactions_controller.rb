@@ -413,6 +413,24 @@ class TransactionsController < ApplicationController
     end
   end
 
+  def retract_scheduled
+    return unless require_account_permission!(@entry.account)
+
+    spe = ScheduledPaymentEntry.find_by(entry_id: @entry.id) ||
+          ScheduledPaymentEntry.find_by(transfer_entry_id: @entry.id)
+
+    unless spe&.confirmed?
+      redirect_back_or_to transactions_path, alert: t("scheduled_payments.retract_error")
+      return
+    end
+
+    account = @entry.account
+    spe.retract!
+    account.sync_later
+
+    redirect_back_or_to transactions_path, notice: t("scheduled_payments.retracted")
+  end
+
   private
     def accessible_transactions
       Current.family.transactions
@@ -665,22 +683,4 @@ class TransactionsController < ApplicationController
 
       [ qty, price ]
     end
-
-  def retract_scheduled
-    return unless require_account_permission!(@entry.account)
-
-    spe = ScheduledPaymentEntry.find_by(entry_id: @entry.id) ||
-          ScheduledPaymentEntry.find_by(transfer_entry_id: @entry.id)
-
-    unless spe&.confirmed?
-      redirect_back_or_to transactions_path, alert: t("scheduled_payments.retract_error")
-      return
-    end
-
-    account = @entry.account
-    spe.retract!
-    account.sync_later
-
-    redirect_back_or_to transactions_path, notice: t("scheduled_payments.retracted")
-  end
 end
