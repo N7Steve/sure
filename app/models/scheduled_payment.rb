@@ -166,8 +166,8 @@ class ScheduledPayment < ApplicationRecord
       .merge(Account.accessible_by(user))
       .where(account_id: account_id)
       .where(currency: currency)
-      .where("ABS(amount) BETWEEN ? AND ?", min_amount, max_amount)
-      .where("LOWER(name) = LOWER(?)", title)
+      .where("ABS(entries.amount) BETWEEN ? AND ?", min_amount, max_amount)
+      .where("LOWER(entries.name) = LOWER(?)", title)
 
     # If merchant is set, also filter by merchant
     if merchant_id.present?
