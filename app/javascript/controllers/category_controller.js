@@ -214,7 +214,6 @@ export default class extends Controller {
     "star": "favorite rating review best",
     "stethoscope": "doctor medical health hospital",
     "store": "shop retail business market",
-    "stroller": "baby child family parent walk",
     "sun": "weather bright day summer warm",
     "syringe": "vaccine injection medical hospital",
     "tablet-smartphone": "device mobile technology screen",

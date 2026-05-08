@@ -167,7 +167,7 @@ class Category < ApplicationRecord
         sailboat sandwich scale school scissors settings shapes shell shield
         shield-plus ship shirt shopping-bag shopping-basket shopping-cart
         shovel smartphone snowflake sofa soup sparkles sprout star
-        stethoscope store stroller sun syringe
+        stethoscope store sun syringe
         tablet-smartphone tag target tent thermometer ticket timer
         tractor train trees tree-palm trending-down trending-up trophy
         truck tv
