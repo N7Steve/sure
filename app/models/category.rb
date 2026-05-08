@@ -82,7 +82,23 @@ class Category < ApplicationRecord
     /book|reading|library/                                         => "book",
     /child|kid|baby|infant|daycare/                                => "baby",
     /cloth|apparel|fashion|wear/                                   => "shirt",
-    /ticket/                                                       => "ticket"
+    /cleaning|laundry|wash/                                  => "washing-machine",
+    /construction|build/                                     => "construction",
+    /newspaper|news|press/                                   => "newspaper",
+    /fish|seafood|sushi/                                     => "fish",
+    /boat|sail|marina/                                       => "sailboat",
+    /farm|agriculture/                                       => "tractor",
+    /factory|manufacturing|industrial/                       => "factory",
+    /church|religious|worship/                               => "church",
+    /library|study/                                          => "library",
+    /school|kindergarten|preschool/                           => "school",
+    /podcast|audio/                                          => "podcast",
+    /mountain|hiking|outdoor/                                => "mountain",
+    /camping|camp/                                           => "tent",
+    /snow|ski|winter/                                        => "snowflake",
+    /garden|yard|lawn/                                       => "fence",
+    /furniture|sofa|couch/                                   => "sofa",
+    /kitchen|appliance|fridge/                               => "refrigerator"
   }.freeze
 
   # Category name keys for i18n
@@ -122,21 +138,43 @@ class Category < ApplicationRecord
 
     def icon_codes
       %w[
-        ambulance apple award baby badge-dollar-sign banknote barcode bar-chart-3 bath
-        battery bed-single beer bike bluetooth bone book book-open briefcase building bus
-        cake calculator calendar-heart calendar-range camera car cat chart-line
-        circle-dollar-sign circle-parking coffee coins compass cookie cooking-pot
-        credit-card dices dog drama drill droplet drum dumbbell film flame flower flower-2
-        fuel gamepad-2 gem gift glasses globe graduation-cap hammer hand-heart
-        hand-helping heart-handshake handshake headphones heart heart-pulse home hotel
-        house ice-cream-cone key landmark laptop leaf lightbulb luggage mail map-pin
-        martini mic monitor moon music package palette party-popper paw-print pen pencil
-        percent phone pie-chart piggy-bank pill pizza plane plug popcorn power printer
-        puzzle receipt receipt-text ribbon scale scissors settings shield shield-plus
-        shirt shopping-bag shopping-basket shopping-cart smartphone sparkles sprout
-        stethoscope store sun tablet-smartphone tag target tent thermometer ticket train
-        trees tree-palm trending-up trophy truck tv umbrella undo-2 unplug users utensils
-        video wallet wallet-cards waves wifi wine wrench zap
+        activity alarm-clock ambulance anchor apple archive award axe
+        baby backpack badge-dollar-sign banana banknote barcode bar-chart-3 bath
+        battery bed-double bed-single beer bell bike binoculars bitcoin
+        bluetooth bone book book-open box briefcase brush building bus
+        cable-car cake calculator calendar-heart calendar-range camera
+        candy car carrot cat chart-line cherry church cigarette
+        circle-dollar-sign circle-parking clipboard clock cloud clover
+        coffee coins compass construction cookie cooking-pot
+        credit-card crown cup-soda
+        dices dog door-closed door-open drama drill droplet drum dumbbell
+        ear egg eye
+        factory fan fence ferris-wheel film fingerprint fish flag flame
+        flashlight flower flower-2 fuel
+        gamepad-2 gem ghost gift glasses globe graduation-cap grape guitar
+        hammer hand-coins hand-heart hand-helping handshake headphones
+        heart heart-handshake heart-pulse home hotel house
+        ice-cream-cone
+        key
+        lamp landmark laptop laugh leaf library lightbulb lock luggage
+        mail map map-pin martini megaphone mic microscope milk monitor moon
+        mountain mountain-snow music
+        newspaper nut
+        package paintbrush palette party-popper paw-print pen pencil
+        percent phone pickaxe pie-chart piggy-bank pill pizza plane plug
+        podcast popcorn power printer puzzle
+        rabbit radio receipt receipt-text refrigerator ribbon rocket ruler
+        sailboat sandwich scale school scissors settings shapes shell shield
+        shield-plus ship shirt shopping-bag shopping-basket shopping-cart
+        shovel smartphone snowflake sofa soup sparkles sprout star
+        stethoscope store stroller sun syringe
+        tablet-smartphone tag target tent thermometer ticket timer
+        tractor train trees tree-palm trending-down trending-up trophy
+        truck tv
+        umbrella undo-2 unplug users utensils
+        video
+        wallet wallet-cards washing-machine waves wheat wifi wine wrench
+        zap
       ]
     end
 

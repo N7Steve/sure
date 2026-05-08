@@ -40,17 +40,24 @@
               </div>
             </div>
 
-            <div class="flex flex-wrap gap-2 justify-center flex-col w-auto md:w-87">
+            <div class="flex flex-wrap gap-2 justify-center flex-col w-auto md:w-96">
               <h4 class="text-secondary text-sm">Icon</h4>
-              <div class="flex flex-wrap gap-0.5 max-h-52 overflow-auto">
+              <input type="text"
+                     placeholder="Search icons..."
+                     class="w-full px-3 py-1.5 text-sm border border-alpha-black-100 rounded-lg bg-container focus:outline-none focus:ring-1 focus:ring-primary"
+                     data-category-target="iconSearch"
+                     data-action="input->category#filterIcons"
+                     autocomplete="off" />
+              <div class="flex flex-wrap gap-1 max-h-64 overflow-auto" data-category-target="iconGrid">
                 <% Category.icon_codes.each do |icon| %>
-                  <label class="relative">
+                  <label class="relative" data-icon-name="<%= icon %>">
                     <%= f.radio_button :lucide_icon, icon, class: "sr-only peer", data: { action: "change->category#handleIconChange change->category#handleIconColorChange", category_target:"icon" } %>
-                    <div class="text-secondary w-7 h-7 flex m-0.5 items-center justify-center rounded-full cursor-pointer hover:bg-container-inset-hover peer-checked:bg-container-inset border-1 border-transparent">
-                      <%= icon(icon, size: "sm", color: "current") %>
+                    <div class="text-secondary w-9 h-9 flex items-center justify-center rounded-full cursor-pointer hover:bg-container-inset-hover peer-checked:bg-container-inset border-1 border-transparent">
+                      <%= icon(icon, size: "md", color: "current") %>
                     </div>
                   </label>
                 <% end %>
+                <p class="text-xs text-secondary w-full text-center py-2 hidden" data-category-target="iconNoResults">No icons found</p>
               </div>
             </div>
           </div>
