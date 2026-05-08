@@ -12,6 +12,11 @@ es:
     entry_confirmed: Entrada confirmada
     entry_rejected: Entrada rechazada
     entry_restored: "Entrada restaurada a pendiente"
+    confirm_modal:
+      title: "Confirmar pago"
+      date_label: "Fecha de transacción"
+      amount_label: "Importe"
+      confirm_button: "Confirmar"
     badge_pending: Pendiente
     badge_skipped: Omitido
     entries_section: Entradas programadas

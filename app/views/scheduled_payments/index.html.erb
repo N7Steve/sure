@@ -140,10 +140,10 @@
                   <%# Line 2: Actions %>
                   <div class="flex items-center justify-end gap-1.5">
                     <% if oldest_pending %>
-                      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
-                          method: :post,
+                      <%= link_to confirm_entry_form_scheduled_payment_path(sp, entry_id: oldest_pending.id),
                           class: "text-success hover:text-green-700 transition-colors",
-                          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+                          title: t("scheduled_payments.confirm_action", default: "Confirm"),
+                          data: { turbo_frame: "modal" } do %>
                         <%= icon "circle-check", size: "sm" %>
                       <% end %>
                       <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),

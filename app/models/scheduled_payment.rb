@@ -79,8 +79,8 @@ class ScheduledPayment < ApplicationRecord
     ActiveRecord::Base.transaction do
       confirmed_spes.each do |spe|
         if spe.entry.present?
-          amount_value = expense? ? amount.abs : -amount.abs
-          spe.entry.update_columns(name: title, amount: amount_value, currency: currency, updated_at: Time.current)
+          # Solo sincronizar nombre (no importe, no currency, no fecha)
+          spe.entry.update_columns(name: title, updated_at: Time.current)
 
           if spe.entry.entryable.is_a?(Transaction)
             spe.entry.entryable.update_columns(
@@ -88,7 +88,7 @@ class ScheduledPayment < ApplicationRecord
               merchant_id: merchant_id,
               updated_at: Time.current
             )
-            # Sync tags (uses association, not update_columns)
+            # Sync tags
             spe.entry.entryable.tags = tags
             spe.entry.entryable.save!
           end
@@ -106,13 +106,6 @@ class ScheduledPayment < ApplicationRecord
         end
       end
     end
-
-    # Re-sync account balances for affected accounts
-    affected_account_ids = confirmed_spes.flat_map { |spe|
-      [spe.entry&.account_id, spe.transfer_entry&.account_id]
-    }.compact.uniq
-
-    Account.where(id: affected_account_ids).find_each(&:sync_later)
   end
 
   def calculate_next_date(from_date)

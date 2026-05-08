@@ -122,9 +122,28 @@ class ScheduledPaymentsController < ApplicationController
     redirect_to scheduled_payments_path
   end
 
+  def confirm_entry_form
+    @scheduled_payment = find_scheduled_payment
+    @entry_to_confirm = params[:entry_id].present? ?
+      @scheduled_payment.scheduled_payment_entries.where(status: %w[pending skipped rejected]).find(params[:entry_id]) :
+      nil
+    @scheduled_date = params[:scheduled_date].present? ? Date.parse(params[:scheduled_date]) : @entry_to_confirm&.scheduled_date
+
+    # Lógica de fecha preseleccionada
+    @default_date = if @scheduled_date && @scheduled_date >= Date.current
+                      Date.current
+                    else
+                      @scheduled_date || Date.current
+                    end
+
+    @default_amount = @scheduled_payment.amount.abs
+  end
+
   def confirm_entry
     entry = find_pending_entry
-    entry.confirm!
+    custom_date = params[:confirm_date].present? ? Date.parse(params[:confirm_date]) : nil
+    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount]) : nil
+    entry.confirm!(date_override: custom_date, amount_override: custom_amount)
     flash[:notice] = t("scheduled_payments.entry_confirmed")
     redirect_back_or_to scheduled_payments_path
   end
@@ -139,6 +158,8 @@ class ScheduledPaymentsController < ApplicationController
   def confirm_scheduled_date
     sp = find_scheduled_payment
     date = Date.parse(params[:scheduled_date])
+    custom_date = params[:confirm_date].present? ? Date.parse(params[:confirm_date]) : nil
+    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount]) : nil
 
     ActiveRecord::Base.transaction do
       spe = sp.scheduled_payment_entries.find_or_initialize_by(scheduled_date: date)
@@ -146,7 +167,7 @@ class ScheduledPaymentsController < ApplicationController
         spe.status = "pending"
         spe.save!
       end
-      spe.confirm! unless spe.confirmed?
+      spe.confirm!(date_override: custom_date, amount_override: custom_amount) unless spe.confirmed?
 
       sp.advance_next_run_date! if sp.next_run_date == date
     end

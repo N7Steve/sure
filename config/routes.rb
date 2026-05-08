@@ -345,6 +345,7 @@ Rails.application.routes.draw do
     end
     member do
       post :toggle_status
+      get  :confirm_entry_form
       post :confirm_entry
       post :reject_entry
       post :restore_entry

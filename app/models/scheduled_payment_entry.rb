@@ -5,15 +5,15 @@ class ScheduledPaymentEntry < ApplicationRecord
 
   enum :status, { pending: "pending", confirmed: "confirmed", rejected: "rejected", skipped: "skipped" }
 
-  def confirm!
+  def confirm!(date_override: nil, amount_override: nil)
     return unless pending? || skipped? || rejected?
 
     sp = scheduled_payment
     ActiveRecord::Base.transaction do
       if sp.transfer?
-        create_transfer_entries!
+        create_transfer_entries!(date_override: date_override, amount_override: amount_override)
       else
-        create_transaction_entry!
+        create_transaction_entry!(date_override: date_override, amount_override: amount_override)
       end
       update!(status: "confirmed")
     end
@@ -52,9 +52,11 @@ class ScheduledPaymentEntry < ApplicationRecord
 
   private
 
-  def create_transaction_entry!
+  def create_transaction_entry!(date_override: nil, amount_override: nil)
     sp = scheduled_payment
-    amount_value = sp.expense? ? sp.amount.abs : -sp.amount.abs
+    effective_amount = amount_override || sp.amount.abs
+    amount_value = sp.expense? ? effective_amount.abs : -effective_amount.abs
+    effective_date = date_override || scheduled_date
 
     transaction = Transaction.create!(
       category: sp.category,
@@ -62,7 +64,7 @@ class ScheduledPaymentEntry < ApplicationRecord
     )
 
     created_entry = sp.account.entries.create!(
-      date: scheduled_date,
+      date: effective_date,
       amount: amount_value,
       currency: sp.currency,
       name: sp.title,
@@ -78,16 +80,18 @@ class ScheduledPaymentEntry < ApplicationRecord
     end
   end
 
-  def create_transfer_entries!
+  def create_transfer_entries!(date_override: nil, amount_override: nil)
     sp = scheduled_payment
+    effective_amount = (amount_override || sp.amount).abs
+    effective_date = date_override || scheduled_date
 
     outflow_txn = Transaction.create!(
       category: sp.category,
       kind: Transfer.outflow_kind_for(sp.account, sp.target_account)
     )
     outflow_entry = sp.account.entries.create!(
-      date: scheduled_date,
-      amount: sp.amount.abs,
+      date: effective_date,
+      amount: effective_amount,
       currency: sp.currency,
       name: sp.title,
       entryable: outflow_txn
@@ -98,10 +102,10 @@ class ScheduledPaymentEntry < ApplicationRecord
       kind: Transfer.inflow_kind_for(sp.account, sp.target_account)
     )
     inflow_currency = sp.target_account.currency
-    inflow_amount = -sp.amount.abs
+    inflow_amount = -effective_amount
 
     inflow_entry = sp.target_account.entries.create!(
-      date: scheduled_date,
+      date: effective_date,
       amount: inflow_amount,
       currency: inflow_currency,
       name: sp.title,

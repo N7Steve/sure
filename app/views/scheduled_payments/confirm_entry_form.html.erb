@@ -1,0 +1,90 @@
+<%= render DS::Dialog.new(variant: "modal", width: "sm") do |dialog| %>
+  <% dialog.with_header(title: t("scheduled_payments.confirm_modal.title", default: "Confirm payment")) %>
+  <% dialog.with_body do %>
+    <% if @entry_to_confirm.present? %>
+      <%# Confirming an existing SPE (pending/skipped/rejected) %>
+      <%= form_with url: confirm_entry_scheduled_payment_path(@scheduled_payment, entry_id: @entry_to_confirm.id),
+                    method: :post,
+                    class: "space-y-4",
+                    data: { turbo_frame: "_top" } do |f| %>
+        <div class="space-y-3">
+          <div class="form-field">
+            <label class="form-field__label"><%= t("scheduled_payments.confirm_modal.date_label", default: "Transaction date") %></label>
+            <input type="date"
+                   name="confirm_date"
+                   value="<%= @default_date.to_s %>"
+                   class="form-field__input rounded-lg border border-secondary px-3 py-2 text-sm w-full" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label"><%= t("scheduled_payments.confirm_modal.amount_label", default: "Amount") %></label>
+            <div class="flex items-center gap-2">
+              <input type="number"
+                     name="confirm_amount"
+                     value="<%= @default_amount %>"
+                     step="0.01"
+                     min="0"
+                     class="form-field__input rounded-lg border border-secondary px-3 py-2 text-sm w-full" />
+              <span class="text-sm text-secondary flex-shrink-0"><%= @scheduled_payment.currency %></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" data-action="DS--dialog#close" class="btn btn--ghost btn--sm">
+            <%= t("common.cancel", default: "Cancel") %>
+          </button>
+          <%= render DS::Button.new(
+            text: t("scheduled_payments.confirm_modal.confirm_button", default: "Confirm"),
+            variant: "primary",
+            size: :sm,
+            type: "submit"
+          ) %>
+        </div>
+      <% end %>
+    <% else %>
+      <%# Confirming a scheduled date (no SPE yet) %>
+      <%= form_with url: confirm_scheduled_date_scheduled_payment_path(@scheduled_payment),
+                    method: :post,
+                    class: "space-y-4",
+                    data: { turbo_frame: "_top" } do |f| %>
+        <input type="hidden" name="scheduled_date" value="<%= @scheduled_date.to_s %>" />
+
+        <div class="space-y-3">
+          <div class="form-field">
+            <label class="form-field__label"><%= t("scheduled_payments.confirm_modal.date_label", default: "Transaction date") %></label>
+            <input type="date"
+                   name="confirm_date"
+                   value="<%= @default_date.to_s %>"
+                   class="form-field__input rounded-lg border border-secondary px-3 py-2 text-sm w-full" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label"><%= t("scheduled_payments.confirm_modal.amount_label", default: "Amount") %></label>
+            <div class="flex items-center gap-2">
+              <input type="number"
+                     name="confirm_amount"
+                     value="<%= @default_amount %>"
+                     step="0.01"
+                     min="0"
+                     class="form-field__input rounded-lg border border-secondary px-3 py-2 text-sm w-full" />
+              <span class="text-sm text-secondary flex-shrink-0"><%= @scheduled_payment.currency %></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" data-action="DS--dialog#close" class="btn btn--ghost btn--sm">
+            <%= t("common.cancel", default: "Cancel") %>
+          </button>
+          <%= render DS::Button.new(
+            text: t("scheduled_payments.confirm_modal.confirm_button", default: "Confirm"),
+            variant: "primary",
+            size: :sm,
+            type: "submit"
+          ) %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -63,10 +63,10 @@
     <% case occurrence.status %>
     <% when :scheduled %>
       <%# Future, no SPE: confirm-now + skip %>
-      <%= button_to confirm_scheduled_date_scheduled_payment_path(sp, scheduled_date: date.to_s),
-          method: :post,
+      <%= link_to confirm_entry_form_scheduled_payment_path(sp, scheduled_date: date.to_s),
           class: "text-success hover:text-green-700 transition-colors",
-          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+          title: t("scheduled_payments.confirm_action", default: "Confirm"),
+          data: { turbo_frame: "modal" } do %>
         <%= icon "circle-check", size: "sm" %>
       <% end %>
       <%= button_to skip_scheduled_date_scheduled_payment_path(sp, scheduled_date: date.to_s),
@@ -78,10 +78,10 @@
 
     <% when :pending %>
       <%# SPE pending: confirm + skip %>
-      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: entry_id),
-          method: :post,
+      <%= link_to confirm_entry_form_scheduled_payment_path(sp, entry_id: entry_id),
           class: "text-success hover:text-green-700 transition-colors",
-          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+          title: t("scheduled_payments.confirm_action", default: "Confirm"),
+          data: { turbo_frame: "modal" } do %>
         <%= icon "circle-check", size: "sm" %>
       <% end %>
       <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: entry_id),

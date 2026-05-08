@@ -108,10 +108,11 @@
                   } %>
             <div data-autocomplete-target="results" class="hidden bg-container border border-secondary shadow-border-xs p-1.5 rounded-lg text-sm text-primary overflow-hidden min-w-32 mt-1 z-50"></div>
           </div>
+          <% date_locked = @entry.linked? || @split_locked || (!can_edit_entry? && !scheduled_payment_locked) %>
           <%= f.date_field :date,
                 label: t(".date_label"),
                 max: Date.current,
-                disabled: @entry.linked? || @split_locked || @edit_locked,
+                disabled: date_locked,
                 "data-auto-submit-form-target": "auto" %>
           <% unless @entry.transaction.transfer? %>
             <div class="flex items-center gap-2">
@@ -119,13 +120,14 @@
                     [["Expense", "outflow"], ["Income", "inflow"]],
                     { container_class: "w-1/3", label: t(".nature"), selected: @entry.amount.negative? ? "inflow" : "outflow" },
                     { data: { "auto-submit-form-target": "auto" }, disabled: @entry.linked? || @split_locked || @edit_locked } %>
+              <% amount_locked = @entry.linked? || @split_locked || (!can_edit_entry? && !scheduled_payment_locked) %>
               <%= f.money_field :amount, label: t(".amount"),
                     container_class: "w-2/3",
                     auto_submit: true,
                     min: 0,
                     value: @entry.amount.abs,
-                    disabled: @entry.linked? || @split_locked || @edit_locked,
-                    disable_currency: @entry.linked? || @split_locked || @edit_locked %>
+                    disabled: amount_locked,
+                    disable_currency: amount_locked %>
             </div>
             <% if @entry.from_scheduled_payment? %>
               <div class="form-field">

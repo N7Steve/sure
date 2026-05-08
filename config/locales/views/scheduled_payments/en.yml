@@ -12,6 +12,11 @@ en:
     entry_confirmed: Entry confirmed
     entry_rejected: Entry rejected
     entry_restored: "Entry restored to pending"
+    confirm_modal:
+      title: "Confirm payment"
+      date_label: "Transaction date"
+      amount_label: "Amount"
+      confirm_button: "Confirm"
     badge_pending: Pending
     badge_skipped: Skipped
     entries_section: Scheduled entries
