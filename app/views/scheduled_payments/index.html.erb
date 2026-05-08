@@ -152,23 +152,23 @@
                           title: t("scheduled_payments.reject_action", default: "Reject") do %>
                         <%= icon "circle-x", size: "sm" %>
                       <% end %>
-                    <% end %}
+                    <% end %>
                     <%= link_to edit_scheduled_payment_path(sp),
                         class: "text-secondary hover:text-primary transition-colors" do %>
                       <%= icon "pencil", size: "sm" %>
-                    <% end %}
-                    <% unless sp.completed? %}
+                    <% end %>
+                    <% unless sp.completed? %>
                       <%= link_to toggle_status_scheduled_payment_path(sp),
                           data: { turbo_method: :post },
                           class: "text-secondary hover:text-primary transition-colors" do %>
                         <%= icon sp.active? ? "pause" : "play", size: "sm" %>
-                      <% end %}
-                    <% end %}
+                      <% end %>
+                    <% end %>
                     <%= link_to scheduled_payment_path(sp),
                         data: { turbo_method: :delete, turbo_confirm: t("scheduled_payments.confirm_delete") },
                         class: "text-secondary hover:text-destructive transition-colors" do %>
                       <%= icon "trash-2", size: "sm" %>
-                    <% end %}
+                    <% end %>
                   </div>
                 </div>
               </div>
