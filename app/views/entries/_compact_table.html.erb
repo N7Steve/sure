@@ -24,15 +24,23 @@
             <%= entry.date.strftime(Current.family.date_format) %>
           </td>
           <td class="px-4 py-2 hidden md:table-cell text-secondary truncate max-w-[150px] align-middle">
-             <% if entry.entryable_type == "Transaction" && entry.entryable.merchant.present? %>
-                <div class="flex items-center gap-2">
-                  <% if entry.entryable.merchant.logo_url.present? %>
-                    <%= image_tag Setting.transform_brand_fetch_url(entry.entryable.merchant.logo_url),
-                        class: "w-5 h-5 rounded-full border border-secondary",
-                        loading: "lazy" %>
-                  <% end %>
-                  <span class="truncate"><%= entry.entryable.merchant.name %></span>
-                </div>
+             <% if entry.entryable_type == "Transaction" %>
+               <% transaction = entry.entryable %>
+               <% if transaction.transfer? %>
+                 <div class="flex items-center gap-2">
+                   <%= icon "arrow-right-left", size: "sm", class: "shrink-0", color: "current" %>
+                   <span class="truncate"><%= transaction.transfer&.payment? ? t("transactions.show.loan_payment", default: "Payment") : t("transactions.show.transfer", default: "Transfer") %></span>
+                 </div>
+               <% elsif transaction.merchant.present? %>
+                 <div class="flex items-center gap-2">
+                   <% if transaction.merchant.logo_url.present? %>
+                     <%= image_tag Setting.transform_brand_fetch_url(transaction.merchant.logo_url),
+                         class: "w-5 h-5 rounded-full border border-secondary shrink-0",
+                         loading: "lazy" %>
+                   <% end %>
+                   <span class="truncate"><%= transaction.merchant.name %></span>
+                 </div>
+               <% end %>
              <% end %>
           </td>
           <td class="px-4 py-2 font-medium min-w-[200px] align-middle">
