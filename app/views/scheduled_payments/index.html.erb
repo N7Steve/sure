@@ -37,7 +37,7 @@
             <div class="p-4 hover:bg-surface-hover transition-colors <%= 'opacity-60' unless sp.active? %>">
               <div class="grid grid-cols-12 items-center gap-x-2">
                 <%# Col 1-4: Left stacked content (two lines) %>
-                <div class="col-span-4 min-w-0 space-y-1">
+                <div class="col-span-4 min-w-0 space-y-2">
                   <%# Line 1: Icon + Merchant – Title %>
                   <div class="flex items-center gap-2.5 min-w-0">
                     <div class="flex-shrink-0">
@@ -60,7 +60,7 @@
                     <div class="truncate text-sm">
                       <% if sp.merchant.present? %>
                         <span class="text-primary font-medium"><%= sp.merchant.name %></span>
-                        <span class="text-secondary mx-1">–</span>
+                        <span class="text-secondary mx-1">·</span>
                       <% end %>
                       <span class="<%= sp.merchant.present? ? 'text-secondary' : 'text-primary font-medium' %>"><%= sp.title %></span>
                     </div>
@@ -129,7 +129,7 @@
                 </div>
 
                 <%# Col 11-12: Right stacked content (Amount + Actions) %>
-                <div class="col-span-2 space-y-1">
+                <div class="col-span-2 space-y-2">
                   <%# Line 1: Amount %>
                   <div class="text-right">
                     <span class="text-sm font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-primary' %>">

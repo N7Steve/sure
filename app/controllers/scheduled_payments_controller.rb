@@ -137,6 +137,7 @@ class ScheduledPaymentsController < ApplicationController
                     end
 
     @default_amount = @scheduled_payment.amount.abs
+    render layout: false
   end
 
   def confirm_entry
