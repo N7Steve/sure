@@ -35,44 +35,78 @@
             <% oldest_pending = @oldest_pending_per_sp[sp.id] %>
 
             <div class="p-4 hover:bg-surface-hover transition-colors <%= 'opacity-60' unless sp.active? %>">
-              <%# === Row 1: Icon + Merchant – Title | Periodo | Estado | Fecha | Importe === %>
-              <div class="grid grid-cols-12 items-center gap-2 mb-2">
-                <%# Col 1-4: Icon + Merchant – Title %>
-                <div class="col-span-4 flex items-center gap-2.5 min-w-0">
-                  <div class="flex-shrink-0">
-                    <% if sp.transfer? %>
-                      <%= render DS::FilledIcon.new(
-                        icon: "arrow-right-left",
-                        hex_color: Category::TRANSFER_COLOR,
-                        size: "sm",
-                        rounded: true
-                      ) %>
-                    <% elsif sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
-                      <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
-                          class: "w-6 h-6 rounded-full", loading: "lazy" %>
-                    <% elsif sp.merchant.present? %>
-                      <%= render DS::FilledIcon.new(variant: :text, text: sp.merchant.name, size: "sm", rounded: true) %>
-                    <% else %>
-                      <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "sm", rounded: true) %>
-                    <% end %>
+              <div class="grid grid-cols-12 items-center gap-x-2">
+                <%# Col 1-4: Left stacked content (two lines) %>
+                <div class="col-span-4 min-w-0 space-y-1">
+                  <%# Line 1: Icon + Merchant – Title %>
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="flex-shrink-0">
+                      <% if sp.transfer? %>
+                        <%= render DS::FilledIcon.new(
+                          icon: "arrow-right-left",
+                          hex_color: Category::TRANSFER_COLOR,
+                          size: "sm",
+                          rounded: true
+                        ) %>
+                      <% elsif sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+                        <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+                            class: "w-6 h-6 rounded-full", loading: "lazy" %>
+                      <% elsif sp.merchant.present? %>
+                        <%= render DS::FilledIcon.new(variant: :text, text: sp.merchant.name, size: "sm", rounded: true) %>
+                      <% else %>
+                        <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "sm", rounded: true) %>
+                      <% end %>
+                    </div>
+                    <div class="truncate text-sm">
+                      <% if sp.merchant.present? %>
+                        <span class="text-primary font-medium"><%= sp.merchant.name %></span>
+                        <span class="text-secondary mx-1">–</span>
+                      <% end %>
+                      <span class="<%= sp.merchant.present? ? 'text-secondary' : 'text-primary font-medium' %>"><%= sp.title %></span>
+                    </div>
                   </div>
-                  <div class="truncate text-sm">
-                    <% if sp.merchant.present? %>
-                      <span class="text-primary font-medium"><%= sp.merchant.name %></span>
-                      <span class="text-secondary mx-1">–</span>
+
+                  <%# Line 2: Category chip + Account icon + Account name %>
+                  <div class="flex items-center gap-2 min-w-0 pl-[calc(1.5rem+0.625rem)]">
+                    <% if sp.category.present? %>
+                      <span class="inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-1.5 py-0.5 border max-w-[140px] flex-shrink-0"
+                            style="background-color: color-mix(in oklab, <%= sp.category.color %> 10%, transparent);
+                                   border-color: color-mix(in oklab, <%= sp.category.color %> 10%, transparent);
+                                   color: <%= sp.category.color %>;">
+                        <% if sp.category.lucide_icon.present? %>
+                          <span class="shrink-0"><%= icon sp.category.lucide_icon, size: "sm", color: "current" %></span>
+                        <% end %>
+                        <span class="truncate"><%= sp.category.name %></span>
+                      </span>
                     <% end %>
-                    <span class="<%= sp.merchant.present? ? 'text-secondary' : 'text-primary font-medium' %>"><%= sp.title %></span>
+
+                    <div class="flex items-center gap-1.5 min-w-0 flex-shrink-0">
+                      <div class="w-4 h-4 flex-shrink-0 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
+                        <%= render "accounts/logo", account: sp.account, size: "sm" %>
+                      </div>
+                      <span class="text-xs text-secondary truncate"><%= sp.account.name %></span>
+                    </div>
+
+                    <% if sp.transfer? && sp.target_account.present? %>
+                      <span class="text-secondary text-xs flex-shrink-0">→</span>
+                      <div class="flex items-center gap-1.5 min-w-0 flex-shrink-0">
+                        <div class="w-4 h-4 flex-shrink-0 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
+                          <%= render "accounts/logo", account: sp.target_account, size: "sm" %>
+                        </div>
+                        <span class="text-xs text-secondary truncate"><%= sp.target_account.name %></span>
+                      </div>
+                    <% end %>
                   </div>
                 </div>
 
-                <%# Col 5-6: Periodo %>
+                <%# Col 5-6: Periodo (vertically centered) %>
                 <div class="col-span-2 flex justify-center">
                   <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-secondary bg-surface-inset uppercase">
                     <%= t("scheduled_payments.form.frequencies.#{sp.frequency}", default: sp.frequency) %>
                   </span>
                 </div>
 
-                <%# Col 7-8: Estado %>
+                <%# Col 7-8: Estado (vertically centered) %>
                 <div class="col-span-2 flex justify-center">
                   <% if sp.active? %>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-600/10 text-success">
@@ -89,97 +123,53 @@
                   <% end %>
                 </div>
 
-                <%# Col 9-10: Fecha %>
+                <%# Col 9-10: Fecha (vertically centered) %>
                 <div class="col-span-2 flex justify-center">
                   <span class="text-xs text-secondary"><%= l(sp.next_run_date, format: :short) %></span>
                 </div>
 
-                <%# Col 11-12: Importe %>
-                <div class="col-span-2 text-right">
-                  <span class="text-sm font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-primary' %>">
-                    <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
-                  </span>
-                </div>
-              </div>
-
-              <%# === Row 2: Categoría + Cuenta(s) | Pending | (vacío) | (vacío) | Acciones === %>
-              <div class="grid grid-cols-12 items-center gap-2">
-                <%# Col 1-4: Category chip + Account icon(s) %>
-                <div class="col-span-4 flex items-center gap-2 min-w-0">
-                  <% if sp.category.present? %>
-                    <span class="inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-1.5 py-0.5 border max-w-[140px] flex-shrink-0"
-                          style="background-color: color-mix(in oklab, <%= sp.category.color %> 10%, transparent);
-                                 border-color: color-mix(in oklab, <%= sp.category.color %> 10%, transparent);
-                                 color: <%= sp.category.color %>;">
-                      <% if sp.category.lucide_icon.present? %>
-                        <span class="shrink-0"><%= icon sp.category.lucide_icon, size: "sm", color: "current" %></span>
-                      <% end %>
-                      <span class="truncate"><%= sp.category.name %></span>
+                <%# Col 11-12: Right stacked content (Amount + Actions) %>
+                <div class="col-span-2 space-y-1">
+                  <%# Line 1: Amount %>
+                  <div class="text-right">
+                    <span class="text-sm font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-primary' %>">
+                      <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
                     </span>
-                  <% end %>
-
-                  <div data-controller="tooltip" data-tooltip-placement-value="top" class="flex-shrink-0 cursor-default">
-                    <div class="w-5 h-5 [&_img]:w-5 [&_img]:h-5 [&_.w-6]:w-5 [&_.h-6]:h-5">
-                      <%= render "accounts/logo", account: sp.account, size: "sm" %>
-                    </div>
-                    <%= render "shared/text_tooltip", tooltip_text: sp.account.name %>
                   </div>
 
-                  <% if sp.transfer? && sp.target_account.present? %>
-                    <span class="text-secondary text-xs">→</span>
-                    <div data-controller="tooltip" data-tooltip-placement-value="top" class="flex-shrink-0 cursor-default">
-                      <div class="w-5 h-5 [&_img]:w-5 [&_img]:h-5 [&_.w-6]:w-5 [&_.h-6]:h-5">
-                        <%= render "accounts/logo", account: sp.target_account, size: "sm" %>
-                      </div>
-                      <%= render "shared/text_tooltip", tooltip_text: sp.target_account.name %>
-                    </div>
-                  <% end %>
-                </div>
-
-                <%# Col 5-6: Pending count (aligned under Periodo) %>
-                <div class="col-span-2 flex justify-center">
-                  <% if pending_count > 0 %>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                      <%= pending_count %> <%= t("scheduled_payments.status.pending", default: "pending") %>
-                    </span>
-                  <% end %>
-                </div>
-
-                <%# Col 7-10: Empty (aligned under Estado + Fecha) %}
-                <div class="col-span-4"></div>
-
-                <%# Col 11-12: Actions %>
-                <div class="col-span-2 flex items-center justify-end gap-1.5">
-                  <% if oldest_pending %>
-                    <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
-                        method: :post,
-                        class: "text-success hover:text-green-700 transition-colors",
-                        title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
-                      <%= icon "circle-check", size: "sm" %>
-                    <% end %>
-                    <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
-                        method: :post,
-                        class: "text-destructive hover:text-red-700 transition-colors",
-                        title: t("scheduled_payments.reject_action", default: "Reject") do %>
-                      <%= icon "circle-x", size: "sm" %>
-                    <% end %>
-                  <% end %>
-                  <%= link_to edit_scheduled_payment_path(sp),
-                      class: "text-secondary hover:text-primary transition-colors" do %>
-                    <%= icon "pencil", size: "sm" %>
-                  <% end %>
-                  <% unless sp.completed? %>
-                    <%= link_to toggle_status_scheduled_payment_path(sp),
-                        data: { turbo_method: :post },
+                  <%# Line 2: Actions %>
+                  <div class="flex items-center justify-end gap-1.5">
+                    <% if oldest_pending %>
+                      <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
+                          method: :post,
+                          class: "text-success hover:text-green-700 transition-colors",
+                          title: t("scheduled_payments.confirm_action", default: "Confirm") do %>
+                        <%= icon "circle-check", size: "sm" %>
+                      <% end %>
+                      <%= button_to reject_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
+                          method: :post,
+                          class: "text-destructive hover:text-red-700 transition-colors",
+                          title: t("scheduled_payments.reject_action", default: "Reject") do %>
+                        <%= icon "circle-x", size: "sm" %>
+                      <% end %>
+                    <% end %}
+                    <%= link_to edit_scheduled_payment_path(sp),
                         class: "text-secondary hover:text-primary transition-colors" do %>
-                      <%= icon sp.active? ? "pause" : "play", size: "sm" %>
-                    <% end %>
-                  <% end %>
-                  <%= link_to scheduled_payment_path(sp),
-                      data: { turbo_method: :delete, turbo_confirm: t("scheduled_payments.confirm_delete") },
-                      class: "text-secondary hover:text-destructive transition-colors" do %>
-                    <%= icon "trash-2", size: "sm" %>
-                  <% end %>
+                      <%= icon "pencil", size: "sm" %>
+                    <% end %}
+                    <% unless sp.completed? %}
+                      <%= link_to toggle_status_scheduled_payment_path(sp),
+                          data: { turbo_method: :post },
+                          class: "text-secondary hover:text-primary transition-colors" do %>
+                        <%= icon sp.active? ? "pause" : "play", size: "sm" %>
+                      <% end %}
+                    <% end %}
+                    <%= link_to scheduled_payment_path(sp),
+                        data: { turbo_method: :delete, turbo_confirm: t("scheduled_payments.confirm_delete") },
+                        class: "text-secondary hover:text-destructive transition-colors" do %>
+                      <%= icon "trash-2", size: "sm" %>
+                    <% end %}
+                  </div>
                 </div>
               </div>
             </div>
