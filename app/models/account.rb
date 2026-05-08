@@ -30,7 +30,7 @@ class Account < ApplicationRecord
 
   VISIBLE_STATUSES = %w[draft active].freeze
 
-  scope :visible, -> { where(status: VISIBLE_STATUSES, excluded: false) }
+  scope :visible, -> { where(status: VISIBLE_STATUSES, excluded: false, archived: false) }
   scope :sidebar_visible, -> { where(status: VISIBLE_STATUSES, archived: false) }
   scope :sync_enabled, -> { where(status: VISIBLE_STATUSES) }
   scope :assets, -> { where(classification: "asset") }

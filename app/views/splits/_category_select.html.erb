@@ -72,11 +72,6 @@
           <span class="check-icon <%= "hidden" unless is_selected %>">
             <%= icon("check") %>
           </span>
-          <% if is_subcategory %>
-            <span class="text-secondary flex shrink-0">
-              <%= icon("corner-down-right", size: "sm") %>
-            </span>
-          <% end %>
           <span class="flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1 border truncate"
                 style="background-color: color-mix(in oklab, <%= hex_color %> 10%, transparent); border-color: color-mix(in oklab, <%= hex_color %> 20%, transparent); color: <%= hex_color %>;">
             <% if category.lucide_icon.present? %>

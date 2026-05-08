@@ -67,13 +67,12 @@ export default class extends Controller {
       this.inputTarget.dispatchEvent(new Event("change", { bubbles: true }))
     }
 
-    const previousSelected = this.menuTarget.querySelector("[aria-selected='true']")
-    if (previousSelected) {
-      previousSelected.setAttribute("aria-selected", "false")
-      previousSelected.classList.remove("bg-container-inset")
-      const prevIcon = previousSelected.querySelector(".check-icon")
+    this.menuTarget.querySelectorAll("[aria-selected='true']").forEach((el) => {
+      el.setAttribute("aria-selected", "false")
+      el.classList.remove("bg-container-inset")
+      const prevIcon = el.querySelector(".check-icon")
       if (prevIcon) prevIcon.classList.add("hidden")
-    }
+    })
 
     selectedElement.setAttribute("aria-selected", "true")
     selectedElement.classList.add("bg-container-inset")

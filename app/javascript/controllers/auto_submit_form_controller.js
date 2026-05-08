@@ -27,6 +27,21 @@ export default class extends Controller {
 
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
+      // If a custom select dropdown is open inside this form, defer the submit
+      // until it closes to prevent Turbo stream replacements from disrupting the open menu.
+      const openMenu = this.element.querySelector("[data-select-target='menu']:not(.hidden)");
+      if (openMenu) {
+        const retry = () => {
+          const stillOpen = this.element.querySelector("[data-select-target='menu']:not(.hidden)");
+          if (!stillOpen) {
+            this.element.requestSubmit();
+          } else {
+            this.timeout = setTimeout(retry, 150);
+          }
+        };
+        this.timeout = setTimeout(retry, 150);
+        return;
+      }
       this.element.requestSubmit();
     }, this.#debounceTimeout(target));
   };
