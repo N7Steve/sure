@@ -66,8 +66,8 @@
                     </div>
                   </div>
 
-                  <%# Line 2: Category chip + Account icon + Account name %>
-                  <div class="flex items-center gap-2 min-w-0 pl-[calc(1.5rem+0.625rem)]">
+                  <%# Line 2: Category chip + Account icon(s) %>
+                  <div class="flex items-center gap-2 min-w-0">
                     <% if sp.category.present? %>
                       <span class="inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-1.5 py-0.5 border max-w-[140px] flex-shrink-0"
                             style="background-color: color-mix(in oklab, <%= sp.category.color %> 10%, transparent);
@@ -80,20 +80,20 @@
                       </span>
                     <% end %>
 
-                    <div class="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-                      <div class="w-4 h-4 flex-shrink-0 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
+                    <div data-controller="tooltip" data-tooltip-placement-value="top" class="flex-shrink-0 cursor-default">
+                      <div class="w-4 h-4 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
                         <%= render "accounts/logo", account: sp.account, size: "sm" %>
                       </div>
-                      <span class="text-xs text-secondary truncate"><%= sp.account.name %></span>
+                      <%= render "shared/text_tooltip", tooltip_text: sp.account.name %>
                     </div>
 
                     <% if sp.transfer? && sp.target_account.present? %>
                       <span class="text-secondary text-xs flex-shrink-0">→</span>
-                      <div class="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-                        <div class="w-4 h-4 flex-shrink-0 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
+                      <div data-controller="tooltip" data-tooltip-placement-value="top" class="flex-shrink-0 cursor-default">
+                        <div class="w-4 h-4 [&_img]:w-4 [&_img]:h-4 [&_.w-6]:w-4 [&_.h-6]:h-4">
                           <%= render "accounts/logo", account: sp.target_account, size: "sm" %>
                         </div>
-                        <span class="text-xs text-secondary truncate"><%= sp.target_account.name %></span>
+                        <%= render "shared/text_tooltip", tooltip_text: sp.target_account.name %>
                       </div>
                     <% end %>
                   </div>
