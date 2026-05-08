@@ -9,7 +9,14 @@
 
   <%# Payment info: logo + title + account %>
   <div class="pr-4 lg:pr-6 flex items-center gap-3 col-span-5 min-w-0">
-    <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
+    <% if sp.transfer? %>
+      <%= render DS::FilledIcon.new(
+        icon: "arrow-right-left",
+        hex_color: Category::TRANSFER_COLOR,
+        size: "lg",
+        rounded: true
+      ) %>
+    <% elsif sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
       <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
           class: "w-9 h-9 rounded-full flex-shrink-0", loading: "lazy" %>
     <% else %>

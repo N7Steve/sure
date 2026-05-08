@@ -126,14 +126,14 @@
 
       <%# Auto confirm toggle %>
       <div class="md:col-span-2">
-        <div class="flex items-center gap-3 p-3 bg-container-inset rounded-lg">
-          <%= f.check_box :auto_confirm, class: "form-field__radio" %>
+        <div class="flex items-center justify-between gap-3 p-3 bg-container-inset rounded-lg">
           <div>
-            <%= f.label :auto_confirm, t("scheduled_payments.form.auto_confirm_label", default: "Auto confirm"), class: "form-field__label" %>
+            <p class="form-field__label"><%= t("scheduled_payments.form.auto_confirm_label", default: "Auto confirm") %></p>
             <p class="text-xs text-secondary">
               <%= t("scheduled_payments.form.auto_confirm_hint", default: "Automatically create the transaction without manual confirmation") %>
             </p>
           </div>
+          <%= f.toggle :auto_confirm %>
         </div>
       </div>
     </div>
