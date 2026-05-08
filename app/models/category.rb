@@ -265,6 +265,10 @@ class Category < ApplicationRecord
     subcategory? ? "#{parent.name} > #{name}" : name
   end
 
+  def display_name_for_select
+    parent_id? ? "— #{name}" : name
+  end
+
   # Predicate: is this the synthetic "Uncategorized" category?
   def uncategorized?
     !persisted? && name == I18n.t(UNCATEGORIZED_NAME_KEY)
