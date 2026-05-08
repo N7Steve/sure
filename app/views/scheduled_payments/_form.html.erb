@@ -53,7 +53,7 @@
       <div>
         <%= f.collection_select :category_id,
             Current.family.categories.alphabetically_by_hierarchy,
-            :id, :display_name_for_select,
+            :id, :name,
             { prompt: t("scheduled_payments.form.select_category", default: "Select category (optional)"),
               label: t("scheduled_payments.form.category_label", default: "Category"),
               variant: :badge,

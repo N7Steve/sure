@@ -156,7 +156,7 @@
               <%= f.fields_for :entryable do |ef| %>
                 <%= ef.collection_select :category_id,
                         Current.family.categories.alphabetically_by_hierarchy,
-                      :id, :display_name_for_select,
+                      :id, :name,
                       { label: t(".category_label"),
                         class: "text-subdued", include_blank: t(".uncategorized"),
                         variant: :badge, searchable: true, disabled: @entry.split_child? || @annotate_locked },

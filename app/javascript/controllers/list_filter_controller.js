@@ -73,14 +73,12 @@ export default class extends Controller {
 
   highlightItem(item) {
     item.classList.add("bg-container-inset-hover");
-    item.setAttribute("aria-selected", "true");
     item.scrollIntoView({ block: "nearest" });
   }
 
   clearHighlights() {
     this.listTarget.querySelectorAll(".filterable-item").forEach((item) => {
       item.classList.remove("bg-container-inset-hover");
-      item.setAttribute("aria-selected", "false");
     });
   }
 
