@@ -65,7 +65,7 @@
                   </div>
                 </div>
 
-                <%# Col 5-6: Periodo %}
+                <%# Col 5-6: Periodo %>
                 <div class="col-span-2 flex justify-center">
                   <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-secondary bg-surface-inset uppercase">
                     <%= t("scheduled_payments.form.frequencies.#{sp.frequency}", default: sp.frequency) %>
@@ -89,12 +89,12 @@
                   <% end %>
                 </div>
 
-                <%# Col 9-10: Fecha %}
+                <%# Col 9-10: Fecha %>
                 <div class="col-span-2 flex justify-center">
                   <span class="text-xs text-secondary"><%= l(sp.next_run_date, format: :short) %></span>
                 </div>
 
-                <%# Col 11-12: Importe %}
+                <%# Col 11-12: Importe %>
                 <div class="col-span-2 text-right">
                   <span class="text-sm font-medium privacy-sensitive <%= sp.income? ? 'text-success' : 'text-primary' %>">
                     <%= format_money(sp.expense? ? -sp.amount_money : sp.amount_money) %>
@@ -136,7 +136,7 @@
                   <% end %>
                 </div>
 
-                <%# Col 5-6: Pending count (aligned under Periodo) %}
+                <%# Col 5-6: Pending count (aligned under Periodo) %>
                 <div class="col-span-2 flex justify-center">
                   <% if pending_count > 0 %>
                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
@@ -148,7 +148,7 @@
                 <%# Col 7-10: Empty (aligned under Estado + Fecha) %}
                 <div class="col-span-4"></div>
 
-                <%# Col 11-12: Actions %}
+                <%# Col 11-12: Actions %>
                 <div class="col-span-2 flex items-center justify-end gap-1.5">
                   <% if oldest_pending %>
                     <%= button_to confirm_entry_scheduled_payment_path(sp, entry_id: oldest_pending.id),
