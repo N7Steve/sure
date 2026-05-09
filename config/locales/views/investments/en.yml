@@ -83,6 +83,33 @@ en:
       rrif:
         short: RRIF
         long: Registered Retirement Income Fund
+      non-registered:
+        short: Non-Registered
+        long: Non-Registered Investment Account
+      fhsa:
+        short: FHSA
+        long: First Home Savings Account
+      rdsp:
+        short: RDSP
+        long: Registered Disability Savings Plan
+      dpsp:
+        short: DPSP
+        long: Deferred Profit Sharing Plan
+      prpp:
+        short: PRPP
+        long: Pooled Registered Pension Plan
+      lif:
+        short: LIF
+        long: Life Income Fund
+      lrif:
+        short: LRIF
+        long: Locked-In Retirement Income Fund
+      prif:
+        short: PRIF
+        long: Prescribed Registered Retirement Income Fund
+      rlif:
+        short: RLIF
+        long: Restricted Life Income Fund
       # Australia
       super:
         short: Super
@@ -100,7 +127,16 @@ en:
       riester:
         short: Riester
         long: Riester-Rente
+      assurance_vie:
+        short: AV
+        long: Assurance Vie
       # Generic
+      roboadvisor:
+        short: Roboadvisor
+        long: Roboadvisor
+      managed_fund:
+        short: Managed Fund
+        long: Managed Portfolio / Fund
       pension:
         short: Pension
         long: Pension

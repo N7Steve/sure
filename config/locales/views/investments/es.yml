@@ -83,6 +83,33 @@ es:
       rrif:
         short: RRIF
         long: Fondo registrado de ingresos para la jubilación (RRIF)
+      non-registered:
+        short: No registrada
+        long: Cuenta de inversión no registrada
+      fhsa:
+        short: FHSA
+        long: Cuenta de ahorro para primera vivienda (FHSA)
+      rdsp:
+        short: RDSP
+        long: Plan registrado de ahorro por discapacidad (RDSP)
+      dpsp:
+        short: DPSP
+        long: Plan diferido de participación en beneficios (DPSP)
+      prpp:
+        short: PRPP
+        long: Plan de pensiones agrupado registrado (PRPP)
+      lif:
+        short: LIF
+        long: Fondo de ingresos vitalicios (LIF)
+      lrif:
+        short: LRIF
+        long: Fondo de ingresos de jubilación inmovilizado (LRIF)
+      prif:
+        short: PRIF
+        long: Fondo de ingresos de jubilación prescrito (PRIF)
+      rlif:
+        short: RLIF
+        long: Fondo de ingresos vitalicios restringido (RLIF)
       # Australia
       super:
         short: Super
@@ -100,7 +127,16 @@ es:
       riester:
         short: Riester
         long: Plan de pensiones Riester (Riester-Rente - Alemania)
+      assurance_vie:
+        short: AV
+        long: Seguro de vida con ahorro (Assurance Vie - Francia)
       # Genéricos
+      roboadvisor:
+        short: Roboadvisor
+        long: Roboadvisor (Gestión automatizada)
+      managed_fund:
+        short: Cartera gestionada
+        long: Cartera / Fondo gestionado
       pension:
         short: Pensión
         long: Plan de pensiones

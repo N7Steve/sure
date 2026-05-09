@@ -103,11 +103,13 @@ es:
         type: Tipo
         expense: Gasto
         income: Ingreso
+        transfer: Transferencias
         uncategorized: Sin categorizar
         entries:
-          one: Movimiento
-          other: Movimientos
+          one: "%{count} Movimiento"
+          other: "%{count} Movimientos"
         percentage: "% del total"
+        excluded_account: "Cuenta excluida"
       pagination:
         showing:
           one: Mostrando %{count} movimiento
@@ -130,9 +132,10 @@ es:
       period_return: Rentabilidad del Periodo
       period_contributions: Aportaciones del Periodo
       accounts: Carteras
-      no_data: "Sin retorno"
-      estimated_net_value: "Valor estimado post-impuestos: %{value}"
-      estimated_net_return: "Retorno estimado post-impuestos: %{value}"
+      transfers: Transferencias
+      no_data: "Sin datos"
+      estimated_net_value: "Valor neto estimado tras impuestos: %{value}"
+      estimated_net_return: "Rentabilidad neta estimada tras impuestos: %{value}"
     investment_performance:
       title: Rendimiento de inversiones
       portfolio_value: Valor de la cartera
@@ -163,10 +166,13 @@ es:
       and_more: "+%{count} más"
     investment_flows:
       title: Flujos de inversión
-      description: Controla el dinero que entra y sale de tus cuentas de inversión
+      description: Controla el dinero que entra y sale de tus cuentas de inversión mediante aportaciones y retiradas.
       contributions: Aportaciones
+      contributions_description: Dinero añadido a inversiones
       withdrawals: Retiradas
+      withdrawals_description: Dinero retirado de inversiones
       net_flow: Flujo neto
+      net_flow_description: Variación neta total
     google_sheets_instructions:
       title_with_key: "✅ Copiar URL para Google Sheets"
       title_no_key: "⚠️ Se requiere clave API"

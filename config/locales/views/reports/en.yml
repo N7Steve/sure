@@ -103,11 +103,13 @@ en:
         type: Type
         expense: Expenses
         income: Income
+        transfer: Transfers
         uncategorized: Uncategorized
         entries:
           one: "%{count} entry"
           other: "%{count} entries"
         percentage: "% of Total"
+        excluded_account: "Excluded account"
       pagination:
         showing:
           one: Showing %{count} entry
@@ -130,6 +132,7 @@ en:
       period_return: Period Return
       period_contributions: Period Contributions
       accounts: Portfolios
+      transfers: Transfers
       no_data: "No Returns"
       estimated_net_value: "Estimated net value: %{value}"
       estimated_net_return: "Estimated net return: %{value}"
@@ -163,10 +166,13 @@ en:
       and_more: "+%{count} more"
     investment_flows:
       title: Investment Flows
-      description: Track money flowing into and out of your investment accounts
+      description: Track money flowing into and out of your investment accounts through contributions and withdrawals.
       contributions: Contributions
+      contributions_description: Money added to investments
       withdrawals: Withdrawals
+      withdrawals_description: Money withdrawn from investments
       net_flow: Net Flow
+      net_flow_description: Total net change
     google_sheets_instructions:
       title_with_key: "✅ Copy URL for Google Sheets"
       title_no_key: "⚠️ API Key Required"
