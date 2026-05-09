@@ -75,6 +75,7 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <% roboadvisor_metrics[:accounts].each do |account| %>
+          <% account_trend = roboadvisor_metrics[:account_return_trends][account.id] %>
           <%= link_to account_path(account), class: "bg-container-inset rounded-lg p-4 flex items-center justify-between hover:bg-container-hover transition-colors" do %>
             <div class="flex items-center gap-3">
               <%= render "accounts/logo", account: account, size: "sm" %>
@@ -83,7 +84,18 @@
                 <p class="text-xs text-secondary"><%= account.short_subtype_label %></p>
               </div>
             </div>
-            <p class="font-medium text-primary privacy-sensitive"><%= format_money(account.balance_money) %></p>
+            <div class="text-right">
+              <p class="font-medium text-primary privacy-sensitive"><%= format_money(account.balance_money) %></p>
+              <% if account_trend %>
+                <% return_money = Money.new(account_trend.value, Current.family.currency) %>
+                <p class="text-xs font-medium privacy-sensitive" style="color: <%= account_trend.color %>">
+                  <%= format_money(return_money) %>
+                  <% if account_trend.percent.finite? %>
+                    (<%= account_trend.percent_formatted %>)
+                  <% end %>
+                </p>
+              <% end %>
+            </div>
           <% end %>
         <% end %>
       </div>

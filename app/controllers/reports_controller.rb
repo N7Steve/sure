@@ -575,6 +575,10 @@ class ReportsController < ApplicationController
 
       return { has_roboadvisors: false } unless robo_accounts.any?
 
+      account_return_trends = robo_accounts.each_with_object({}) do |account, hash|
+        hash[account.id] = investment_statement.roboadvisor_account_return_trend(account)
+      end
+
       {
         has_roboadvisors: true,
         portfolio_value: investment_statement.roboadvisor_portfolio_value_money,
@@ -582,6 +586,7 @@ class ReportsController < ApplicationController
         period_contributions: investment_statement.roboadvisor_period_contributions(period: @period),
         period_return: investment_statement.roboadvisor_period_return(period: @period),
         accounts: robo_accounts.to_a,
+        account_return_trends: account_return_trends,
         transfers: investment_statement.roboadvisor_transfers_grouped(period: @period)
       }
     end

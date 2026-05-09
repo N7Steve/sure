@@ -263,6 +263,34 @@ class InvestmentStatement
     )
   end
 
+  # Total inflow transfers (contributions) to a single roboadvisor account, all-time.
+  # Returns a numeric value in the family's currency.
+  def roboadvisor_account_contributions(account)
+    entries = family.entries
+                    .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+                    .where(account_id: account.id, excluded: false)
+                    .where(transactions: { kind: Transaction::TRANSFER_KINDS })
+                    .where("entries.amount < 0") # negative amount = inflow
+
+    entries.sum { |e| convert_to_family_currency(e.amount.abs, e.currency) }
+  end
+
+  # Return trend for a single roboadvisor account.
+  # current = account balance (in family currency)
+  # previous = total contributions (in family currency)
+  # Trend.value = balance - contributions = profit/loss
+  # Trend.percent = (balance - contributions) / contributions * 100
+  def roboadvisor_account_return_trend(account)
+    contributions = roboadvisor_account_contributions(account)
+    current = convert_to_family_currency(account.balance, account.currency)
+    return nil if contributions.zero? && current.zero?
+
+    Trend.new(
+      current: Money.new(current, family.currency),
+      previous: Money.new(contributions, family.currency)
+    )
+  end
+
   # Period return: net of all non-transfer transactions in roboadvisor accounts.
   # Income entries (negative amount) become positive gains; expense entries
   # (positive amount) become losses. Result is the net gain/loss for the period.
