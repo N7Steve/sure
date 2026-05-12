@@ -104,46 +104,25 @@
           Gastos compartidos
         </h3>
       </div>
-      <span class="text-xs text-subdued">Todo el histórico</span>
     </div>
 
     <% if shared_expenses[:has_data] %>
-      <div class="space-y-3">
-        <div>
-          <p class="text-2xl font-semibold privacy-sensitive <%= shared_expenses[:pending_debt].amount > 0 ? 'text-warning' : 'text-success' %>">
-            <%= shared_expenses[:pending_debt].format %>
-          </p>
-          <p class="text-sm text-subdued">
-            <% if shared_expenses[:pending_debt].amount > 0 %>
-              Deuda pendiente
-            <% else %>
-              Sin deuda pendiente
-            <% end %>
-          </p>
-        </div>
-
-        <div class="pt-3 border-t border-tertiary space-y-1.5">
-          <div class="flex justify-between text-sm">
-            <span class="text-subdued">Total gastos</span>
-            <span class="font-medium text-primary privacy-sensitive"><%= shared_expenses[:total_expenses].format %></span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-subdued">Mitad (tu parte)</span>
-            <span class="font-medium text-primary privacy-sensitive"><%= shared_expenses[:half_expenses].format %></span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-subdued">Total ingresado</span>
-            <span class="font-medium text-primary privacy-sensitive"><%= shared_expenses[:total_income].format %></span>
-          </div>
-        </div>
-      </div>
-    <% else %>
-      <div class="text-center py-4">
-        <%= icon("users", class: "w-8 h-8 text-subdued mx-auto mb-2") %>
+      <div class="space-y-2">
+        <p class="text-2xl font-semibold privacy-sensitive <%= shared_expenses[:pending_debt].amount > 0 ? 'text-warning' : 'text-success' %>">
+          <%= shared_expenses[:pending_debt].format %>
+        </p>
         <p class="text-sm text-subdued">
-          No hay transacciones con la etiqueta "Gastos compartidos"
+          <% if shared_expenses[:pending_debt].amount > 0 %>
+            Deuda pendiente
+          <% else %>
+            Sin deuda pendiente
+          <% end %>
         </p>
       </div>
+    <% else %>
+      <p class="text-base text-subdued">
+        No hay datos de gastos compartidos
+      </p>
     <% end %>
   </div>
 </div>

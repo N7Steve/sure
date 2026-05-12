@@ -52,9 +52,6 @@ class SharedExpensesCalculator
     pending_debt = 0 if pending_debt < 0
 
     {
-      total_expenses: Money.new(total_expenses, family_currency),
-      total_income: Money.new(total_income, family_currency),
-      half_expenses: Money.new(half_expenses, family_currency),
       pending_debt: Money.new(pending_debt, family_currency),
       has_data: total_expenses > 0 || total_income > 0
     }
@@ -65,9 +62,6 @@ class SharedExpensesCalculator
   def empty_result
     currency = @family.currency
     {
-      total_expenses: Money.new(0, currency),
-      total_income: Money.new(0, currency),
-      half_expenses: Money.new(0, currency),
       pending_debt: Money.new(0, currency),
       has_data: false
     }
