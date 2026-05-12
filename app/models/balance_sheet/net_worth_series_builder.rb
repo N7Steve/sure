@@ -22,7 +22,7 @@ class BalanceSheet::NetWorthSeriesBuilder
 
     def visible_account_ids
       @visible_account_ids ||= begin
-        scope = family.accounts.visible
+        scope = family.accounts.data_visible
         scope = scope.included_in_finances_for(user) if user
         scope.pluck(:id)
       end

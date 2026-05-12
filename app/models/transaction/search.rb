@@ -114,7 +114,7 @@ class Transaction::Search
     # Applies a filter to only include transactions from active, non-excluded accounts,
     # if the active_accounts_only_filter flag is enabled.
     def apply_active_accounts_filter(query, active_accounts_only_filter)
-      scope = active_accounts_only_filter ? Account.visible : Account.sidebar_visible
+      scope = active_accounts_only_filter ? Account.data_visible : Account.where(status: Account::VISIBLE_STATUSES)
       query.merge(scope)
     end
 
