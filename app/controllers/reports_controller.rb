@@ -133,6 +133,9 @@ class ReportsController < ApplicationController
 
       # Flags for view rendering
       @has_accounts = accessible_accounts.any?
+
+      # TEMPORARY: Shared expenses data (see rollback_gc.md)
+      @shared_expenses = SharedExpensesCalculator.new(Current.family).calculate
     end
 
     def preferences_params
