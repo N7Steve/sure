@@ -3,7 +3,7 @@
 # See rollback_gc.md for removal instructions
 class SharedExpensesCalculator
   TAG_NAME = "Gastos compartidos"
-  RENT_CATEGORY_NAME = "Rentas de trabajo"
+  RENT_CATEGORY_NAME = "Rentas de Trabajo"
 
   def initialize(family)
     @family = family
@@ -74,7 +74,7 @@ class SharedExpensesCalculator
     family_currency = @family.currency
     date_range = period.date_range
 
-    category = @family.categories.find_by(name: RENT_CATEGORY_NAME)
+    category = @family.categories.where("LOWER(name) = LOWER(?)", RENT_CATEGORY_NAME).first
     return zero_money unless category
 
     # Include the category itself and all its subcategories
@@ -84,8 +84,9 @@ class SharedExpensesCalculator
     income_scope = Transaction
       .joins(:entry)
       .joins(entry: :account)
-      .where(accounts: { family_id: @family.id })
+      .where(accounts: { family_id: @family.id, status: %w[draft active], excluded: false })
       .where(entries: { entryable_type: "Transaction", excluded: false, date: date_range })
+      .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
       .where(category_id: category_ids)
       .where("entries.amount < 0")
 
@@ -108,17 +109,19 @@ class SharedExpensesCalculator
       .joins(:entry)
       .joins(entry: :account)
       .joins(:taggings)
-      .where(accounts: { family_id: @family.id })
+      .where(accounts: { family_id: @family.id, status: %w[draft active], excluded: false })
       .where(taggings: { tag_id: tag.id })
       .where(entries: { entryable_type: "Transaction", excluded: false })
+      .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
   end
 
   def expense_transactions_scope(date_range)
     Transaction
       .joins(:entry)
       .joins(entry: :account)
-      .where(accounts: { family_id: @family.id })
+      .where(accounts: { family_id: @family.id, status: %w[draft active], excluded: false })
       .where(entries: { entryable_type: "Transaction", excluded: false, date: date_range })
+      .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
       .where("entries.amount > 0")
   end
 
