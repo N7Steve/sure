@@ -135,7 +135,10 @@ class ReportsController < ApplicationController
       @has_accounts = accessible_accounts.any?
 
       # TEMPORARY: Shared expenses data (see rollback_gc.md)
-      @shared_expenses = SharedExpensesCalculator.new(Current.family).calculate
+      _calculator = SharedExpensesCalculator.new(Current.family)
+      @shared_expenses = _calculator.calculate_debt
+      @adjusted_expenses = _calculator.calculate_adjusted_expenses(@period)
+      @rent_income = _calculator.calculate_rent_income(@period)
     end
 
     def preferences_params

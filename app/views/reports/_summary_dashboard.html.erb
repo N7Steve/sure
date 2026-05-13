@@ -1,4 +1,7 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<%# TEMPORARY: Modified layout (2 rows of 3) - see rollback_gc.md for original %>
+
+<%# === ROW 1: Existing metrics (3 cols) === %>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
   <%# Total Income Card %>
   <div class="bg-container rounded-xl shadow-border-xs p-6">
     <div class="flex items-start justify-between mb-3">
@@ -94,8 +97,53 @@
       </p>
     </div>
   </div>
+</div>
 
-  <%# TEMPORARY: Shared Expenses Card (replaces Budget Performance) - see rollback_gc.md %>
+<%# === ROW 2: Custom metrics (3 cols) === %>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <%# TEMPORARY: Rent Income Card - see rollback_gc.md %>
+  <div class="bg-container rounded-xl shadow-border-xs p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <%= icon("briefcase", class: "w-5 h-5") %>
+        <h3 class="text-sm font-medium text-secondary">
+          Ingresos de renta
+        </h3>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <p class="text-2xl font-semibold text-primary privacy-sensitive">
+        <%= rent_income.format %>
+      </p>
+      <p class="text-sm text-subdued">
+        Solo rentas de trabajo
+      </p>
+    </div>
+  </div>
+
+  <%# TEMPORARY: Adjusted Expenses Card - see rollback_gc.md %>
+  <div class="bg-container rounded-xl shadow-border-xs p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <%= icon("calculator", class: "w-5 h-5") %>
+        <h3 class="text-sm font-medium text-secondary">
+          Gastos ajustados
+        </h3>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <p class="text-2xl font-semibold text-primary privacy-sensitive">
+        <%= adjusted_expenses.format %>
+      </p>
+      <p class="text-sm text-subdued">
+        Compartidos a mitad
+      </p>
+    </div>
+  </div>
+
+  <%# TEMPORARY: Shared Expenses Debt Card - see rollback_gc.md %>
   <div class="bg-container rounded-xl shadow-border-xs p-6">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
@@ -121,7 +169,7 @@
       </div>
     <% else %>
       <p class="text-base text-subdued">
-        No hay datos de gastos compartidos
+        Sin datos de gastos compartidos
       </p>
     <% end %>
   </div>
