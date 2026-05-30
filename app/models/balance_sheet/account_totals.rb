@@ -27,7 +27,7 @@ class BalanceSheet::AccountTotals
 
     def visible_accounts
       @visible_accounts ||= begin
-        scope = family.accounts.sidebar_visible.with_attached_logo.includes(:account_shares)
+        scope = family.accounts.sidebar_visible.with_attached_logo.includes(:account_shares, :accountable, :plaid_account, :simplefin_account, account_providers: :provider)
         scope = scope.accessible_by(user) if user
         scope
       end

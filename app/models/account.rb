@@ -5,6 +5,11 @@ class Account < ApplicationRecord
   after_save :invalidate_family_caches, if: :saved_change_to_archived?
   before_validation :assign_default_owner, if: -> { owner_id.blank? }
 
+  before_destroy :capture_account_statement_ids_to_move
+  before_destroy :cleanup_transfers
+
+  after_destroy_commit :move_account_statements_to_inbox
+
   validates :name, :balance, :currency, presence: true
   validate :owner_belongs_to_family, if: -> { owner_id.present? && family_id.present? }
 
@@ -23,6 +28,14 @@ class Account < ApplicationRecord
   has_many :balances, dependent: :destroy
   has_many :recurring_transactions, dependent: :destroy
   has_many :scheduled_payments, dependent: :destroy
+  # Inverse for recurring transfers where this account is the destination.
+  # Account#recurring_transactions only matches account_id; without this
+  # association, destroying the destination account would hit the FK
+  # cascade silently and the AR cache wouldn't reflect the deletion.
+  has_many :inbound_recurring_transfers,
+           class_name: "RecurringTransaction",
+           foreign_key: :destination_account_id,
+           dependent: :destroy
 
   monetize :balance, :cash_balance
 
@@ -81,6 +94,8 @@ class Account < ApplicationRecord
   }
 
   has_one_attached :logo, dependent: :purge_later
+  # No dependent: option; before_destroy captures IDs, after_destroy_commit moves statements back to inbox.
+  has_many :account_statements
 
   delegated_type :accountable, types: Accountable::TYPES, dependent: :destroy
   delegate :subtype, to: :accountable, allow_nil: true
@@ -260,26 +275,57 @@ class Account < ApplicationRecord
     end
 
     def create_from_binance_account(binance_account)
-      family = binance_account.binance_item.family
+      account = create_from_crypto_exchange_account(binance_account, family: binance_account.binance_item.family)
+      account.set_opening_anchor_balance(balance: 0)
+      account
+    end
+
+    def create_from_ibkr_account(ibkr_account)
+      family = ibkr_account.ibkr_item.family
+      default_name = if ibkr_account.ibkr_account_id.present?
+        "Interactive Brokers (#{ibkr_account.ibkr_account_id})"
+      else
+        "Interactive Brokers"
+      end
 
       attributes = {
         family: family,
-        name: binance_account.name,
-        balance: (binance_account.current_balance || 0).to_d,
+        name: default_name,
+        balance: 0,
         cash_balance: 0,
-        currency: binance_account.currency.presence || family.currency,
-        accountable_type: "Crypto",
+        currency: ibkr_account.currency.presence || family.currency,
+        accountable_type: "Investment",
         accountable_attributes: {
-          subtype: "exchange",
-          tax_treatment: "taxable"
+          subtype: "brokerage"
         }
       }
 
+      # Capture the created account in a variable
       create_and_sync(attributes, skip_initial_sync: true)
     end
 
+    def create_from_kraken_account(kraken_account)
+      create_from_crypto_exchange_account(kraken_account, family: kraken_account.kraken_item.family)
+    end
 
     private
+
+      def create_from_crypto_exchange_account(provider_account, family:)
+        attributes = {
+          family: family,
+          name: provider_account.name,
+          balance: (provider_account.current_balance || 0).to_d,
+          cash_balance: 0,
+          currency: provider_account.currency.presence || family.currency,
+          accountable_type: "Crypto",
+          accountable_attributes: {
+            subtype: "exchange",
+            tax_treatment: "taxable"
+          }
+        }
+
+        create_and_sync(attributes, skip_initial_sync: true)
+      end
 
       def build_simplefin_accountable_attributes(simplefin_account, account_type, subtype)
         attributes = {}
@@ -308,6 +354,14 @@ class Account < ApplicationRecord
 
   def institution_domain
     read_attribute(:institution_domain).presence || provider&.institution_domain
+  end
+
+  def manual_crypto_exchange?
+    accountable_type == "Crypto" &&
+      accountable&.subtype == "exchange" &&
+      account_providers.none? &&
+      plaid_account_id.blank? &&
+      simplefin_account_id.blank?
   end
 
   def logo_url
@@ -340,15 +394,23 @@ class Account < ApplicationRecord
   end
 
   def current_holdings
-    holdings
-      .where(currency: currency)
-      .where.not(qty: 0)
-      .where(
-        id: holdings.select("DISTINCT ON (security_id) id")
-                    .where(currency: currency)
-                    .order(:security_id, date: :desc)
-      )
-      .order(amount: :desc)
+    if (provider_snapshot_date = latest_provider_holdings_snapshot_date)
+      holdings
+        .where.not(account_provider_id: nil)
+        .where(date: provider_snapshot_date)
+        .where.not(qty: 0)
+        .order(amount: :desc)
+    else
+      holdings
+        .where(currency: currency)
+        .where.not(qty: 0)
+        .where(
+          id: holdings.select("DISTINCT ON (security_id) id")
+                      .where(currency: currency)
+                      .order(:security_id, date: :desc)
+        )
+        .order(amount: :desc)
+    end
   end
 
   def latest_provider_holdings_snapshot_date
@@ -488,5 +550,30 @@ class Account < ApplicationRecord
     def owner_belongs_to_family
       return if User.where(id: owner_id, family_id: family_id).exists?
       errors.add(:owner, :invalid, message: "must belong to the same family as the account")
+    end
+
+    def capture_account_statement_ids_to_move
+      @statement_ids_to_move = account_statements.ids
+    end
+
+    def move_account_statements_to_inbox
+      statement_ids = Array(@statement_ids_to_move).compact
+      return if statement_ids.empty?
+
+      # Bypass callbacks deliberately: the account was destroyed, so linked statements need a direct inbox move.
+      AccountStatement.where(id: statement_ids).update_all(
+        account_id: nil,
+        review_status: "unmatched",
+        match_confidence: nil,
+        updated_at: Time.current
+      )
+    end
+
+    def cleanup_transfers
+      transaction_ids = entries.where(entryable_type: "Transaction").pluck(:entryable_id)
+
+      transfers = Transfer.where(inflow_transaction_id: transaction_ids).or(Transfer.where(outflow_transaction_id: transaction_ids))
+
+      transfers.find_each(&:destroy!)
     end
 end

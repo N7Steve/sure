@@ -3,6 +3,8 @@
   data-controller="bulk-select checkbox-toggle drag-and-drop-import"
   data-bulk-select-singular-label-value="<%= t(".transaction") %>"
   data-bulk-select-plural-label-value="<%= t(".transactions") %>"
+  data-bulk-select-selected-label-value="<%= t("transactions.selection_bar.selected") %>"
+  data-bulk-select-edit-label-value="<%= t("transactions.selection_bar.edit") %>"
   class="flex flex-col bg-container rounded-xl shadow-border-xs px-3 py-4 lg:p-4 relative group">
 
   <%= form_with url: imports_path, method: :post, class: "hidden", data: { drag_and_drop_import_target: "form", turbo: false } do |f| %>

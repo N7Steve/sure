@@ -1,7 +1,7 @@
 require "set"
 
 class Family::DataImporter
-  SUPPORTED_TYPES = %w[Account Category Tag Merchant RecurringTransaction Transaction Trade Valuation Budget BudgetCategory Rule].freeze
+  SUPPORTED_TYPES = %w[Account Balance Category Tag Merchant RecurringTransaction Transaction Transfer RejectedTransfer Trade Holding Valuation Budget BudgetCategory Rule].freeze
   ACCOUNTABLE_TYPES = Accountable::TYPES.freeze
 
   def initialize(family, ndjson_content)
@@ -13,9 +13,11 @@ class Family::DataImporter
       tags: {},
       merchants: {},
       recurring_transactions: {},
+      transactions: {},
       budgets: {},
       securities: {}
     }
+    @security_cache = {}
     @created_accounts = []
     @created_entries = []
   end
@@ -28,12 +30,16 @@ class Family::DataImporter
     Import.transaction do
       # Import in dependency order
       import_accounts(records["Account"] || [])
+      import_balances(records["Balance"] || [])
       import_categories(records["Category"] || [])
       import_tags(records["Tag"] || [])
       import_merchants(records["Merchant"] || [])
       import_recurring_transactions(records["RecurringTransaction"] || [])
       import_transactions(records["Transaction"] || [])
+      import_transfers(records["Transfer"] || [])
+      import_rejected_transfers(records["RejectedTransfer"] || [])
       import_trades(records["Trade"] || [])
+      import_holdings(records["Holding"] || [])
       import_valuations(records["Valuation"] || [])
       import_budgets(records["Budget"] || [])
       import_budget_categories(records["BudgetCategory"] || [])
@@ -121,6 +127,49 @@ class Family::DataImporter
 
     def importable_account_status(status)
       status.to_s.in?(%w[active disabled draft]) ? status.to_s : "active"
+    end
+
+    def import_balances(records)
+      records.each do |record|
+        data = record["data"] || {}
+        new_account_id = @id_mappings[:accounts][data["account_id"]]
+        balance_date = parse_import_date(data["date"])
+        next if new_account_id.blank? || balance_date.blank? || data["balance"].blank?
+
+        account = @family.accounts.find(new_account_id)
+        currency = data["currency"].presence || account.currency
+        balance = account.balances.find_or_initialize_by(date: balance_date, currency: currency)
+
+        balance.assign_attributes(imported_balance_attributes(data))
+        balance.save!
+      end
+    end
+
+    def imported_balance_attributes(data)
+      attributes = {
+        balance: data["balance"].to_d,
+        cash_balance: optional_decimal(data["cash_balance"]),
+        start_cash_balance: optional_decimal(data["start_cash_balance"]),
+        start_non_cash_balance: optional_decimal(data["start_non_cash_balance"]),
+        cash_inflows: optional_decimal(data["cash_inflows"]),
+        cash_outflows: optional_decimal(data["cash_outflows"]),
+        non_cash_inflows: optional_decimal(data["non_cash_inflows"]),
+        non_cash_outflows: optional_decimal(data["non_cash_outflows"]),
+        net_market_flows: optional_decimal(data["net_market_flows"]),
+        cash_adjustments: optional_decimal(data["cash_adjustments"]),
+        non_cash_adjustments: optional_decimal(data["non_cash_adjustments"])
+      }.compact
+
+      attributes[:flows_factor] = balance_flows_factor_for(data["flows_factor"]) if data["flows_factor"].present?
+      attributes
+    end
+
+    def optional_decimal(value)
+      value.presence&.to_d
+    end
+
+    def balance_flows_factor_for(value)
+      value.to_i.in?([ -1, 1 ]) ? value.to_i : 1
     end
 
     def import_categories(records)
@@ -254,6 +303,7 @@ class Family::DataImporter
     def import_transactions(records)
       records.each do |record|
         data = record["data"]
+        old_id = data["id"]
 
         # Map account ID
         new_account_id = @id_mappings[:accounts][data["account_id"]]
@@ -304,7 +354,47 @@ class Family::DataImporter
         end
 
         @created_entries << entry
+        @id_mappings[:transactions][old_id] = transaction.id
       end
+    end
+
+    def import_transfers(records)
+      records.each do |record|
+        data = record["data"]
+        inflow_transaction_id = @id_mappings[:transactions][data["inflow_transaction_id"]]
+        outflow_transaction_id = @id_mappings[:transactions][data["outflow_transaction_id"]]
+        next unless inflow_transaction_id && outflow_transaction_id
+
+        Transfer.find_or_create_by!(
+          inflow_transaction_id: inflow_transaction_id,
+          outflow_transaction_id: outflow_transaction_id
+        ) do |transfer|
+          transfer.status = transfer_status_for(data["status"])
+          transfer.notes = data["notes"]
+        end
+      end
+    end
+
+    def import_rejected_transfers(records)
+      records.each do |record|
+        data = record["data"]
+        inflow_transaction_id = @id_mappings[:transactions][data["inflow_transaction_id"]]
+        outflow_transaction_id = @id_mappings[:transactions][data["outflow_transaction_id"]]
+        next unless inflow_transaction_id && outflow_transaction_id
+
+        RejectedTransfer.find_or_create_by!(
+          inflow_transaction_id: inflow_transaction_id,
+          outflow_transaction_id: outflow_transaction_id
+        )
+      end
+    end
+
+    def transfer_status_for(status)
+      status = status.to_s
+      return status if Transfer.statuses.key?(status)
+
+      Rails.logger.debug("Unknown transfer status #{status.inspect}; defaulting to pending") if status.present?
+      "pending"
     end
 
     def import_trades(records)
@@ -321,7 +411,13 @@ class Family::DataImporter
         ticker = data["ticker"]
         next unless ticker.present?
 
-        security = find_or_create_security(ticker, data["currency"])
+        security = find_or_create_security(
+          ticker,
+          data["currency"],
+          old_security_id: data["security_id"],
+          name: data["security_name"],
+          exchange_operating_mic: data["exchange_operating_mic"]
+        )
 
         trade = Trade.new(
           security: security,
@@ -341,6 +437,51 @@ class Family::DataImporter
 
         entry.save!
         @created_entries << entry
+      end
+    end
+
+    def import_holdings(records)
+      accounts_by_id = @family.accounts.where(id: records.filter_map { |record| @id_mappings[:accounts][record.dig("data", "account_id")] }).index_by(&:id)
+
+      records.each do |record|
+        data = record["data"]
+
+        new_account_id = @id_mappings[:accounts][data["account_id"]]
+        next unless new_account_id
+
+        account = accounts_by_id[new_account_id]
+        next unless account
+
+        ticker = data["ticker"]
+        next unless ticker.present?
+
+        security = find_or_create_security(
+          ticker,
+          data["currency"],
+          old_security_id: data["security_id"],
+          name: data["security_name"],
+          exchange_operating_mic: data["exchange_operating_mic"],
+          exchange_mic: data["exchange_mic"],
+          exchange_acronym: data["exchange_acronym"],
+          country_code: data["country_code"],
+          kind: data["kind"],
+          website_url: data["website_url"]
+        )
+
+        holding_date = Date.parse(data["date"].to_s)
+        holding_currency = data["currency"] || account.currency
+        holding_attributes = {
+          qty: data["qty"].to_d,
+          price: data["price"].to_d,
+          amount: data["amount"].to_d,
+          currency: holding_currency,
+          cost_basis: data["cost_basis"]&.to_d,
+          cost_basis_source: importable_cost_basis_source(data["cost_basis_source"]),
+          cost_basis_locked: truthy?(data["cost_basis_locked"]) || false,
+          security_locked: truthy?(data["security_locked"]) || false
+        }
+
+        upsert_imported_holding!(account, security, holding_date, holding_currency, holding_attributes)
       end
     end
 
@@ -375,7 +516,7 @@ class Family::DataImporter
 
       # Account-level opening balances must precede every imported account
       # activity, including standalone valuation snapshots.
-      %w[Transaction Trade Valuation].each do |type|
+      %w[Balance Transaction Trade Holding Valuation].each do |type|
         records[type].to_a.each do |record|
           data = record["data"] || {}
           account_id = data["account_id"]
@@ -530,7 +671,7 @@ class Family::DataImporter
 
     def resolve_rule_condition_value(condition_data)
       condition_type = condition_data["condition_type"]
-      value = condition_data["value"]
+      value = rule_operand_value(condition_data)
 
       return value unless value.present?
 
@@ -558,7 +699,7 @@ class Family::DataImporter
 
     def resolve_rule_action_value(action_data)
       action_type = action_data["action_type"]
-      value = action_data["value"]
+      value = rule_operand_value(action_data)
 
       return value unless value.present?
 
@@ -591,18 +732,110 @@ class Family::DataImporter
       value
     end
 
-    def find_or_create_security(ticker, currency)
+    def rule_operand_value(data)
+      raw_value = data["value"]
+      value = raw_value.is_a?(String) ? raw_value.presence : raw_value
+      value_ref_name = data.dig("value_ref", "name")
+
+      return value_ref_name if value.is_a?(String) && uuid_like?(value) && value_ref_name.present?
+      return value unless value.nil?
+
+      value_ref_name
+    end
+
+    def uuid_like?(value)
+      UuidFormat.valid?(value)
+    end
+
+    def importable_cost_basis_source(value)
+      source = value.to_s
+      Holding::COST_BASIS_SOURCES.include?(source) ? source : nil
+    end
+
+    def truthy?(value)
+      ActiveModel::Type::Boolean.new.cast(value)
+    end
+
+    def find_or_create_security(ticker, currency, old_security_id: nil, **attributes)
       # Check cache first
-      cache_key = "#{ticker}:#{currency}"
-      return @id_mappings[:securities][cache_key] if @id_mappings[:securities][cache_key]
+      normalized_ticker = ticker.to_s.upcase
+      exchange_operating_mic = attributes[:exchange_operating_mic].presence&.upcase
+      cache_key = "#{normalized_ticker}:#{exchange_operating_mic}:#{currency}"
 
-      security = Security.find_by(ticker: ticker.upcase)
-      security ||= Security.create!(
-        ticker: ticker.upcase,
-        name: ticker.upcase
-      )
+      if @security_cache[cache_key]
+        security = @security_cache[cache_key]
+        apply_security_metadata(security, normalized_ticker, attributes)
+        return security
+      end
 
-      @id_mappings[:securities][cache_key] = security
+      if old_security_id.present? && @id_mappings[:securities][old_security_id]
+        security = Security.find(@id_mappings[:securities][old_security_id])
+        apply_security_metadata(security, normalized_ticker, attributes)
+        @security_cache[cache_key] = security
+        return security
+      end
+
+      security = find_security_by_identity(normalized_ticker, exchange_operating_mic)
+      apply_security_metadata(security, normalized_ticker, attributes)
+
+      @security_cache[cache_key] = security
+      @id_mappings[:securities][old_security_id] = security.id if old_security_id.present?
       security
+    end
+
+    def find_security_by_identity(ticker, exchange_operating_mic)
+      if exchange_operating_mic.present?
+        return Security.find_or_initialize_by(ticker: ticker, exchange_operating_mic: exchange_operating_mic)
+      end
+
+      # Without an exchange MIC, matching by ticker is a best-effort restore path and can merge same-ticker securities from different venues.
+      Security.find_by(ticker: ticker, exchange_operating_mic: nil) ||
+        Security.where(ticker: ticker).order(:created_at).first ||
+        Security.new(ticker: ticker)
+    end
+
+    def apply_security_metadata(security, ticker, attributes)
+      assign_if_blank_or_placeholder(security, :name, attributes[:name].presence, placeholder: ticker)
+      assign_if_blank(security, :exchange_operating_mic, attributes[:exchange_operating_mic].presence&.upcase)
+      assign_if_blank(security, :exchange_mic, attributes[:exchange_mic].presence)
+      assign_if_blank(security, :exchange_acronym, attributes[:exchange_acronym].presence)
+      assign_if_blank(security, :country_code, attributes[:country_code].presence)
+      assign_if_blank(security, :website_url, attributes[:website_url].presence)
+      security.kind = security_kind_for(attributes[:kind]) if security.new_record? || security.kind.blank?
+
+      security.save! if security.new_record? || security.changed?
+    end
+
+    def assign_if_blank(record, attribute, value)
+      return if value.blank?
+      return if record.public_send(attribute).present?
+
+      record.public_send("#{attribute}=", value)
+    end
+
+    def assign_if_blank_or_placeholder(record, attribute, value, placeholder:)
+      return if value.blank?
+
+      current_value = record.public_send(attribute)
+      return if current_value.present? && current_value != placeholder
+
+      record.public_send("#{attribute}=", value)
+    end
+
+    def upsert_imported_holding!(account, security, date, currency, attributes)
+      holding = account.holdings.find_or_initialize_by(security: security, date: date, currency: currency)
+      holding.assign_attributes(attributes)
+
+      begin
+        Holding.transaction(requires_new: true) { holding.save! }
+      rescue ActiveRecord::RecordNotUnique
+        existing = account.holdings.find_by!(security: security, date: date, currency: currency)
+        existing.update!(attributes)
+      end
+    end
+
+    def security_kind_for(value)
+      kind = value.to_s
+      Security::KINDS.include?(kind) ? kind : Security::KINDS.first
     end
 end
