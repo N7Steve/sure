@@ -203,11 +203,11 @@
         <% end %>
 
         <% unless entry.from_scheduled_payment? %>
-          <%= render DS::Menu.new do |menu| %>
-            <% menu.with_button(class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center justify-center whitespace-nowrap border border-dashed border-secondary text-secondary hover:bg-surface-hover hover:text-primary transition-colors", style: "width: 24px; height: 24px;") do %>
+          <%= render DS::Popover.new do |popover| %>
+            <% popover.with_button(class: "text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center justify-center whitespace-nowrap border border-dashed border-secondary text-secondary hover:bg-surface-hover hover:text-primary transition-colors", style: "width: 24px; height: 24px;") do %>
               <%= icon "plus", size: "sm" %>
             <% end %>
-            <% menu.with_custom_content do %>
+            <% popover.with_custom_content do %>
               <div class="p-3 w-64">
                 <%= styled_form_with model: entry,
                       url: transaction_path(entry),
