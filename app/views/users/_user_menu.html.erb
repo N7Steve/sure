@@ -44,14 +44,19 @@
       <% end %>
     <% end %>
 
-    <% menu.with_item(
-      variant: "link",
-      text: "Settings",
-      icon: "settings",
-      href: intro_mode ? settings_profile_path : accounts_path(return_to: request.fullpath)
-    ) %>
-    <% menu.with_item(variant: "link", text: "Changelog", icon: "box", href: changelog_path) %>
-    <% menu.with_item(variant: "button", text: "Recalculate balances", icon: "refresh-cw", href: sync_all_accounts_path, method: :post) %>
+    <% popover.with_custom_content do %>
+      <%# `roving: false` keeps these items in the normal Tab order. The parent
+          `DS::Popover` has no arrow-key roving handler and is not a `role="menu"`
+          container, so the default `tabindex="-1"` would skip every item. %>
+      <%= render DS::MenuItem.new(
+        variant: "link",
+        roving: false,
+        text: "Settings",
+        icon: "settings",
+        href: intro_mode ? settings_profile_path : accounts_path(return_to: request.fullpath)
+      ) %>
+      <%= render DS::MenuItem.new(variant: "link", roving: false, text: "Changelog", icon: "box", href: changelog_path) %>
+      <%= render DS::MenuItem.new(variant: "button", roving: false, text: "Recalculate balances", icon: "refresh-cw", href: sync_all_accounts_path, method: :post) %>
 
       <% if self_hosted? && !intro_mode %>
         <%= render DS::MenuItem.new(variant: "link", roving: false, text: t(".feedback"), icon: "megaphone", href: feedback_path) %>
