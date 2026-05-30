@@ -28,7 +28,9 @@ export default class extends Controller {
     this.show = this.showValue;
     this.boundUpdate = this.update.bind(this);
     this.addEventListeners();
-    this.startAutoUpdate();
+    if (this.show) {
+      this.startAutoUpdate();
+    }
   }
 
   disconnect() {
@@ -72,7 +74,10 @@ export default class extends Controller {
     this.buttonTarget.setAttribute("aria-expanded", this.show.toString());
     if (this.show) {
       this.update();
+      this.startAutoUpdate();
       this.focusFirstElement();
+    } else {
+      this.stopAutoUpdate();
     }
   };
 
@@ -80,6 +85,7 @@ export default class extends Controller {
     this.show = false;
     this.contentTarget.classList.add("hidden");
     this.buttonTarget.setAttribute("aria-expanded", "false");
+    this.stopAutoUpdate();
   }
 
   focusFirstElement() {
