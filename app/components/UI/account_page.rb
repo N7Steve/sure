@@ -47,16 +47,14 @@ class UI::AccountPage < ApplicationComponent
     when "Investment"
       current_subtype = account.accountable&.subtype || account.subtype
       if %w[roboadvisor managed_fund].include?(current_subtype)
-        []
+        [ :activity ]
       else
         [ :holdings ]
       end
     when "Crypto"
       [ :holdings ]
-    when "Property", "Vehicle", "Loan"
-      []
     else
-      []
+      [ :activity ]
     end
 
     base_tabs
