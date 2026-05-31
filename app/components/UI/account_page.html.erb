@@ -30,7 +30,7 @@
             <% end %>
           <% end %>
         <% end %>
-      <% else %>
+      <% elsif tabs.any? %>
         <%= tab_content_for(tabs.first) %>
       <% end %>
     </div>

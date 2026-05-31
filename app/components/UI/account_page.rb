@@ -47,19 +47,19 @@ class UI::AccountPage < ApplicationComponent
     when "Investment"
       current_subtype = account.accountable&.subtype || account.subtype
       if %w[roboadvisor managed_fund].include?(current_subtype)
-        [ :activity, :overview ]
+        []
       else
-        [ :activity, :holdings ]
+        [ :holdings ]
       end
     when "Crypto"
-      [ :activity, :holdings ]
+      [ :holdings ]
     when "Property", "Vehicle", "Loan"
-      [ :activity, :overview ]
+      []
     else
-      [ :activity ]
+      []
     end
 
-    base_tabs + [ :statements ]
+    base_tabs
   end
 
   def fx_coverage_start_date
