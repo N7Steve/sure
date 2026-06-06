@@ -172,82 +172,80 @@
       </div>
     <% end %>
     <% dialog.with_section(title: t(".details")) do %>
-      <%= styled_form_with model: @entry,
-            url: transaction_path(@entry),
-            class: "space-y-2",
-            data: { controller: "auto-submit-form" } do |f| %>
-        <%= hidden_field_tag :grouped, "true" if params[:grouped] == "true" %>
-        <% unless @entry.transaction.transfer? %>
-          <%= f.select :account,
-              options_for_select(
-                accessible_accounts.alphabetically.pluck(:name, :id),
-                @entry.account_id
-              ),
-              { label: t(".account_label") },
-              { disabled: true } %>
-          <%= f.fields_for :entryable do |ef| %>
-            <% if @entry.from_scheduled_payment? %>
-              <div class="form-field">
-                <div class="form-field__body">
-                  <label class="form-field__label"><%= t(".merchant_label") %></label>
-                  <% merchant = @entry.entryable.merchant %>
-                  <% if merchant.present? %>
-                    <div class="flex items-center gap-2 py-1">
-                      <% if merchant.respond_to?(:logo_url) && merchant.logo_url.present? %>
-                        <%= image_tag Setting.transform_brand_fetch_url(merchant.logo_url),
-                            class: "w-6 h-6 rounded-full border border-secondary", loading: "lazy" %>
-                      <% else %>
-                        <%= render DS::FilledIcon.new(variant: :text, text: merchant.name, size: "sm", rounded: true) %>
-                      <% end %>
-                      <span class="text-sm text-primary"><%= merchant.name %></span>
-                    </div>
-                  <% else %>
-                    <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
-                  <% end %>
+      <div class="space-y-2">
+        <%= styled_form_with model: @entry,
+              url: transaction_path(@entry),
+              class: "space-y-2",
+              data: { controller: "auto-submit-form" } do |f| %>
+          <%= hidden_field_tag :grouped, "true" if params[:grouped] == "true" %>
+          <% unless @entry.transaction.transfer? %>
+            <%= f.select :account,
+                options_for_select(
+                  accessible_accounts.alphabetically.pluck(:name, :id),
+                  @entry.account_id
+                ),
+                { label: t(".account_label") },
+                { disabled: true } %>
+            <%= f.fields_for :entryable do |ef| %>
+              <% if @entry.from_scheduled_payment? %>
+                <div class="form-field">
+                  <div class="form-field__body">
+                    <label class="form-field__label"><%= t(".merchant_label") %></label>
+                    <% merchant = @entry.entryable.merchant %>
+                    <% if merchant.present? %>
+                      <div class="flex items-center gap-2 py-1">
+                        <% if merchant.respond_to?(:logo_url) && merchant.logo_url.present? %>
+                          <%= image_tag Setting.transform_brand_fetch_url(merchant.logo_url),
+                              class: "w-6 h-6 rounded-full border border-secondary", loading: "lazy" %>
+                        <% else %>
+                          <%= render DS::FilledIcon.new(variant: :text, text: merchant.name, size: "sm", rounded: true) %>
+                        <% end %>
+                        <span class="text-sm text-primary"><%= merchant.name %></span>
+                      </div>
+                    <% else %>
+                      <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
+                    <% end %>
+                  </div>
                 </div>
-              </div>
-            <% else %>
-              <%= ef.collection_select :merchant_id,
-                    Current.family.available_merchants_for(Current.user).alphabetically,
-                    :id, :name,
-                    { include_blank: t(".none"),
-                      label: t(".merchant_label"),
-                      variant: :logo, searchable: true, menu_placement: :auto, disabled: @entry.split_child? || @annotate_locked },
-                    "data-auto-submit-form-target": "auto" %>
-            <% end %>
-            <% if @entry.from_scheduled_payment? %>
-              <div class="form-field">
-                <div class="form-field__body">
-                  <label class="form-field__label"><%= t(".tags_label") %></label>
-                  <% entry_tags = @entry.entryable.tags %>
-                  <% if entry_tags.any? %>
-                    <div class="flex flex-wrap gap-1 py-1">
-                      <% entry_tags.each do |tag| %>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                          <%= tag.name %>
-                        </span>
-                      <% end %>
-                    </div>
-                  <% else %>
-                    <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
-                  <% end %>
+                <div class="form-field">
+                  <div class="form-field__body">
+                    <label class="form-field__label"><%= t(".tags_label") %></label>
+                    <% entry_tags = @entry.entryable.tags %>
+                    <% if entry_tags.any? %>
+                      <div class="flex flex-wrap gap-1 py-1">
+                        <% entry_tags.each do |tag| %>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-container-inset text-primary border border-secondary">
+                            <%= tag.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% else %>
+                      <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
+                    <% end %>
+                  </div>
                 </div>
-              </div>
-            <% else %>
-              <%= ef.select :tag_ids,
-                    Current.family.tags.alphabetically.pluck(:name, :id),
-                    {
-                      include_blank: t(".none"),
-                      multiple: true,
-                      label:    t(".tags_label"),
-                      disabled: @annotate_locked
-                    },
-                    { "data-controller": "multi-select", "data-auto-submit-form-target": "auto" } %>
+              <% else %>
+                <%= ef.collection_select :merchant_id,
+                      Current.family.available_merchants_for(Current.user).alphabetically,
+                      :id, :name,
+                      { include_blank: t(".none"),
+                        label: t(".merchant_label"),
+                        variant: :logo, searchable: true, menu_placement: :auto, disabled: @entry.split_child? || @annotate_locked },
+                      "data-auto-submit-form-target": "auto" %>
+                <%= render DS::TagSelect.new(
+                      form: ef,
+                      tags: Current.family.tags.alphabetically,
+                      selected_ids: ef.object.tag_ids,
+                      disabled: @annotate_locked,
+                      auto_submit: true,
+                      update_url: tags_transaction_path(@entry)
+                    ) %>
+              <% end %>
             <% end %>
           <% end %>
         <% end %>
-      <% end %>
-      <%= render "transactions/notes", entry: @entry, can_annotate: !@annotate_locked && !@entry.from_scheduled_payment? %>
+        <%= render "transactions/notes", entry: @entry, can_annotate: !@annotate_locked && !@entry.from_scheduled_payment? %>
+      </div>
     <% end %>
 
     <% dialog.with_section(title: t(".attachments")) do %>

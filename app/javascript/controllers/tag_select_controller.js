@@ -1,176 +1,485 @@
+import { autoUpdate } from "@floating-ui/dom";
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
+  static targets = [
+    "button",
+    "menu",
+    "search",
+    "option",
+    "selectionContainer",
+    "createForm",
+    "createError",
+  ];
+
+  static values = {
+    createUrl: String,
+    fieldName: String,
+    defaultColor: String,
+    disabled: Boolean,
+    autoSubmit: Boolean,
+    updateUrl: String,
+    menuPlacement: { type: String, default: "auto" },
+    offset: { type: Number, default: 6 },
+  };
+
   connect() {
-    this.element.style.display = "none";
-
-    this.wrapper = document.createElement('div');
-    this.wrapper.className = "relative";
-    this.element.parentNode.insertBefore(this.wrapper, this.element.nextSibling);
-
-    this.trigger = document.createElement('button');
-    this.trigger.type = 'button';
-    this.trigger.className = "form-field__input w-full text-left cursor-pointer";
-    this.trigger.addEventListener('click', this.toggleDropdown);
-    this.wrapper.appendChild(this.trigger);
-
-    this.dropdown = document.createElement('div');
-    this.dropdown.className = "absolute z-50 p-1.5 w-full min-w-32 rounded-lg shadow-lg bg-container mt-1.5 transition duration-150 ease-out hidden";
-    this.dropdown.style.cssText = "border: 1px solid var(--color-alpha-white-200);";
-    this.wrapper.appendChild(this.dropdown);
-
-    this.filterInput = document.createElement('input');
-    this.filterInput.type = 'search';
-    this.filterInput.placeholder = 'Search tags...';
-    this.filterInput.className = "form-field__input text-sm mb-2 w-full";
-    this.filterInput.addEventListener('input', this.filterOptions);
-    this.dropdown.appendChild(this.filterInput);
-
-    this.optionsList = document.createElement('div');
-    this.optionsList.className = "flex flex-col gap-0.5 max-h-48 overflow-auto";
-    this.dropdown.appendChild(this.optionsList);
-
-    this.chipsContainer = document.createElement('div');
-    this.chipsContainer.className = "flex flex-wrap gap-2 mt-2 hidden";
-    this.wrapper.appendChild(this.chipsContainer);
-
-    this.buildOptions();
-    this.updateTriggerText();
-    this.renderChips();
-
-    this._outsideClickHandler = (e) => {
-      if (!this.wrapper.contains(e.target) && !this.element.contains(e.target)) {
-        this.closeDropdown();
-      }
-    };
-    document.addEventListener('click', this._outsideClickHandler);
+    this.creating = false;
+    this.isOpen = false;
+    this.selectedIds = new Set(
+      this.optionTargets
+        .filter((option) => option.getAttribute("aria-selected") === "true")
+        .map((option) => option.dataset.tagId),
+    );
+    this.renderSelection();
+    this.observeMenuResize();
   }
 
   disconnect() {
-    document.removeEventListener('click', this._outsideClickHandler);
-    if (this.wrapper) this.wrapper.remove();
-    this.element.style.display = "";
+    if (this.submitAbortController) this.submitAbortController.abort();
+    this.stopAutoUpdate();
+    if (this.resizeObserver) this.resizeObserver.disconnect();
   }
 
-  buildOptions = () => {
-    this.optionsList.innerHTML = '';
-    Array.from(this.element.options).forEach(option => {
-      if (option.value === "") return;
+  toggle(event) {
+    event.preventDefault();
+    if (this.disabledValue) return;
 
-      const item = document.createElement('div');
-      item.className = "filterable-item text-primary text-sm cursor-pointer flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-container-inset-hover";
-      item.dataset.value = option.value;
-      item.dataset.filterName = option.text;
+    this.isOpen ? this.close() : this.open();
+  }
 
-      const check = document.createElement('span');
-      check.className = option.selected ? "check-icon" : "check-icon hidden";
-      check.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+  open(focusOption = false) {
+    this.isOpen = true;
+    this.buttonTarget.setAttribute("aria-expanded", "true");
+    this.menuTarget.classList.remove("hidden");
+    this.searchTarget.value = "";
+    this.filter();
+    this.startAutoUpdate();
 
-      const label = document.createElement('span');
-      label.textContent = option.text;
+    requestAnimationFrame(() => {
+      this.menuTarget.classList.remove(
+        "opacity-0",
+        "-translate-y-1",
+        "pointer-events-none",
+      );
+      this.menuTarget.classList.add("opacity-100", "translate-y-0");
+      this.updatePosition();
+      if (focusOption) {
+        this.focusActiveOption();
+      }
+    });
+  }
 
-      item.appendChild(check);
-      item.appendChild(label);
+  close() {
+    this.isOpen = false;
+    this.stopAutoUpdate();
+    this.buttonTarget.setAttribute("aria-expanded", "false");
+    this.menuTarget.classList.remove("opacity-100", "translate-y-0");
+    this.menuTarget.classList.add(
+      "opacity-0",
+      "-translate-y-1",
+      "pointer-events-none",
+    );
 
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        option.selected = !option.selected;
-        check.classList.toggle('hidden', !option.selected);
-        item.classList.toggle('bg-container-inset', option.selected);
-        this.updateTriggerText();
-        this.renderChips();
-        const event = new Event('change', { bubbles: true });
-        this.element.dispatchEvent(event);
+    setTimeout(() => {
+      if (!this.isOpen) this.menuTarget.classList.add("hidden");
+    }, 150);
+  }
+
+  toggleTag(event) {
+    event.preventDefault();
+    const option = event.currentTarget;
+    const id = option.dataset.tagId;
+
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+
+    this.updateOption(option);
+    this.renderSelection();
+    this.submitForm();
+  }
+
+  filter() {
+    this.clearCreateError();
+
+    const query = this.searchTarget.value.trim().toLowerCase();
+    let hasExactMatch = false;
+
+    this.optionTargets.forEach((option) => {
+      const name = option.dataset.tagName.toLowerCase();
+      const isMatch = name.includes(query);
+      option.classList.toggle("hidden", !isMatch);
+
+      if (name === query) hasExactMatch = true;
+    });
+
+    const canCreate = query.length > 0 && !hasExactMatch;
+    this.createFormTarget.classList.toggle("hidden", !canCreate);
+    this.createFormTarget.classList.toggle("flex", canCreate);
+    this.createNameElement.textContent = this.searchTarget.value.trim();
+    this.syncActiveOption();
+  }
+
+  handleSearchKeydown(event) {
+    if (
+      event.key === "Enter" &&
+      !this.createFormTarget.classList.contains("hidden") &&
+      !this.creating
+    ) {
+      event.preventDefault();
+      this.createTag();
+    }
+  }
+
+  async createTag() {
+    if (this.creating) return;
+
+    const name = this.searchTarget.value.trim();
+    if (!name) return;
+
+    this.creating = true;
+    this.createFormTarget.disabled = true;
+    this.clearCreateError();
+
+    try {
+      const response = await fetch(this.createUrlValue, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": this.csrfToken,
+        },
+        body: JSON.stringify({
+          tag: {
+            name,
+            color: this.defaultColorValue,
+          },
+        }),
       });
 
-      if (option.selected) {
-        item.classList.add('bg-container-inset');
+      const tag = await this.parseJson(response);
+
+      if (!response.ok) {
+        this.showCreateError(tag.errors?.join(", ") || tag.error);
+        return;
       }
 
-      this.optionsList.appendChild(item);
+      this.createFormTarget.insertAdjacentHTML("beforebegin", tag.html);
+      this.selectedIds.add(String(tag.id));
+      this.renderSelection();
+      this.searchTarget.value = "";
+      this.filter();
+      this.submitForm();
+    } finally {
+      this.creating = false;
+      this.createFormTarget.disabled = false;
+    }
+  }
+
+  renderSelection() {
+    this.hiddenInputsElement.innerHTML = "";
+    this.hiddenInputsElement.appendChild(this.buildHiddenInput(""));
+    this.selectionContainerTarget.innerHTML = "";
+
+    const selectedOptions = this.optionTargets.filter((option) =>
+      this.selectedIds.has(option.dataset.tagId),
+    );
+
+    selectedOptions.forEach((option) => {
+      this.hiddenInputsElement.appendChild(
+        this.buildHiddenInput(option.dataset.tagId),
+      );
+      const badge = option.querySelector("[data-tag-select-badge]");
+      if (badge) {
+        this.selectionContainerTarget.appendChild(badge.cloneNode(true));
+      }
+      this.updateOption(option);
     });
-  }
 
-  toggleDropdown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const isHidden = this.dropdown.classList.contains('hidden');
-    if (isHidden) {
-      this.dropdown.classList.remove('hidden');
-      this.filterInput.value = '';
-      this.filterOptions({ target: this.filterInput });
-      this.filterInput.focus();
-    } else {
-      this.closeDropdown();
+    if (selectedOptions.length === 0) {
+      this.selectionContainerTarget.appendChild(this.buildPlaceholder());
     }
   }
 
-  closeDropdown = () => {
-    this.dropdown.classList.add('hidden');
+  updateOption(option) {
+    const isSelected = this.selectedIds.has(option.dataset.tagId);
+    option.setAttribute("aria-selected", isSelected ? "true" : "false");
+    option.classList.toggle("bg-container-inset", isSelected);
+
+    const icon = option.querySelector(".check-icon");
+    if (icon) icon.classList.toggle("hidden", !isSelected);
   }
 
-  filterOptions = (e) => {
-    const term = e.target.value.toLowerCase();
-    this.optionsList.querySelectorAll('.filterable-item').forEach(item => {
-      const name = (item.dataset.filterName || '').toLowerCase();
-      item.style.display = name.includes(term) ? '' : 'none';
-    });
+  buildHiddenInput(id) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = this.fieldNameValue;
+    input.value = id;
+    input.disabled = this.disabledValue;
+    return input;
   }
 
-  updateTriggerText = () => {
-    const selected = Array.from(this.element.options).filter(o => o.selected && o.value !== "");
-    if (selected.length === 0) {
-      this.trigger.textContent = this.element.querySelector('option[value=""]')?.text || '(none)';
-      this.trigger.classList.add('text-secondary');
-    } else {
-      this.trigger.textContent = selected.map(o => o.text).join(', ');
-      this.trigger.classList.remove('text-secondary');
-    }
+  handleOutsideClick(event) {
+    if (this.isOpen && !this.element.contains(event.target)) this.close();
   }
 
-  renderChips = () => {
-    if (!this.chipsContainer) return;
-    this.chipsContainer.innerHTML = '';
+  async submitForm() {
+    if (!this.autoSubmitValue) return;
+    if (!this.hasUpdateUrlValue || !this.updateUrlValue) return;
 
-    const selectedOptions = Array.from(this.element.options).filter(opt => opt.selected && opt.value !== "");
+    if (this.submitAbortController) this.submitAbortController.abort();
 
-    if (selectedOptions.length > 0) {
-      this.chipsContainer.classList.remove('hidden');
-    } else {
-      this.chipsContainer.classList.add('hidden');
-    }
+    const abortController = new AbortController();
+    this.submitAbortController = abortController;
 
-    selectedOptions.forEach(option => {
-      const chip = document.createElement('div');
-      chip.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-surface-inset text-primary border border-secondary shadow-sm";
-
-      const removeBtn = document.createElement('button');
-      removeBtn.type = "button";
-      removeBtn.className = "text-secondary hover:text-primary focus:outline-none flex items-center justify-center";
-      removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-
-      removeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        option.selected = false;
-        const item = this.optionsList.querySelector(`[data-value="${option.value}"]`);
-        if (item) {
-          item.classList.remove('bg-container-inset');
-          item.querySelector('.check-icon')?.classList.add('hidden');
-        }
-        this.updateTriggerText();
-        this.renderChips();
-        const event = new Event('change', { bubbles: true });
-        this.element.dispatchEvent(event);
+    try {
+      await fetch(this.updateUrlValue, {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": this.csrfToken,
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          tag_ids: Array.from(this.selectedIds),
+        }),
+        credentials: "same-origin",
+        signal: abortController.signal,
       });
+    } catch (error) {
+      if (error.name !== "AbortError") throw error;
+    } finally {
+      if (this.submitAbortController === abortController) {
+        this.submitAbortController = null;
+      }
+    }
+  }
 
-      const textSpan = document.createElement('span');
-      textSpan.textContent = option.text;
+  handleKeydown(event) {
+    if (!this.isOpen && event.target === this.buttonTarget) {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        this.open(true);
+      }
+      return;
+    }
 
-      chip.appendChild(removeBtn);
-      chip.appendChild(textSpan);
-      this.chipsContainer.appendChild(chip);
+    if (!this.isOpen) return;
+
+    if (event.key === "Escape" && this.isOpen) {
+      event.preventDefault();
+      this.close();
+      this.buttonTarget.focus();
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      this.moveActiveOption(1);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      this.moveActiveOption(-1);
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      this.focusOption(this.visibleOptions[0]);
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      this.focusOption(this.visibleOptions.at(-1));
+      return;
+    }
+
+    if (
+      event.key === "Enter" &&
+      event.target.getAttribute("role") === "option"
+    ) {
+      event.preventDefault();
+      event.target.click();
+    }
+  }
+
+  syncActiveOption() {
+    const options = this.visibleOptions;
+    const current = this.activeOption;
+    const selected = options.find((option) =>
+      this.selectedIds.has(option.dataset.tagId),
+    );
+
+    this.setActiveOption(
+      options.includes(current) ? current : selected || options[0],
+      false,
+    );
+  }
+
+  moveActiveOption(delta) {
+    const options = this.visibleOptions;
+    if (options.length === 0) return;
+
+    const currentIndex = options.indexOf(this.activeOption);
+    const nextIndex =
+      currentIndex === -1
+        ? delta > 0
+          ? 0
+          : options.length - 1
+        : (currentIndex + delta + options.length) % options.length;
+
+    this.focusOption(options[nextIndex]);
+  }
+
+  focusActiveOption() {
+    this.focusOption(this.activeOption || this.visibleOptions[0]);
+  }
+
+  focusOption(option) {
+    this.setActiveOption(option, true);
+  }
+
+  setActiveOption(option, focus) {
+    this.optionTargets.forEach((target) => {
+      target.tabIndex = target === option ? 0 : -1;
     });
+
+    if (!option) return;
+
+    if (focus) {
+      option.focus({ preventScroll: true });
+      option.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  get activeOption() {
+    return this.optionTargets.find((option) => option.tabIndex === 0);
+  }
+
+  get visibleOptions() {
+    return this.optionTargets.filter(
+      (option) => !option.classList.contains("hidden"),
+    );
+  }
+
+  startAutoUpdate() {
+    if (!this._cleanup && this.hasButtonTarget && this.hasMenuTarget) {
+      this._cleanup = autoUpdate(this.buttonTarget, this.menuTarget, () =>
+        this.updatePosition(),
+      );
+    }
+  }
+
+  stopAutoUpdate() {
+    if (!this._cleanup) return;
+
+    this._cleanup();
+    this._cleanup = null;
+  }
+
+  observeMenuResize() {
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.isOpen) requestAnimationFrame(() => this.updatePosition());
+    });
+    this.resizeObserver.observe(this.menuTarget);
+  }
+
+  getScrollParent(element) {
+    let parent = element.parentElement;
+    while (parent) {
+      const style = getComputedStyle(parent);
+      const overflowY = style.overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") return parent;
+      parent = parent.parentElement;
+    }
+    return document.documentElement;
+  }
+
+  placementMode() {
+    const mode = (this.menuPlacementValue || "auto").toLowerCase();
+    return ["auto", "down", "up"].includes(mode) ? mode : "auto";
+  }
+
+  updatePosition() {
+    if (!this.hasButtonTarget || !this.hasMenuTarget || !this.isOpen) return;
+
+    const container = this.getScrollParent(this.element);
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = this.buttonTarget.getBoundingClientRect();
+    const menuHeight = this.menuTarget.scrollHeight;
+
+    const spaceBelow = containerRect.bottom - buttonRect.bottom;
+    const spaceAbove = buttonRect.top - containerRect.top;
+    const placement = this.placementMode();
+    const shouldOpenUp =
+      placement === "up" ||
+      (placement === "auto" &&
+        spaceBelow < menuHeight &&
+        spaceAbove > spaceBelow);
+
+    this.menuTarget.style.left = "0";
+    this.menuTarget.style.width = "100%";
+    this.menuTarget.style.top = "";
+    this.menuTarget.style.bottom = "";
+    this.menuTarget.style.overflowY = "auto";
+
+    if (shouldOpenUp) {
+      this.menuTarget.style.bottom = "100%";
+      this.menuTarget.style.maxHeight = `${Math.max(0, spaceAbove - this.offsetValue)}px`;
+    } else {
+      this.menuTarget.style.top = "100%";
+      this.menuTarget.style.maxHeight = `${Math.max(0, spaceBelow - this.offsetValue)}px`;
+    }
+  }
+
+  get csrfToken() {
+    return document.querySelector("meta[name='csrf-token']")?.content;
+  }
+
+  get hiddenInputsElement() {
+    return this.element.querySelector("[data-tag-select-hidden-inputs]");
+  }
+
+  get createNameElement() {
+    return this.createFormTarget.querySelector("[data-tag-select-create-name]");
+  }
+
+  showCreateError(message) {
+    if (!this.hasCreateErrorTarget) return;
+
+    this.createErrorTarget.textContent = message || "Could not create tag";
+    this.createErrorTarget.classList.remove("hidden");
+    this.searchTarget.setAttribute("aria-invalid", "true");
+    this.searchTarget.focus({ preventScroll: true });
+  }
+
+  async parseJson(response) {
+    try {
+      return await response.json();
+    } catch {
+      return {};
+    }
+  }
+
+  clearCreateError() {
+    if (!this.hasCreateErrorTarget) return;
+
+    this.createErrorTarget.textContent = "";
+    this.createErrorTarget.classList.add("hidden");
+    this.searchTarget.removeAttribute("aria-invalid");
+  }
+
+  buildPlaceholder() {
+    const placeholder = document.createElement("span");
+    placeholder.className = "text-secondary";
+    placeholder.textContent = this.selectionContainerTarget.dataset.placeholder;
+    return placeholder;
   }
 }
