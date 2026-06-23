@@ -30,38 +30,14 @@
 
     <%# Period Navigation Tabs %>
     <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-        <%= render DS::Link.new(
-          text: t("reports.index.periods.monthly"),
-          variant: @period_type == :monthly ? "secondary" : "ghost",
-          href: reports_path(period_type: :monthly),
-          size: :sm
-        ) %>
-        <%= render DS::Link.new(
-          text: t("reports.index.periods.quarterly"),
-          variant: @period_type == :quarterly ? "secondary" : "ghost",
-          href: reports_path(period_type: :quarterly),
-          size: :sm
-        ) %>
-        <%= render DS::Link.new(
-          text: t("reports.index.periods.ytd"),
-          variant: @period_type == :ytd ? "secondary" : "ghost",
-          href: reports_path(period_type: :ytd),
-          size: :sm
-        ) %>
-        <%= render DS::Link.new(
-          text: t("reports.index.periods.last_6_months"),
-          variant: @period_type == :last_6_months ? "secondary" : "ghost",
-          href: reports_path(period_type: :last_6_months),
-          size: :sm
-        ) %>
-        <%= render DS::Link.new(
-          text: t("reports.index.periods.custom"),
-          variant: @period_type == :custom ? "secondary" : "ghost",
-          href: reports_path(period_type: :custom),
-          size: :sm
-        ) %>
-      </div>
+      <%= render DS::SegmentedControl.new(aria_label: t("reports.index.period_aria", default: "Report period"), class: "overflow-x-auto no-scrollbar") do |sc| %>
+        <% %i[monthly quarterly ytd last_6_months custom].each do |ptype| %>
+          <% sc.with_segment(t("reports.index.periods.#{ptype}"),
+               active: @period_type == ptype,
+               href: reports_path(period_type: ptype),
+               class: "whitespace-nowrap") %>
+        <% end %>
+      <% end %>
     </div>
 
     <%# Custom Date Range Picker (only shown when custom is selected) %>
@@ -90,29 +66,56 @@
     <% end %>
 
     <%# Period Display %>
-    <div class="flex items-center gap-1 text-sm text-subdued">
+    <div class="flex items-center gap-1 mb-4">
       <% if @period_nav %>
-        <%= link_to @period_nav[:prev_url], class: "p-1 rounded-md hover:bg-surface-hover text-secondary hover:text-primary transition-colors", aria: { label: "Previous period" } do %>
-          <%= icon("chevron-left", size: "sm") %>
-        <% end %>
-      <% end %>
+        <div class="flex items-center gap-2">
+          <%= render DS::Link.new(
+            variant: "icon",
+            icon: "chevron-left",
+            href: @period_nav[:prev_url],
+            aria: { label: t("reports.index.previous_period", default: "Previous period") }
+          ) %>
 
-      <span class="px-1">
-        <%= t("reports.index.showing_period",
-              start: @start_date.strftime("%b %-d, %Y"),
-              end: @end_date.strftime("%b %-d, %Y")) %>
-      </span>
+          <% if @period_nav[:next_url].blank? %>
+            <button disabled aria-label="<%= t("reports.index.next_period", default: "Next period") %>" class="text-subdued inline-flex items-center justify-center w-9 h-9 rounded-lg cursor-not-allowed">
+              <%= icon("chevron-right", color: "current") %>
+            </button>
+          <% else %>
+            <%= render DS::Link.new(
+              variant: "icon",
+              icon: "chevron-right",
+              href: @period_nav[:next_url],
+              aria: { label: t("reports.index.next_period", default: "Next period") }
+            ) %>
+          <% end %>
+        </div>
 
-      <% if @period_nav %>
-        <% if @period_nav[:next_url] %>
-          <%= link_to @period_nav[:next_url], class: "p-1 rounded-md hover:bg-surface-hover text-secondary hover:text-primary transition-colors", aria: { label: "Next period" } do %>
-            <%= icon("chevron-right", size: "sm") %>
+        <% if [:monthly, :quarterly, :ytd].include?(@period_type) %>
+          <%= render DS::Popover.new(variant: "button") do |popover| %>
+            <% popover.with_button class: "flex items-center gap-1 hover:bg-surface-hover cursor-pointer rounded-md p-2" do %>
+              <span class="text-primary font-medium text-lg lg:text-base">
+                <%= t("reports.index.showing_period", start: @start_date.strftime("%b %-d, %Y"), end: @end_date.strftime("%b %-d, %Y")) %>
+              </span>
+              <%= icon("chevron-down") %>
+            <% end %>
+
+            <% popover.with_custom_content do %>
+              <%= render "reports/period_picker", period_type: @period_type, start_date: @start_date %>
+            <% end %>
           <% end %>
         <% else %>
-          <div class="p-1 opacity-30 cursor-not-allowed text-secondary" aria-label="Next period disabled">
-            <%= icon("chevron-right", size: "sm") %>
+          <div class="p-2">
+            <span class="text-primary font-medium text-lg lg:text-base">
+              <%= t("reports.index.showing_period", start: @start_date.strftime("%b %-d, %Y"), end: @end_date.strftime("%b %-d, %Y")) %>
+            </span>
           </div>
         <% end %>
+      <% else %>
+        <div class="p-2">
+          <span class="text-primary font-medium text-lg lg:text-base">
+            <%= t("reports.index.showing_period", start: @start_date.strftime("%b %-d, %Y"), end: @end_date.strftime("%b %-d, %Y")) %>
+          </span>
+        </div>
       <% end %>
     </div>
   </div>
