@@ -38,11 +38,7 @@ class BalanceSheet::AccountGroup
   end
 
   def total
-    if accountable_type == Loan
-      accounts.sum(&:converted_balance)
-    else
-      accounts.reject(&:excluded?).sum(&:converted_balance)
-    end
+    accounts.reject(&:excluded?).sum(&:converted_balance)
   end
 
   def icon
