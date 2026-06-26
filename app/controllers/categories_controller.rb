@@ -4,7 +4,7 @@ class CategoriesController < ApplicationController
   before_action :set_transaction, only: :create
 
   def index
-    @categories = Current.family.categories.alphabetically.to_a
+    @categories = Current.family.categories.alphabetically_by_hierarchy.to_a
     @category_groups = Category::Group.for(@categories)
     @category_ids_with_transactions = category_ids_with_transactions(@categories)
 
@@ -17,7 +17,7 @@ class CategoriesController < ApplicationController
   end
 
   def merge
-    @categories = Current.family.categories.alphabetically
+    @categories = Current.family.categories.alphabetically_by_hierarchy
 
     render layout: turbo_frame_request? ? false : "settings"
   end

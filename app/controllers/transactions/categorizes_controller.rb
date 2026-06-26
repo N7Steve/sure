@@ -17,7 +17,7 @@ class Transactions::CategorizesController < ApplicationController
     end
 
     @group      = groups.first
-    @categories = Current.family.categories.alphabetically
+    @categories = Current.family.categories.alphabetically_by_hierarchy
     @total_uncategorized = uncategorized_count
   end
 
@@ -49,7 +49,7 @@ class Transactions::CategorizesController < ApplicationController
         if remaining_ids.empty?
           render turbo_stream: turbo_stream.action(:redirect, transactions_categorize_path(position: @position))
         else
-          @categories = Current.family.categories.alphabetically
+          @categories = Current.family.categories.alphabetically_by_hierarchy
           streams = entry_ids.map { |id| turbo_stream.remove("categorize_entry_#{id}") }
           remaining_entries.each do |entry|
             streams << turbo_stream.replace(
