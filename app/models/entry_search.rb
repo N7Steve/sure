@@ -16,10 +16,28 @@ class EntrySearch
     def apply_search_filter(scope, search)
       return scope if search.blank?
 
+      terms = search.to_s.split.filter_map do |term|
+        sanitized = ActiveRecord::Base.sanitize_sql_like(term)
+        "%#{sanitized}%" if sanitized.present?
+      end
+
+      return scope if terms.blank?
+
       query = scope
-      query = query.where("entries.name ILIKE :search OR entries.notes ILIKE :search",
-        search: "%#{ActiveRecord::Base.sanitize_sql_like(search)}%"
-      )
+        .joins(<<~SQL.squish)
+          LEFT JOIN transactions search_transactions
+            ON search_transactions.id = entries.entryable_id
+            AND entries.entryable_type = 'Transaction'
+        SQL
+        .joins("LEFT JOIN merchants search_merchants ON search_merchants.id = search_transactions.merchant_id")
+
+      terms.each do |term|
+        query = query.where(
+          "entries.name ILIKE :term OR entries.notes ILIKE :term OR search_merchants.name ILIKE :term",
+          term: term
+        )
+      end
+
       query
     end
 

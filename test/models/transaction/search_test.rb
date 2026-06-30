@@ -533,6 +533,42 @@ class Transaction::SearchTest < ActiveSupport::TestCase
     assert_not_includes result_ids, no_match.entryable.id
   end
 
+  test "search matches merchant and entry name terms together" do
+    merchant = merchants(:amazon)
+
+    combined_match = create_transaction(
+      account: @checking_account,
+      amount: 100,
+      kind: "standard",
+      name: "Cascos gaming",
+      merchant: merchant
+    )
+
+    merchant_only = create_transaction(
+      account: @checking_account,
+      amount: 50,
+      kind: "standard",
+      name: "Monitor",
+      merchant: merchant
+    )
+
+    name_only = create_transaction(
+      account: @checking_account,
+      amount: 75,
+      kind: "standard",
+      name: "Cascos gaming"
+    )
+
+    merchant_results = Transaction::Search.new(@family, filters: { search: "amazon" }).transactions_scope.pluck(:id)
+    combined_results = Transaction::Search.new(@family, filters: { search: "amazon cascos" }).transactions_scope.pluck(:id)
+
+    assert_includes merchant_results, combined_match.entryable.id
+    assert_includes merchant_results, merchant_only.entryable.id
+    assert_includes combined_results, combined_match.entryable.id
+    assert_not_includes combined_results, merchant_only.entryable.id
+    assert_not_includes combined_results, name_only.entryable.id
+  end
+
   test "uncategorized filter returns same results across all supported locales" do
     # Create uncategorized transactions
     uncategorized1 = create_transaction(

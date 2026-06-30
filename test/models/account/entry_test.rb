@@ -67,6 +67,25 @@ class EntryTest < ActiveSupport::TestCase
     assert_equal 0, family.entries.search(params).size
   end
 
+  test "can search transaction entries by merchant and name terms" do
+    family = families(:empty)
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    merchant = family.merchants.create! name: "Amazon"
+
+    matching_entry = create_transaction(account: account, name: "Cascos gaming", merchant: merchant)
+    merchant_only_entry = create_transaction(account: account, name: "Monitor", merchant: merchant)
+    name_only_entry = create_transaction(account: account, name: "Cascos gaming")
+
+    merchant_results = family.entries.search(search: "amazon").pluck(:id)
+    combined_results = family.entries.search(search: "amazon cascos").pluck(:id)
+
+    assert_includes merchant_results, matching_entry.id
+    assert_includes merchant_results, merchant_only_entry.id
+    assert_includes combined_results, matching_entry.id
+    assert_not_includes combined_results, merchant_only_entry.id
+    assert_not_includes combined_results, name_only_entry.id
+  end
+
   test "status filter matches pending transactions for every supported provider via EntrySearch" do
     family = families(:empty)
     account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
