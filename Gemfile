@@ -81,7 +81,6 @@ gem "rchardet" # Character encoding detection
 gem "redcarpet"
 gem "stripe"
 gem "plaid"
-gem "snaptrade", "~> 2.0"
 gem "httparty"
 gem "rotp", "~> 6.3"
 gem "rqrcode", "~> 3.0"
@@ -92,7 +91,7 @@ gem "pdf-reader", "~> 2.12"
 
 # OpenID Connect, OAuth & SAML authentication
 gem "omniauth", "~> 2.1"
-gem "omniauth-rails_csrf_protection"
+gem "omniauth-rails_csrf_protection", ">= 2.0"
 gem "omniauth_openid_connect"
 gem "omniauth-google-oauth2"
 gem "omniauth-github"

@@ -84,6 +84,7 @@ class IncomeStatement::Totals
           AND a.family_id = :family_id
           AND a.status IN ('draft', 'active')
           AND a.excluded = false
+          AND a.exclude_from_reports = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
         GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded'), (at.kind = 'transfer_from_excluded')
@@ -119,6 +120,7 @@ class IncomeStatement::Totals
           AND a.family_id = :family_id
           AND a.status IN ('draft', 'active')
           AND a.excluded = false
+          AND a.exclude_from_reports = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
         GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded'), (at.kind = 'transfer_from_excluded')

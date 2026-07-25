@@ -1,11 +1,17 @@
 class Transfer::Creator
-  def initialize(family:, source_account_id:, destination_account_id:, date:, amount:, exchange_rate: nil, category_id: nil)
+  def initialize(
+    family:, source_account_id:, destination_account_id:, date:, amount:,
+    exchange_rate: nil, category_id: nil,
+    source_fee_amount: nil, destination_fee_amount: nil
+  )
     @family = family
     @source_account = family.accounts.find(source_account_id) # early throw if not found
     @destination_account = family.accounts.find(destination_account_id) # early throw if not found
     @date = date
     @amount = amount.to_d
     @category_id = category_id
+    @source_fee_amount = source_fee_amount.to_d
+    @destination_fee_amount = destination_fee_amount.to_d
 
     if exchange_rate.present?
       rate_value = exchange_rate.to_d
@@ -17,22 +23,35 @@ class Transfer::Creator
   end
 
   def create
+    raise ArgumentError, "source_fee_amount must be non-negative" if source_fee_amount.negative?
+    raise ArgumentError, "destination_fee_amount must be non-negative" if destination_fee_amount.negative?
+
     transfer = Transfer.new(
       inflow_transaction: inflow_transaction,
       outflow_transaction: outflow_transaction,
-      status: "confirmed"
+      status: "confirmed",
+      amount: amount
     )
 
-    if transfer.save
-      source_account.sync_later
-      destination_account.sync_later
+    Transfer.transaction do
+      if source_fee_amount > 0
+        transfer.fee_transactions << build_source_fee_transaction
+      end
+      if destination_fee_amount > 0
+        transfer.fee_transactions << build_destination_fee_transaction
+      end
+      transfer.save!
     end
+
+    source_account.sync_later
+    destination_account.sync_later
 
     transfer
   end
 
   private
-    attr_reader :family, :source_account, :destination_account, :date, :amount, :exchange_rate, :category_id
+    attr_reader :family, :source_account, :destination_account, :date, :amount,
+                :exchange_rate, :category_id, :source_fee_amount, :destination_fee_amount
 
     def outflow_transaction
       name = "#{name_prefix} to #{destination_account.name}"
@@ -48,11 +67,11 @@ class Transfer::Creator
         kind: kind,
         category: resolved_category,
         entry: source_account.entries.build(
-          amount: amount.abs,
+          amount: amount,
           currency: source_account.currency,
           date: date,
           name: name,
-          user_modified: true, # Protect from provider sync claiming this entry
+          user_modified: true,
         )
       )
     end
@@ -67,29 +86,60 @@ class Transfer::Creator
       resolved_category = if category_id.present?
         family.categories.find_by(id: category_id)
       end
+      net_inflow = inflow_converted_amount
 
       Transaction.new(
         kind: Transfer.inflow_kind_for(source_account, destination_account),
         category: resolved_category,
         entry: destination_account.entries.build(
-          amount: inflow_converted_money.amount.abs * -1,
+          amount: net_inflow * -1,
           currency: destination_account.currency,
           date: date,
           name: name,
-          user_modified: true, # Protect from provider sync claiming this entry
+          user_modified: true,
         )
       )
     end
 
-    # If destination account has different currency, its transaction should show up as converted
-    # Uses user-provided exchange rate if available, otherwise requires a provider rate
-    def inflow_converted_money
+    def build_source_fee_transaction
+      fee_category = find_or_create_fees_category(source_account.family)
+      Transaction.new(
+        kind: "standard",
+        category: fee_category,
+        entry: source_account.entries.build(
+          amount: source_fee_amount,
+          currency: source_account.currency,
+          date: date,
+          name: "Transfer fee — #{name_prefix} to #{destination_account.name}",
+        )
+      )
+    end
+
+    def build_destination_fee_transaction
+      fee_category = find_or_create_fees_category(destination_account.family)
+      Transaction.new(
+        kind: "standard",
+        category: fee_category,
+        entry: destination_account.entries.build(
+          amount: destination_fee_amount,
+          currency: destination_account.currency,
+          date: date,
+          name: "Transfer fee — #{name_prefix} from #{source_account.name}",
+        )
+      )
+    end
+
+    def find_or_create_fees_category(family)
+      family.categories.find_or_create_by!(name: I18n.t("models.category.defaults.fees"))
+    end
+
+    def inflow_converted_amount
       Money.new(amount.abs, source_account.currency)
            .exchange_to(
              destination_account.currency,
              date: date,
              custom_rate: exchange_rate
-           )
+           ).amount
     end
 
     def outflow_transaction_kind

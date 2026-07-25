@@ -16,6 +16,9 @@ en:
       troubleshoot: Troubleshoot
       enable: Enable account
       disable: Disable account
+      exclude_from_reports: Exclude from all reports
+      include_in_reports: Include in reports
+      excluded_from_reports_indicator: Excluded from reports
       set_default: Set as default
       remove_default: Unset default
       default_label: Default
@@ -59,6 +62,9 @@ en:
       exclude_from_reports_description: Excluded accounts are hidden from reports and net worth calculations.
       archive_label: Archive account
       archive_description: Archived accounts are hidden from the sidebar but still count in your net worth and reports.
+      exclude_from_reports: Exclude from all reports
+      enable_category_matcher_label: Enable category matcher
+      enable_category_matcher_hint: When enabled, the provider's suggested category is applied to imported transactions. Disable to leave new transactions uncategorized.
     index:
       accounts: Accounts
       account_groups:
@@ -66,6 +72,9 @@ en:
         active: Active
         excluded: Excluded
         archived: Archived
+      cancel_sync: Cancel sync
+      manual_accounts:
+        other_accounts: Other accounts
       new_account: New account
       sync: Sync all
     sync_all:
@@ -133,6 +142,8 @@ en:
         manage: Manage accounts
         sharing: Sharing
         statements: Statements
+        exclude_from_reports: Exclude from all reports
+        include_in_reports: Include in reports
     update:
       success: "%{type} account updated"
     sidebar:

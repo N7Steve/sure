@@ -27,10 +27,11 @@ class InvestmentFlowStatement
       .where(kind: %w[standard investment_contribution])
       .where(investment_activity_label: %w[Contribution Withdrawal])
 
+    account_scope = family.accounts.data_visible.included_in_reports
     if user
-      account_ids = family.accounts.included_in_finances_for(user).select(:id)
-      scope = scope.where(entries: { account_id: account_ids })
+      account_scope = account_scope.included_in_finances_for(user)
     end
+    scope = scope.where(entries: { account_id: account_scope.select(:id) })
 
     contributions, withdrawals = scope.pick(
       CONTRIBUTIONS_TOTAL_SQL,

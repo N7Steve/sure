@@ -436,10 +436,13 @@ class ReportsController < ApplicationController
       transactions = Transaction
         .joins(:entry)
         .joins(entry: :account)
-        .where(accounts: { family_id: Current.family.id }).merge(Account.data_visible)
+        .where(accounts: { family_id: Current.family.id })
+        .merge(Account.data_visible)
+        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
         .includes(entry: :account, category: :parent)
+      transactions = exclude_tax_advantaged_accounts(transactions)
 
       # Apply filters (includes finance account scoping)
       transactions = apply_transaction_filters(transactions)
@@ -448,9 +451,12 @@ class ReportsController < ApplicationController
       trades = Trade
         .joins(:entry)
         .joins(entry: :account)
-        .where(accounts: { family_id: Current.family.id }).merge(Account.data_visible)
+        .where(accounts: { family_id: Current.family.id })
+        .merge(Account.data_visible)
+        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Trade", excluded: false, date: @period.date_range })
         .includes(entry: :account, category: :parent)
+      trades = exclude_tax_advantaged_accounts(trades)
 
       trades = apply_entry_filters(trades)
 
@@ -620,8 +626,10 @@ class ReportsController < ApplicationController
       # Get sell trades in period with realized gains
       # Eager-load security, account, and accountable to avoid N+1
       sell_trades = Current.family.trades
-        .joins(:entry)
+        .joins(entry: :account)
         .where(entries: { date: @period.date_range })
+        .merge(Account.data_visible)
+        .merge(Account.included_in_reports)
         .where("trades.qty < 0")
         .includes(:security, entry: { account: :accountable })
         .to_a
@@ -720,13 +728,19 @@ class ReportsController < ApplicationController
         { name: group.name, total: Money.new(group.total, currency) }
       end.reject { |g| g[:total].zero? }
 
+      # Monthly net worth series with per-account-group breakdown for the chart
+      breakdown_series = BalanceSheet::NetWorthBreakdownSeriesBuilder
+        .new(Current.family, user: Current.user)
+        .breakdown_series(period: @period)
+
       {
         current_net_worth: Money.new(current_net_worth, currency),
         total_assets: Money.new(total_assets, currency),
         total_liabilities: Money.new(total_liabilities, currency),
         trend: trend,
         asset_groups: asset_groups,
-        liability_groups: liability_groups
+        liability_groups: liability_groups,
+        breakdown_series: breakdown_series
       }
     end
 
@@ -739,6 +753,13 @@ class ReportsController < ApplicationController
       end
 
       scope
+    end
+
+    def exclude_tax_advantaged_accounts(scope)
+      tax_advantaged_account_ids = Current.family.tax_advantaged_account_ids
+      return scope if tax_advantaged_account_ids.blank?
+
+      scope.where.not(accounts: { id: tax_advantaged_account_ids })
     end
 
     # Filters applicable to both transactions and trades (entry-level + category)
@@ -792,10 +813,13 @@ class ReportsController < ApplicationController
       transactions = Transaction
         .joins(:entry)
         .joins(entry: :account)
-        .where(accounts: { family_id: Current.family.id }).merge(Account.data_visible)
+        .where(accounts: { family_id: Current.family.id })
+        .merge(Account.data_visible)
+        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
         .includes(entry: :account, category: [])
+      transactions = exclude_tax_advantaged_accounts(transactions)
 
       transactions = apply_transaction_filters(transactions)
 
@@ -828,10 +852,13 @@ class ReportsController < ApplicationController
       transactions = Transaction
         .joins(:entry)
         .joins(entry: :account)
-        .where(accounts: { family_id: Current.family.id }).merge(Account.data_visible)
+        .where(accounts: { family_id: Current.family.id })
+        .merge(Account.data_visible)
+        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
         .includes(entry: :account, category: [])
+      transactions = exclude_tax_advantaged_accounts(transactions)
 
       transactions = apply_transaction_filters(transactions)
 
@@ -1227,64 +1254,4 @@ class ReportsController < ApplicationController
       true
     end
 
-    def build_period_navigation
-      # Called at the end of setup_report_data, so @start_date and @end_date are guaranteed to be set.
-      case @period_type
-      when :monthly
-        prev_start = @start_date.beginning_of_month - 1.month
-        prev_end   = prev_start.end_of_month
-        next_start = @start_date.beginning_of_month + 1.month
-        next_end   = next_start.end_of_month
-        at_latest  = @start_date.beginning_of_month >= Date.current.beginning_of_month
-      when :quarterly
-        prev_start = (@start_date.beginning_of_quarter - 1.day).beginning_of_quarter
-        prev_end   = prev_start.end_of_quarter
-        next_start = @end_date.end_of_quarter + 1.day
-        next_end   = next_start.end_of_quarter
-        at_latest  = @start_date.beginning_of_quarter >= Date.current.beginning_of_quarter
-      when :ytd
-        prev_year  = @start_date.year - 1
-        prev_start = Date.new(prev_year, 1, 1)
-        prev_end   = Date.new(prev_year, 12, 31)
-        next_year  = @start_date.year + 1
-        next_start = Date.new(next_year, 1, 1)
-        next_end   = next_year == Date.current.year ? Date.current : Date.new(next_year, 12, 31)
-        at_latest  = @start_date.year >= Date.current.year
-      when :last_6_months
-        prev_start = @start_date.beginning_of_month - 6.months
-        prev_end   = prev_start + 6.months - 1.day
-        candidate_start = @start_date.beginning_of_month + 6.months
-        if candidate_start + 6.months >= Date.current.beginning_of_month
-          next_end   = Date.current.end_of_month
-          next_start = (next_end + 1.day - 6.months).beginning_of_month
-        else
-          next_start = candidate_start
-          next_end   = next_start + 6.months - 1.day
-        end
-        at_latest  = @end_date >= Date.current.end_of_month
-      else
-        return nil
-      end
-
-      { prev_start: prev_start, prev_end: prev_end, next_start: next_start, next_end: next_end, at_latest: at_latest, label: period_label }
-    end
-
-    def period_label
-      case @period_type
-      when :monthly
-        I18n.l(@start_date, format: :month_year)
-      when :quarterly
-        t("reports.index.period_label.quarterly", quarter: @start_date.quarter, year: @start_date.year)
-      when :ytd
-        if @start_date.year == Date.current.year
-          t("reports.index.period_label.ytd", year: @start_date.year)
-        else
-          t("reports.index.period_label.past_year", year: @start_date.year)
-        end
-      when :last_6_months
-        t("reports.index.period_label.last_6_months",
-          start: I18n.l(@start_date, format: :short_month_year),
-          end: I18n.l(@end_date, format: :short_month_year))
-      end
-    end
 end
