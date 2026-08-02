@@ -1,4 +1,4 @@
-<%= render DS::Dialog.new(scrollable: false, content_class: "lg:max-h-none lg:overflow-y-auto") do |dialog| %>
+<%= render DS::Dialog.new(scrollable: false, content_class: "lg:max-h-none lg:overflow-visible") do |dialog| %>
   <% dialog.with_header(title: t(".new_transaction")) %>
   <% dialog.with_body do %>
     <%= render "form",

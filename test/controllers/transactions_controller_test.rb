@@ -588,6 +588,18 @@ end
     end
   end
 
+  test "new dialog allows dropdown menus to overflow its bounds" do
+    get new_transaction_url
+
+    assert_response :success
+    assert_select "dialog > div > div" do |elements|
+      classes = elements.first["class"].split
+
+      assert_includes classes, "lg:overflow-visible"
+      refute_includes classes, "lg:overflow-y-auto"
+    end
+  end
+
   test "new preloads transaction form option data" do
     family = families(:empty)
     user = users(:empty)
