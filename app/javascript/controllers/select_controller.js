@@ -45,7 +45,13 @@ export default class extends Controller {
   }
 
   toggle = () => {
-    this.isOpen ? this.close() : this.openMenu()
+    if (this.isOpen) {
+      this.close()
+      return
+    }
+
+    this.openMenu()
+    requestAnimationFrame(() => this.focusSearch())
   }
 
   // Tab lands on the trigger — open the menu but keep focus here so the
