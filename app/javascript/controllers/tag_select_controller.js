@@ -45,7 +45,15 @@ export default class extends Controller {
     event.preventDefault();
     if (this.disabledValue) return;
 
-    this.isOpen ? this.close() : this.open();
+    if (this.isOpen) {
+      this.close();
+      return;
+    }
+
+    this.open();
+    requestAnimationFrame(() => {
+      this.searchTarget.focus({ preventScroll: true });
+    });
   }
 
   open(focusOption = false) {
