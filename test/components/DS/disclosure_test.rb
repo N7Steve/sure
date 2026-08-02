@@ -36,4 +36,11 @@ class DS::DisclosureTest < ViewComponent::TestCase
     assert_selector "details[data-controller='color-icon-picker']"
     assert_selector "summary.custom-summary", text: "trigger"
   end
+
+  test "animated disclosure connects its controller and marks its content" do
+    render_inline(DS::Disclosure.new(title: "More", animated: true)) { "Animated body" }
+
+    assert_selector "details[data-controller='DS--disclosure']"
+    assert_selector "details > div[data-DS--disclosure-target='content']", text: "Animated body"
+  end
 end

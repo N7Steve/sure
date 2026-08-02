@@ -600,6 +600,23 @@ end
     end
   end
 
+  test "new form uses the compact primary field layout" do
+    get new_transaction_url
+
+    assert_response :success
+    assert_select "div.grid.grid-cols-2" do
+      assert_select "input[name='entry[amount]']"
+      assert_select "input[name='entry[date]']"
+    end
+    assert_select "input[name='entry[entryable_attributes][merchant_id]']", count: 1
+    assert_select "[data-controller~='tag-select']", count: 1
+    assert_select "details[data-controller~='DS--disclosure']" do
+      assert_select "textarea[name='entry[notes]']", count: 1
+      assert_select "input[name='entry[entryable_attributes][merchant_id]']", count: 0
+      assert_select "[data-controller~='tag-select']", count: 0
+    end
+  end
+
   test "new preloads transaction form option data" do
     family = families(:empty)
     user = users(:empty)
