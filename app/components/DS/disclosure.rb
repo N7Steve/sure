@@ -3,7 +3,7 @@ class DS::Disclosure < DesignSystemComponent
 
   VARIANTS = %i[default card card_inset inline bare].freeze
 
-  attr_reader :title, :align, :open, :variant, :summary_class_override, :summary_aria_label, :body_class, :animated, :opts
+  attr_reader :title, :align, :open, :variant, :summary_class_override, :summary_aria_label, :body_class, :opts
 
   # `:default` — bg-surface summary, no chrome on the `<details>`. Use
   # for inline expanders that sit inside a parent card (the summary
@@ -37,10 +37,7 @@ class DS::Disclosure < DesignSystemComponent
   # `body_class:` styles the wrapper around the disclosure body (ignored for
   # `:bare`, which renders no wrapper). Defaults to `mt-2` (the standard gap
   # below the summary). Pass `nil`/`""` to drop it on non-bare variants.
-  #
-  # `animated:` smoothly expands and collapses the body while respecting the
-  # user's reduced-motion preference.
-  def initialize(title: nil, align: "right", open: false, variant: :default, summary_class: nil, summary_aria_label: nil, body_class: "mt-2", animated: false, **opts)
+  def initialize(title: nil, align: "right", open: false, variant: :default, summary_class: nil, summary_aria_label: nil, body_class: "mt-2", **opts)
     @title = title
     @align = align.to_sym
     @open = open
@@ -48,7 +45,6 @@ class DS::Disclosure < DesignSystemComponent
     @summary_class_override = summary_class
     @summary_aria_label = summary_aria_label
     @body_class = body_class
-    @animated = animated
     @opts = opts
 
     raise ArgumentError, "Invalid variant: #{@variant.inspect}. Must be one of #{VARIANTS.inspect}" unless VARIANTS.include?(@variant)
@@ -71,18 +67,7 @@ class DS::Disclosure < DesignSystemComponent
   # separately to avoid duplicate-keyword collisions when forwarding to
   # `tag.details`.
   def details_opts
-    forwarded_opts = opts.except(:class)
-    return forwarded_opts unless animated
-
-    data = forwarded_opts.fetch(:data, {})
-    existing_controller = data[:controller] || data["controller"]
-    merged_data = data.except(:controller, "controller").merge(
-      controller: [ existing_controller, "DS--disclosure" ].compact.join(" ")
-    )
-
-    forwarded_opts.merge(
-      data: merged_data
-    )
+    opts.except(:class)
   end
 
   def summary_classes

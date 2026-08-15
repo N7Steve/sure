@@ -4,7 +4,7 @@ class Transfer < ApplicationRecord
 
   has_many :fee_transactions, class_name: "Transaction", dependent: :destroy
 
-  attr_accessor :source_fee_amount, :destination_fee_amount
+  attr_accessor :source_fee_amount, :destination_fee_amount, :tag_ids
 
   enum :status, { pending: "pending", confirmed: "confirmed" }
 
@@ -137,6 +137,51 @@ class Transfer < ApplicationRecord
       super
       inflow_entry&.destroy!
       outflow_entry&.destroy!
+    end
+  end
+
+  def confirm!
+    update!(status: "confirmed")
+  end
+
+  def date
+    inflow_transaction&.entry&.date
+  end
+
+  def sync_account_later
+    inflow_transaction&.entry&.sync_account_later
+    outflow_transaction&.entry&.sync_account_later
+    fee_transactions.each { |t| t.entry&.sync_account_later }
+  end
+
+  def to_account
+    inflow_transaction&.entry&.account
+  end
+
+  def from_account
+    outflow_transaction&.entry&.account
+  end
+
+  def reject!
+    Transfer.transaction do
+      RejectedTransfer.find_or_create_by!(inflow_transaction_id: inflow_transaction_id, outflow_transaction_id: outflow_transaction_id)
+      destroy!
+    end
+  end
+
+  def destroy!
+    Transfer.transaction do
+      [ inflow_transaction, outflow_transaction ].each do |transaction|
+        next if transaction.nil?
+        next unless Transaction.exists?(transaction.id)
+        begin
+          transaction.update!(kind: "standard")
+        rescue ActiveRecord::RecordNotFound
+        rescue NoMethodError
+          next
+        end
+      end
+      super
     end
   end
 

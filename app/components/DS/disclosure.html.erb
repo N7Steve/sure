@@ -36,7 +36,7 @@
   <% if variant == :bare %>
     <%= content %>
   <% else %>
-    <%= tag.div class: body_class.presence, data: { DS__disclosure_target: ("content" if animated) }.compact do %>
+    <%= tag.div class: body_class.presence do %>
       <%= content %>
     <% end %>
   <% end %>

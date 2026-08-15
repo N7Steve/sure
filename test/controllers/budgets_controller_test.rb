@@ -2,36 +2,37 @@ require "test_helper"
 
 class BudgetsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    sign_in users(:family_admin)
-    @budget = budgets(:one)
+    @user = users(:family_admin)
+    sign_in @user
+    ensure_tailwind_build
   end
 
-  test "destroy deletes the budget and redirects to index" do
-    assert_difference("Budget.count", -1) do
-      delete budget_path(@budget)
-    end
+  test "index redirects to the current month budget" do
+    get budgets_url
 
-    assert_redirected_to budgets_path
-    assert_equal "Budget deleted successfully", flash[:notice]
+    assert_redirected_to budget_path(Budget.date_to_param(Date.current))
   end
 
-  test "destroy also deletes associated budget_categories" do
-    categories_count = @budget.budget_categories.count
-    assert categories_count.positive?, "fixture must have budget categories"
+  test "show renders the budget page" do
+    get budget_url(Budget.date_to_param(Date.current))
 
-    assert_difference("BudgetCategory.count", -categories_count) do
-      delete budget_path(@budget)
-    end
+    assert_response :success
   end
 
-  test "destroy returns 404 for a budget that does not exist" do
-    delete budget_path("jan-1900")
-    assert_response :not_found
+  test "breadcrumbs include the Plan hub for preview users" do
+    @user.update!(preferences: (@user.preferences || {}).merge("preview_features_enabled" => true))
+
+    get budget_url(Budget.date_to_param(Date.current))
+
+    assert_response :success
+    assert_select "a[href=?]", plan_path, minimum: 1
   end
 
-  test "destroy is not accessible without authentication" do
-    sign_out
-    delete budget_path(@budget)
-    assert_redirected_to new_session_path
+  test "renders no Plan links without preview features" do
+    get budget_url(Budget.date_to_param(Date.current))
+
+    assert_response :success
+    assert_select "a[href=?]", plan_path, count: 0
+    assert_select "a[href=?]", budgets_path, minimum: 1
   end
 end

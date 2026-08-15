@@ -18,6 +18,10 @@ fr:
           title: Catégorisation des transactions
     appearances:
       show:
+        modals_title: Fenêtres modales
+        modals_subtitle: Personnaliser le comportement des fenêtres modales
+        disable_modal_click_outside_title: Garder les fenêtres modales ouvertes au clic extérieur
+        disable_modal_click_outside_description: Empêche les fenêtres modales de se fermer en cliquant à l'extérieur. Utile pour éviter de perdre accidentellement des modifications non sauvegardées.
         dashboard_subtitle: Personnalisez l'affichage du tableau de bord
         dashboard_title: Tableau de bord
         dashboard_two_column_description: Affiche les widgets du tableau de bord sur deux colonnes sur les grands écrans. Lorsque cette option est désactivée, les widgets sont empilés dans une seule colonne.
@@ -113,8 +117,8 @@ fr:
         page_title: Serveur MCP
         revoke: Révoquer
         revoke_confirm: Révoquer l'accès pour ce client ?
-        step_1: Ouvrez Claude.ai et allez dans Paramètres → Intégrations.
-        step_2: Cliquez sur "Ajouter l'intégration" et collez l'URL du serveur MCP ci-dessus.
+        step_1: Ouvrez Claude.ai et allez dans Paramètres → Personnaliser → Connecteurs.
+        step_2: Cliquez sur "Ajouter un connecteur" et collez l'URL du serveur MCP ci-dessus.
         step_3: Cliquez sur Connecter — vous serez redirigé vers Sure pour vous connecter et autoriser l'accès.
         step_4: Une fois autorisé, Claude peut lire vos comptes, transactions et données de solde.
         unknown_client: Client inconnu

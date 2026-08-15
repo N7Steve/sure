@@ -51,7 +51,9 @@ class PagesController < ApplicationController
 
     @cashflow_sankey_data = build_cashflow_sankey_data(net_totals, income_totals, expense_totals, family_currency)
     @outflows_data = build_outflows_donut_data(net_totals)
-    @feed_insights = Current.family.insights.visible.ordered.limit(3)
+    # Preview-gated: skip the query outright rather than loading rows the
+    # section won't be built from.
+    @feed_insights = preview_features_enabled? ? Current.family.insights.visible.ordered.limit(Insight::FEED_LIMIT) : Insight.none
 
     @money_flow_accounts = income_statement.eligible_accounts
     @money_flow_month = money_flow_month_param
@@ -76,6 +78,7 @@ class PagesController < ApplicationController
   end
 
   def changelog
+    @breadcrumbs = [ [ t("breadcrumbs.home"), root_path ], [ t("breadcrumbs.changelog"), nil ] ]
     @release_notes = github_provider.fetch_latest_release_notes
 
     # Fallback if no release notes are available
@@ -93,6 +96,7 @@ class PagesController < ApplicationController
   end
 
   def feedback
+    @breadcrumbs = [ [ t("breadcrumbs.home"), root_path ], [ t("breadcrumbs.feedback"), nil ] ]
     render layout: "settings"
   end
 
@@ -118,8 +122,27 @@ class PagesController < ApplicationController
       end
     end
 
+    # Preview-gated, and omitted from the section list entirely rather than
+    # left in it with `visible: false`. Dropping it here means the two
+    # downstream behaviors fall out for free: the saved-order lookup finds
+    # nothing to map, and the insights_feed unshift special-case never fires.
+    def insights_feed_section
+      return nil unless preview_features_enabled?
+
+      {
+        key: "insights_feed",
+        title: "pages.dashboard.insights_feed.title",
+        partial: "pages/dashboard/insights_feed",
+        layout: section_layout("insights_feed"),
+        locals: { insights: @feed_insights },
+        visible: @feed_insights.any?,
+        collapsible: true
+      }
+    end
+
     def build_dashboard_sections
       all_sections = [
+        insights_feed_section,
         {
           key: "insights_feed",
           title: "pages.dashboard.insights_feed.title",
@@ -183,7 +206,7 @@ class PagesController < ApplicationController
           visible: @accounts.any?,
           collapsible: true
         }
-      ]
+      ].compact
 
       # Order sections according to user preference
       section_order = Current.user.dashboard_section_order
@@ -459,6 +482,12 @@ class PagesController < ApplicationController
         {
           date: month_start,
           label: I18n.l(month_start, format: :short_month_year),
+          # Fallback for the axis when the full label does not fit its band.
+          # `short_month_year` is only short in some locales — "Mar 2026" in
+          # English, but "Mar de 2026" in ca/es/pt, which is wide enough to
+          # collide with its neighbours on a phone. The bar chart measures the
+          # rendered labels and drops to this when they overlap.
+          short_label: I18n.l(month_start, format: "%b"),
           income: totals.income_money.amount.to_f.round(2),
           expense: totals.expense_money.amount.to_f.round(2),
           highlighted: month_start == selected_month,

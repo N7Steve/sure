@@ -54,6 +54,7 @@ zh-TW:
       general_merchant: "General"
       linked_with_provider: 已與 %{provider} 連結
     index:
+      title: 交易紀錄
       include_excluded_accounts: 包含已排除的帳戶
       transaction: 筆交易
       transactions: 筆交易

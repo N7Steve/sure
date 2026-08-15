@@ -65,13 +65,13 @@ tr:
       institution_name_placeholder: örn. Chase Bank
       name_label: Hesap adı
       name_placeholder: Örnek hesap adı
+      notes_label: Notlar
+      notes_placeholder: Hesap numaraları, sort code, IBAN, routing numarası gibi
+        ek bilgileri saklayın.
       exclude_from_reports_label: Raporlardan ve ölçümlerden hariç tut
       exclude_from_reports_description: Hariç tutulan hesaplar raporlarda ve net değer hesaplamalarında gizlenir.
       archive_label: Hesabı arşivle
       archive_description: Arşivlenen hesaplar kenar çubuğundan gizlenir ancak net değerinizde ve raporlarda sayılmaya devam eder.
-      notes_label: Notlar
-      notes_placeholder: Hesap numaraları, sort code, IBAN, routing numarası gibi
-        ek bilgileri saklayın.
       opening_balance_date_label: Açılış bakiyesi tarihi
     accountable_group:
       excluded_badge: "(Hariç tutulan)"

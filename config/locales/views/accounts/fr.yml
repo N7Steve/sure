@@ -76,6 +76,8 @@ fr:
         active: Actif
         excluded: Exclu
         archived: Archivé
+      manual_accounts:
+        other_accounts: Autres comptes
       new_account: Nouveau compte
       sync: Tout synchroniser
     new:

@@ -108,6 +108,60 @@ export default class extends Controller {
     this.focusOption(selected || visible[0])
   }
 
+  // Tab lands on the trigger — open the menu but keep focus here so the
+  // browser doesn't continue Tab into the listbox and skip to the next field.
+  // Skip when we just closed via Escape/Enter and re-focused the trigger:
+  // keyboard modality keeps :focus-visible, which would otherwise reopen.
+  handleButtonFocus() {
+    if (this.isOpen) return
+    if (this.suppressReopenOnFocus) return
+    if (!this.buttonTarget.matches(":focus-visible")) return
+    this.openMenu()
+  }
+
+  focusTriggerWithoutReopening() {
+    this.suppressReopenOnFocus = true
+    this.buttonTarget.focus()
+    requestAnimationFrame(() => { this.suppressReopenOnFocus = false })
+  }
+
+  // Move focus to the next/previous tab stop after the trigger. Used when Tab
+  // closes the listbox: options are tabindex="-1" and close() sets inert on
+  // the menu, so the browser can't reliably continue native Tab navigation.
+  focusAdjacentTabStop(reverse = false) {
+    const scope = this.element.closest("dialog") || document
+    const focusables = this.#focusablesIn(scope)
+    const index = focusables.indexOf(this.buttonTarget)
+    if (index === -1) return
+
+    const next = focusables[index + (reverse ? -1 : 1)]
+    next?.focus()
+  }
+
+  #focusablesIn(scope) {
+    return Array.from(scope.querySelectorAll(FOCUSABLE_SELECTOR)).filter((el) => {
+      if (el.closest("[inert]")) return false
+      return el.offsetParent !== null || el === document.activeElement
+    })
+  }
+
+  // Arrow / Space / Enter from a closed trigger — open and move focus in.
+  openAndFocusMenu() {
+    this.openMenu()
+    requestAnimationFrame(() => {
+      if (this.focusSearch()) return
+      this.focusSelectedOrFirstOption()
+    })
+  }
+
+  focusSelectedOrFirstOption() {
+    const visible = this.visibleOptions()
+    if (visible.length === 0) return
+
+    const selected = visible.find(opt => opt.getAttribute("aria-selected") === "true")
+    this.focusOption(selected || visible[0])
+  }
+
   openMenu() {
     this.isOpen = true
     this.setMenuInert(false)
@@ -376,7 +430,7 @@ export default class extends Controller {
     const shouldOpenUp = placement === "up" || (placement === "auto" && spaceBelow < menuHeight && spaceAbove > spaceBelow)
 
     this.menuTarget.style.left = "0"
-    this.menuTarget.style.width = "100%"
+    this.menuTarget.style.right = ""
     this.menuTarget.style.top = ""
     this.menuTarget.style.bottom = ""
     this.menuTarget.style.overflowY = "auto"
@@ -387,6 +441,15 @@ export default class extends Controller {
     } else {
       this.menuTarget.style.top = "100%"
       this.menuTarget.style.maxHeight = `${Math.max(0, spaceBelow - this.offsetValue)}px`
+    }
+
+    // A menu wider than its anchor (e.g. the split dialog's category select)
+    // can spill past the scroll container's right edge and force a horizontal
+    // scrollbar; anchor it to the right edge of the button instead.
+    const menuRect = this.menuTarget.getBoundingClientRect()
+    if (menuRect.right > containerRect.right) {
+      this.menuTarget.style.left = "auto"
+      this.menuTarget.style.right = "0"
     }
   }
 }

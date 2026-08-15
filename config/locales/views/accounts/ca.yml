@@ -9,6 +9,9 @@ ca:
       change_simplefin_account: Canvia el compte de SimpleFIN
       complete_setup: Completa la configuració
       default_label: Per defecte
+      disabled_label: Desactivat
+      excluded_label: Exclòs
+      archived_label: Arxivat
       delete: Elimina el compte
       disable: Desactiva el compte
       edit: Edita
@@ -18,14 +21,10 @@ ca:
       remove_default: Treu com a predeterminat
       set_default: Estableix com a predeterminat
       sharing: Compartició
-      troubleshoot: Resolució de problemes
-      unlink_provider: Desenllaça del proveïdor
       archive: Arxivar compte
       unarchive: Desarxivar compte
-      default_label: Per defecte
-      disabled_label: Desactivat
-      excluded_label: Exclòs
-      archived_label: Arxivat
+      troubleshoot: Resolució de problemes
+      unlink_provider: Desenllaça del proveïdor
     chart:
       data_not_available: Dades no disponibles per al període seleccionat
     confirm_unlink:
@@ -60,18 +59,16 @@ ca:
       name_label: Nom del compte
       name_placeholder: Exemple de nom de compte
       notes_label: Notes
-      notes_placeholder: Emmagatzema informació addicional com números de compte, codis de sortida,
-        IBAN, números de ruta, etc.
+      notes_placeholder: Emmagatzema informació addicional com números de compte,
+        codis de sortida, IBAN, números de ruta, etc.
       exclude_from_reports_label: Excloure dels informes i les mètriques
       exclude_from_reports_description: Els comptes exclosos estan ocults als informes i als càlculs del patrimoni net.
       archive_label: Arxivar compte
       archive_description: Els comptes arxivats s'oculten de la barra lateral però continuen comptant al patrimoni net i els informes.
+      opening_balance_date_label: Data del saldo inicial
     accountable_group:
       excluded_badge: "(Exclòs)"
       archived_badge: "(Arxivat)"
-      notes_placeholder: Emmagatzema informació addicional com números de compte,
-        codis de sortida, IBAN, números de ruta, etc.
-      opening_balance_date_label: Data del saldo inicial
     index:
       accounts: Comptes
       account_groups:
@@ -79,6 +76,9 @@ ca:
         active: Actiu
         excluded: Exclòs
         archived: Arxivat
+      cancel_sync: Cancel·la la sincronització
+      manual_accounts:
+        other_accounts: Altres comptes
       new_account: Nou compte
       sync: Sincronitza-ho tot
     new:

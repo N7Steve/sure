@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_08_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -119,6 +119,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.jsonb "holdings_snapshot_data"
     t.datetime "holdings_snapshot_at"
     t.boolean "excluded", default: false, null: false
+    t.boolean "archived", default: false, null: false
     t.uuid "owner_id"
     t.datetime "disabled_at"
     t.boolean "exclude_from_reports", default: false, null: false
@@ -397,6 +398,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.uuid "parent_id"
     t.string "classification_unused", default: "expense", null: false
     t.string "lucide_icon", default: "shapes", null: false
+    t.datetime "last_used_at"
+    t.index ["family_id", "last_used_at"], name: "index_categories_on_family_id_and_last_used_at"
+    t.index ["family_id", "name"], name: "index_categories_on_family_id_and_name", unique: true
     t.index ["family_id"], name: "index_categories_on_family_id"
   end
 
@@ -1643,6 +1647,49 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.check_constraint "destination_account_id IS NULL OR destination_account_id <> account_id", name: "chk_recurring_txns_transfer_distinct_accounts"
   end
 
+  create_table "redbark_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "redbark_item_id", null: false
+    t.string "name", null: false
+    t.string "redbark_account_id", null: false
+    t.string "connection_id"
+    t.string "account_number"
+    t.string "currency", null: false
+    t.decimal "current_balance", precision: 19, scale: 4
+    t.string "account_status"
+    t.string "account_type"
+    t.string "provider"
+    t.boolean "ignored", default: false, null: false
+    t.jsonb "institution_metadata"
+    t.jsonb "raw_payload"
+    t.jsonb "raw_transactions_payload"
+    t.date "sync_start_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["redbark_item_id", "redbark_account_id"], name: "index_redbark_accounts_on_item_and_account_id", unique: true
+    t.index ["redbark_item_id"], name: "index_redbark_accounts_on_redbark_item_id"
+  end
+
+  create_table "redbark_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "family_id", null: false
+    t.string "name", null: false
+    t.string "institution_id"
+    t.string "institution_name"
+    t.string "institution_domain"
+    t.string "institution_url"
+    t.string "institution_color"
+    t.string "status", default: "good", null: false
+    t.boolean "scheduled_for_deletion", default: false, null: false
+    t.boolean "pending_account_setup", default: false, null: false
+    t.datetime "sync_start_date"
+    t.jsonb "raw_payload"
+    t.jsonb "raw_institution_payload"
+    t.text "api_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id"], name: "index_redbark_items_on_family_id"
+    t.index ["status"], name: "index_redbark_items_on_status"
+  end
+
   create_table "rejected_transfers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "inflow_transaction_id", null: false
     t.uuid "outflow_transaction_id", null: false
@@ -1701,6 +1748,52 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.index ["family_id"], name: "index_rules_on_family_id"
+  end
+
+  create_table "scheduled_payment_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "scheduled_payment_id", null: false
+    t.uuid "entry_id"
+    t.uuid "transfer_entry_id"
+    t.date "scheduled_date", null: false
+    t.string "status", default: "pending", null: false
+    t.text "rejection_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entry_id"], name: "index_scheduled_payment_entries_on_entry_id"
+    t.index ["scheduled_payment_id", "scheduled_date"], name: "index_sp_entries_on_sp_and_date", unique: true
+    t.index ["scheduled_payment_id"], name: "index_scheduled_payment_entries_on_scheduled_payment_id"
+    t.index ["status", "scheduled_date"], name: "index_scheduled_payment_entries_on_status_and_scheduled_date"
+    t.index ["transfer_entry_id"], name: "index_scheduled_payment_entries_on_transfer_entry_id"
+  end
+
+  create_table "scheduled_payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "family_id", null: false
+    t.uuid "account_id", null: false
+    t.uuid "category_id"
+    t.uuid "merchant_id"
+    t.uuid "target_account_id"
+    t.string "title", null: false
+    t.decimal "amount", precision: 19, scale: 4, null: false
+    t.string "currency", null: false
+    t.string "frequency", null: false
+    t.integer "frequency_day", null: false
+    t.date "start_date", null: false
+    t.date "end_date"
+    t.date "next_run_date", null: false
+    t.string "status", default: "active", null: false
+    t.string "payment_type", default: "expense", null: false
+    t.boolean "auto_confirm", default: false
+    t.integer "occurrences_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_scheduled_payments_on_account_id"
+    t.index ["category_id"], name: "index_scheduled_payments_on_category_id"
+    t.index ["family_id", "next_run_date"], name: "index_scheduled_payments_on_family_id_and_next_run_date", where: "((status)::text = 'active'::text)"
+    t.index ["family_id", "status"], name: "index_scheduled_payments_on_family_id_and_status"
+    t.index ["family_id"], name: "index_scheduled_payments_on_family_id"
+    t.index ["merchant_id"], name: "index_scheduled_payments_on_merchant_id"
+    t.index ["next_run_date"], name: "index_scheduled_payments_on_next_run_date"
+    t.index ["target_account_id"], name: "index_scheduled_payments_on_target_account_id"
   end
 
   create_table "securities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2020,6 +2113,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["family_id"], name: "index_tags_on_family_id"
+    t.index ["family_id", "name"], name: "index_tags_on_family_id_and_name", unique: true
   end
 
   create_table "tool_calls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2271,6 +2365,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
     t.datetime "sync_start_date"
     t.text "token", null: false
     t.datetime "updated_at", null: false
+    t.boolean "import_all_history", default: false, null: false
     t.index ["family_id", "profile_id"], name: "index_wise_items_on_family_id_and_profile_id", unique: true
     t.index ["family_id"], name: "index_wise_items_on_family_id"
     t.index ["status"], name: "index_wise_items_on_status"
@@ -2373,6 +2468,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
   add_foreign_key "recurring_transactions", "accounts", on_delete: :cascade
   add_foreign_key "recurring_transactions", "families"
   add_foreign_key "recurring_transactions", "merchants"
+  add_foreign_key "redbark_accounts", "redbark_items"
+  add_foreign_key "redbark_items", "families"
   add_foreign_key "rejected_transfers", "transactions", column: "inflow_transaction_id", on_delete: :cascade
   add_foreign_key "rejected_transfers", "transactions", column: "outflow_transaction_id", on_delete: :cascade
   add_foreign_key "rule_actions", "rules"
@@ -2380,6 +2477,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_19_000002) do
   add_foreign_key "rule_conditions", "rules"
   add_foreign_key "rule_runs", "rules"
   add_foreign_key "rules", "families"
+  add_foreign_key "scheduled_payment_entries", "entries"
+  add_foreign_key "scheduled_payment_entries", "entries", column: "transfer_entry_id"
+  add_foreign_key "scheduled_payment_entries", "scheduled_payments"
+  add_foreign_key "scheduled_payments", "accounts"
+  add_foreign_key "scheduled_payments", "accounts", column: "target_account_id"
+  add_foreign_key "scheduled_payments", "categories"
+  add_foreign_key "scheduled_payments", "families"
+  add_foreign_key "scheduled_payments", "merchants"
   add_foreign_key "security_prices", "securities"
   add_foreign_key "sessions", "impersonation_sessions", column: "active_impersonator_session_id"
   add_foreign_key "sessions", "users"

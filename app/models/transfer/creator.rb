@@ -2,7 +2,7 @@ class Transfer::Creator
   def initialize(
     family:, source_account_id:, destination_account_id:, date:, amount:,
     exchange_rate: nil, category_id: nil,
-    source_fee_amount: nil, destination_fee_amount: nil
+    source_fee_amount: nil, destination_fee_amount: nil, tag_ids: nil
   )
     @family = family
     @source_account = family.accounts.find(source_account_id) # early throw if not found
@@ -12,6 +12,7 @@ class Transfer::Creator
     @category_id = category_id
     @source_fee_amount = source_fee_amount.to_d
     @destination_fee_amount = destination_fee_amount.to_d
+    @tag_ids = Array(tag_ids).reject(&:blank?)
 
     if exchange_rate.present?
       rate_value = exchange_rate.to_d
@@ -41,6 +42,7 @@ class Transfer::Creator
         transfer.fee_transactions << build_destination_fee_transaction
       end
       transfer.save!
+      apply_tags!(transfer) if tag_ids.any?
     end
 
     source_account.sync_later
@@ -51,7 +53,16 @@ class Transfer::Creator
 
   private
     attr_reader :family, :source_account, :destination_account, :date, :amount,
-                :exchange_rate, :category_id, :source_fee_amount, :destination_fee_amount
+                :exchange_rate, :category_id, :source_fee_amount, :destination_fee_amount, :tag_ids
+
+    def apply_tags!(transfer)
+      resolved_ids = family.tags.where(id: tag_ids).pluck(:id)
+      return if resolved_ids.empty?
+
+      [ transfer.outflow_transaction, transfer.inflow_transaction ].each do |transaction|
+        transaction.tag_ids = resolved_ids
+      end
+    end
 
     def outflow_transaction
       name = "#{name_prefix} to #{destination_account.name}"
