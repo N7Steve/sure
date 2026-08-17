@@ -13,7 +13,7 @@ class FamilyDataExportJob < ApplicationJob
     if family_export.transactions_csv?
       result = Family::TransactionCsvExporter.new(family_export).generate
       export_file = result.io
-      content_type = "text/csv"
+      content_type = "text/csv; charset=utf-8"
       family_export.record_count = result.record_count
     else
       exporter = Family::DataExporter.new(family_export.family)

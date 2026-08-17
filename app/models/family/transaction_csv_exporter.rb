@@ -3,11 +3,9 @@ require "csv"
 class Family::TransactionCsvExporter
   Result = Data.define(:io, :record_count)
 
-  HEADERS = %w[
-    date transaction_id entry_id account account_id name merchant amount currency
-    transaction_type parent_category category tags notes status excluded kind
-    transfer_id transfer_direction counterparty_account split_parent_id
-  ].freeze
+  UTF_8_BOM = "\uFEFF"
+  SEMICOLON_LANGUAGES = %w[ca de es fr hu it nb nl pl pt ro ru tr uk vi].freeze
+  HEADERS = %w[source_account destination_account merchant title amount date category tags].freeze
 
   def initialize(family_export)
     @family_export = family_export
@@ -17,7 +15,7 @@ class Family::TransactionCsvExporter
 
   def generate
     count = 0
-    csv_data = CSV.generate do |csv|
+    csv_data = CSV.generate(col_sep: column_separator) do |csv|
       csv << HEADERS
 
       transactions.each do |transaction|
@@ -26,7 +24,7 @@ class Family::TransactionCsvExporter
       end
     end
 
-    Result.new(io: StringIO.new(csv_data), record_count: count)
+    Result.new(io: StringIO.new("#{UTF_8_BOM}#{csv_data}"), record_count: count)
   end
 
   private
@@ -52,7 +50,7 @@ class Family::TransactionCsvExporter
             :tags,
             :merchant,
             { category: :parent },
-            { entry: [ :account, :parent_entry ] },
+            { entry: :account },
             { transfer_as_inflow: { outflow_transaction: { entry: :account } } },
             { transfer_as_outflow: { inflow_transaction: { entry: :account } } }
           )
@@ -100,52 +98,40 @@ class Family::TransactionCsvExporter
       transfer = transaction.transfer
 
       [
-        entry.date&.iso8601,
-        transaction.id,
-        entry.id,
-        spreadsheet_safe(entry.account.name),
-        entry.account_id,
-        spreadsheet_safe(entry.name),
+        spreadsheet_safe(account_name(transfer&.from_account || entry.account)),
+        spreadsheet_safe(account_name(transfer&.to_account)),
         spreadsheet_safe(transaction.merchant&.name),
-        entry.amount.to_s,
-        entry.currency,
-        transaction_type(transaction),
-        spreadsheet_safe(transaction.category&.parent&.name),
-        spreadsheet_safe(transaction.category&.name),
-        spreadsheet_safe(transaction.tags.map(&:name).sort.join(", ")),
-        spreadsheet_safe(entry.notes),
-        transaction.pending? ? "pending" : "confirmed",
-        entry.excluded?,
-        transaction.kind,
-        transfer&.id,
-        transfer_direction(transaction, transfer),
-        spreadsheet_safe(counterparty_account_name(transaction, transfer)),
-        entry.parent_entry_id
+        spreadsheet_safe(entry.name),
+        amount_value(entry.amount),
+        entry.date&.iso8601,
+        spreadsheet_safe(category_name(transaction.category)),
+        spreadsheet_safe(transaction.tags.map(&:name).sort.join(", "))
       ]
     end
 
-    def transaction_type(transaction)
-      return "transfer" if transaction.transfer?
+    def account_name(account)
+      return if account.blank? || !accessible_account_ids.include?(account.id)
 
-      transaction.entry.amount.negative? ? "income" : "expense"
+      account.name
     end
 
-    def transfer_direction(transaction, transfer)
-      return if transfer.blank?
-
-      transfer.inflow_transaction_id == transaction.id ? "inflow" : "outflow"
+    def accessible_account_ids
+      @accessible_account_ids ||= user.accessible_accounts.pluck(:id)
     end
 
-    def counterparty_account_name(transaction, transfer)
-      return if transfer.blank?
+    def category_name(category)
+      return if category.blank?
 
-      counterpart = if transfer.inflow_transaction_id == transaction.id
-        transfer.outflow_transaction
-      else
-        transfer.inflow_transaction
-      end
+      [ category.parent&.name, category.name ].compact.join(" / ")
+    end
 
-      counterpart&.entry&.account&.name
+    def column_separator
+      locale = user.locale.presence || family.locale.presence || I18n.default_locale.to_s
+      SEMICOLON_LANGUAGES.include?(locale.to_s.tr("_", "-").split("-").first) ? ";" : ","
+    end
+
+    def amount_value(amount)
+      column_separator == ";" ? amount.to_s.tr(".", ",") : amount.to_s
     end
 
     def spreadsheet_safe(value)

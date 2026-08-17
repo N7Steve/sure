@@ -43,7 +43,7 @@ class FamilyDataExportJobTest < ActiveJob::TestCase
     export.reload
     assert export.completed?
     assert export.export_file.attached?
-    assert_equal "text/csv", export.export_file.content_type
+    assert_equal "text/csv; charset=utf-8", export.export_file.content_type
     assert_operator export.record_count, :>=, 1
     assert_includes export.export_file.download, "CSV job transaction"
   end

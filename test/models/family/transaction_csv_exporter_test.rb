@@ -6,6 +6,7 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
 
   setup do
     @user = users(:family_admin)
+    @user.update!(locale: "es")
     @family = @user.family
     @account = @user.accessible_accounts.first
     @other_account = @user.accessible_accounts.where.not(id: @account.id).first || @family.accounts.create!(
@@ -23,7 +24,7 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
   end
 
   test "exports only selected dates and accounts and applies category and tag exclusions" do
-    included = create_transaction(
+    create_transaction(
       account: @account,
       name: "Included transaction",
       date: Date.new(2026, 2, 15),
@@ -44,31 +45,73 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     )
 
     result = exporter.generate
-    rows = CSV.parse(result.io.string, headers: true)
+    rows = parse_csv(result)
 
     assert_equal 1, result.record_count
-    assert_equal [ "Included transaction" ], rows.map { |row| row["name"] }
-    assert_equal included.entryable.id, rows.first["transaction_id"]
-    assert_equal "42.5", rows.first["amount"]
-    assert_equal @account.currency, rows.first["currency"]
-    assert_equal "expense", rows.first["transaction_type"]
+    assert_equal Family::TransactionCsvExporter::HEADERS, rows.headers
+    assert_equal [ "Included transaction" ], rows.map { |row| row["title"] }
+    assert_equal @account.name, rows.first["source_account"]
+    assert_nil rows.first["destination_account"]
+    assert_equal "42,5", rows.first["amount"]
+    assert_equal "2026-02-15", rows.first["date"]
+    assert_equal @allowed_category.name, rows.first["category"]
+    assert_equal @allowed_tag.name, rows.first["tags"]
   end
 
   test "includes both date boundaries" do
     create_transaction(account: @account, name: "First day", date: Date.new(2026, 2, 1))
     create_transaction(account: @account, name: "Last day", date: Date.new(2026, 2, 28))
 
-    rows = CSV.parse(exporter.generate.io.string, headers: true)
+    rows = parse_csv(exporter.generate)
 
-    assert_equal [ "First day", "Last day" ], rows.map { |row| row["name"] }
+    assert_equal [ "First day", "Last day" ], rows.map { |row| row["title"] }
   end
 
   test "protects spreadsheet text fields from formulas" do
     create_transaction(account: @account, name: "=SUM(1,1)", date: Date.new(2026, 2, 15))
 
-    row = CSV.parse(exporter.generate.io.string, headers: true).first
+    row = parse_csv(exporter.generate).first
 
-    assert_equal "'=SUM(1,1)", row["name"]
+    assert_equal "'=SUM(1,1)", row["title"]
+  end
+
+  test "uses an Excel-friendly UTF-8 semicolon CSV for Spanish users" do
+    create_transaction(account: @account, name: "Café", date: Date.new(2026, 2, 15))
+
+    result = exporter.generate
+    csv = result.io.string
+
+    assert csv.start_with?(Family::TransactionCsvExporter::UTF_8_BOM)
+    header = csv.delete_prefix(Family::TransactionCsvExporter::UTF_8_BOM).lines.first.chomp
+    assert_equal Family::TransactionCsvExporter::HEADERS.join(";"), header
+    assert_equal "Café", parse_csv(result).first["title"]
+  end
+
+  test "uses comma-separated columns and decimal point for English users" do
+    @user.update!(locale: "en")
+    create_transaction(account: @account, name: "English CSV", amount: 42.5, date: Date.new(2026, 2, 15))
+
+    data = exporter.generate.io.string.delete_prefix(Family::TransactionCsvExporter::UTF_8_BOM)
+    rows = CSV.parse(data, headers: true, col_sep: ",")
+
+    assert_equal Family::TransactionCsvExporter::HEADERS, rows.headers
+    assert_equal "42.5", rows.first["amount"]
+  end
+
+  test "includes source and destination accounts for transfers" do
+    create_transfer(
+      from_account: @account,
+      to_account: @other_account,
+      amount: 75,
+      date: Date.new(2026, 2, 15),
+      currency: @account.currency
+    )
+
+    row = parse_csv(exporter.generate).find { |candidate| candidate["title"] == "Transfer to #{@other_account.name}" }
+
+    assert row
+    assert_equal @account.name, row["source_account"]
+    assert_equal @other_account.name, row["destination_account"]
   end
 
   private
@@ -86,5 +129,10 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
       )
 
       Family::TransactionCsvExporter.new(export)
+    end
+
+    def parse_csv(result)
+      data = result.io.string.delete_prefix(Family::TransactionCsvExporter::UTF_8_BOM)
+      CSV.parse(data, headers: true, col_sep: ";")
     end
 end
