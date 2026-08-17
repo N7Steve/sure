@@ -57,6 +57,23 @@ class Api::V1::FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @family.family_exports.count, json_response["meta"]["total_count"]
   end
 
+  test "API does not expose user-scoped transaction CSV exports" do
+    custom_export = @family.family_exports.create!(
+      export_type: :transactions_csv,
+      requested_by: @admin,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current,
+      filters: { account_ids: [ @admin.accessible_accounts.first.id ] }
+    )
+
+    get api_v1_family_exports_url, headers: api_headers(@read_only_api_key)
+    assert_response :success
+    assert_not_includes JSON.parse(response.body)["data"].map { |item| item["id"] }, custom_export.id
+
+    get api_v1_family_export_url(custom_export), headers: api_headers(@read_only_api_key)
+    assert_response :not_found
+  end
+
   test "shows a family export" do
     export = @family.family_exports.create!(status: "completed")
     export.export_file.attach(

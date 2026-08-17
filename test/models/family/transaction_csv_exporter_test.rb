@@ -1,0 +1,90 @@
+require "test_helper"
+require "csv"
+
+class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
+  include EntriesTestHelper
+
+  setup do
+    @user = users(:family_admin)
+    @family = @user.family
+    @account = @user.accessible_accounts.first
+    @other_account = @user.accessible_accounts.where.not(id: @account.id).first || @family.accounts.create!(
+      owner: @user,
+      name: "Other CSV account",
+      balance: 0,
+      currency: @family.currency,
+      accountable: Depository.new
+    )
+    @allowed_category = @family.categories.create!(name: "CSV Allowed", color: "#111111")
+    @excluded_parent = @family.categories.create!(name: "CSV Excluded Parent", color: "#222222")
+    @excluded_child = @family.categories.create!(name: "CSV Excluded Child", color: "#333333", parent: @excluded_parent)
+    @excluded_tag = @family.tags.create!(name: "CSV Excluded Tag", color: "#444444")
+    @allowed_tag = @family.tags.create!(name: "CSV Allowed Tag", color: "#555555")
+  end
+
+  test "exports only selected dates and accounts and applies category and tag exclusions" do
+    included = create_transaction(
+      account: @account,
+      name: "Included transaction",
+      date: Date.new(2026, 2, 15),
+      amount: 42.5,
+      category: @allowed_category,
+      tags: [ @allowed_tag ]
+    )
+    create_transaction(account: @account, name: "Before range", date: Date.new(2026, 1, 31))
+    create_transaction(account: @account, name: "After range", date: Date.new(2026, 3, 1))
+    create_transaction(account: @other_account, name: "Other account", date: Date.new(2026, 2, 15))
+    create_transaction(account: @account, name: "Excluded parent", date: Date.new(2026, 2, 15), category: @excluded_parent)
+    create_transaction(account: @account, name: "Excluded child", date: Date.new(2026, 2, 15), category: @excluded_child)
+    create_transaction(
+      account: @account,
+      name: "Excluded by one of several tags",
+      date: Date.new(2026, 2, 15),
+      tags: [ @excluded_tag, @allowed_tag ]
+    )
+
+    result = exporter.generate
+    rows = CSV.parse(result.io.string, headers: true)
+
+    assert_equal 1, result.record_count
+    assert_equal [ "Included transaction" ], rows.map { |row| row["name"] }
+    assert_equal included.entryable.id, rows.first["transaction_id"]
+    assert_equal "42.5", rows.first["amount"]
+    assert_equal @account.currency, rows.first["currency"]
+    assert_equal "expense", rows.first["transaction_type"]
+  end
+
+  test "includes both date boundaries" do
+    create_transaction(account: @account, name: "First day", date: Date.new(2026, 2, 1))
+    create_transaction(account: @account, name: "Last day", date: Date.new(2026, 2, 28))
+
+    rows = CSV.parse(exporter.generate.io.string, headers: true)
+
+    assert_equal [ "First day", "Last day" ], rows.map { |row| row["name"] }
+  end
+
+  test "protects spreadsheet text fields from formulas" do
+    create_transaction(account: @account, name: "=SUM(1,1)", date: Date.new(2026, 2, 15))
+
+    row = CSV.parse(exporter.generate.io.string, headers: true).first
+
+    assert_equal "'=SUM(1,1)", row["name"]
+  end
+
+  private
+    def exporter
+      export = @family.family_exports.new(
+        export_type: :transactions_csv,
+        requested_by: @user,
+        start_date: Date.new(2026, 2, 1),
+        end_date: Date.new(2026, 2, 28),
+        filters: {
+          account_ids: [ @account.id ],
+          excluded_category_ids: [ @excluded_parent.id ],
+          excluded_tag_ids: [ @excluded_tag.id ]
+        }
+      )
+
+      Family::TransactionCsvExporter.new(export)
+    end
+end

@@ -25,17 +25,44 @@ en:
       note_description: This export includes all of your data, but only some of the data can be imported back via the CSV import feature. We support account, transaction (with category and tags), and trade imports. Other account data cannot be imported and is for your records only.
       cancel: Cancel
       export_data: Export data
+      custom_dialog_title: Export transactions to CSV
+      custom_dialog_subtitle: Choose the accounts, dates, categories, and tags to include in your file
+      validation_error: Check the export options
+      start_date: Start date
+      end_date: End date
+      accounts: Accounts to include
+      accounts_help: Only accounts you can access are available. All are selected by default.
+      excluded_categories: Categories to exclude
+      excluded_categories_help: Excluding a parent category also excludes its subcategories.
+      excluded_tags: Tags to exclude
+      excluded_tags_help: Transactions with any selected tag will not be exported.
+      export_csv: Export CSV
     index:
       title: Exports
       new: New Export
+      full_backup:
+        title: Full backup
+        description: Create a complete archive of the family's financial data for safekeeping.
+        action: Create full backup
+      custom_export:
+        title: Custom transaction export
+        description: Create a spreadsheet-ready CSV filtered by accounts, dates, categories, and tags.
+        action: Configure CSV export
+    types:
+      full_backup: Full backup
+      transactions_csv: Transactions CSV
     table:
       title: Exports
       header:
         date: Date
+        type: Type and period
         filename: File name
         status: Status
         actions: Actions
       row:
+        records:
+          one: 1 transaction
+          other: "%{count} transactions"
         status:
           in_progress: In progress
           complete: Complete

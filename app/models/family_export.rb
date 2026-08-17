@@ -5,6 +5,7 @@ class FamilyExport < ApplicationRecord
   STUCK_AFTER = 2.hours
 
   belongs_to :family
+  belongs_to :requested_by, class_name: "User", optional: true
 
   has_one_attached :export_file, dependent: :purge_later
 
@@ -14,6 +15,15 @@ class FamilyExport < ApplicationRecord
     completed: "completed",
     failed: "failed"
   }, default: :pending, validate: true
+
+  enum :export_type, {
+    full_backup: "full_backup",
+    transactions_csv: "transactions_csv"
+  }, default: :full_backup, validate: true
+
+  validate :validate_transaction_export_options, if: :transactions_csv?
+  validate :selected_accounts_are_accessible, if: :transactions_csv?
+  validate :requested_by_belongs_to_family, if: -> { requested_by.present? }
 
   scope :ordered, -> { order(created_at: :desc) }
 
@@ -72,10 +82,51 @@ class FamilyExport < ApplicationRecord
   end
 
   def filename
-    "sure_export_#{created_at.strftime('%Y%m%d_%H%M%S')}.zip"
+    if transactions_csv?
+      "transactions_#{start_date.strftime('%Y-%m-%d')}_to_#{end_date.strftime('%Y-%m-%d')}.csv"
+    else
+      "sure_export_#{created_at.strftime('%Y%m%d_%H%M%S')}.zip"
+    end
   end
 
   def downloadable?
     completed? && export_file.attached?
   end
+
+  def selected_account_ids
+    filter_values("account_ids")
+  end
+
+  def excluded_category_ids
+    filter_values("excluded_category_ids")
+  end
+
+  def excluded_tag_ids
+    filter_values("excluded_tag_ids")
+  end
+
+  private
+    def validate_transaction_export_options
+      errors.add(:requested_by, :blank) if requested_by.blank?
+      errors.add(:start_date, :blank) if start_date.blank?
+      errors.add(:end_date, :blank) if end_date.blank?
+      errors.add(:end_date, :before_start_date) if start_date.present? && end_date.present? && end_date < start_date
+      errors.add(:filters, :accounts_required) if selected_account_ids.empty?
+    end
+
+    def requested_by_belongs_to_family
+      errors.add(:requested_by, :invalid) unless requested_by.family_id == family_id
+    end
+
+    def selected_accounts_are_accessible
+      return if requested_by.blank? || selected_account_ids.empty?
+
+      selected_ids = selected_account_ids.map(&:to_s)
+      accessible_ids = requested_by.accessible_accounts.where(id: selected_ids).pluck(:id).map(&:to_s)
+      errors.add(:filters, :invalid_accounts) if (selected_ids - accessible_ids).any?
+    end
+
+    def filter_values(key)
+      Array(filters&.[](key) || filters&.[](key.to_sym)).compact_blank
+    end
 end

@@ -1,0 +1,12 @@
+---
+es:
+  activerecord:
+    errors:
+      models:
+        family_export:
+          attributes:
+            end_date:
+              before_start_date: debe ser igual o posterior a la fecha inicial
+            filters:
+              accounts_required: debe incluir al menos una cuenta
+              invalid_accounts: contiene una cuenta a la que no tienes acceso

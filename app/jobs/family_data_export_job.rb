@@ -10,16 +10,24 @@ class FamilyDataExportJob < ApplicationJob
 
     family_export.update!(status: :processing)
 
-    exporter = Family::DataExporter.new(family_export.family)
-    zip_file = exporter.generate_export
+    if family_export.transactions_csv?
+      result = Family::TransactionCsvExporter.new(family_export).generate
+      export_file = result.io
+      content_type = "text/csv"
+      family_export.record_count = result.record_count
+    else
+      exporter = Family::DataExporter.new(family_export.family)
+      export_file = exporter.generate_export
+      content_type = "application/zip"
+    end
 
     family_export.export_file.attach(
-      io: zip_file,
+      io: export_file,
       filename: family_export.filename,
-      content_type: "application/zip"
+      content_type: content_type
     )
 
-    family_export.update!(status: :completed)
+    family_export.update!(status: :completed, record_count: family_export.record_count)
   rescue => e
     Rails.logger.error "Family export failed: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")

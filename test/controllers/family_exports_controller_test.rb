@@ -9,7 +9,7 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
   end
 
-  test "non-admin cannot access exports" do
+  test "non-admin can access custom exports but not full backups" do
     sign_in @non_admin
 
     get new_family_export_path
@@ -19,7 +19,11 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
 
     get family_exports_path
-    assert_redirected_to root_path
+    assert_response :success
+
+    get new_family_export_path(export_type: :transactions_csv)
+    assert_response :success
+    assert_select "h2", text: "Export transactions to CSV"
   end
 
   test "admin can view export modal" do
@@ -55,7 +59,7 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     sign_in @non_admin
     post cancel_family_export_path(export)
 
-    assert_redirected_to root_path
+    assert_response :not_found
     assert_equal "processing", export.reload.status
   end
 
@@ -69,6 +73,65 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
 
     export = @family.family_exports.last
     assert_equal "pending", export.status
+    assert export.full_backup?
+    assert_equal @admin, export.requested_by
+  end
+
+  test "user can create a filtered transaction CSV export" do
+    account = @non_admin.accessible_accounts.first
+    category = @family.categories.first
+    tag = @family.tags.first
+    sign_in @non_admin
+
+    assert_enqueued_with(job: FamilyDataExportJob) do
+      post family_exports_path, params: {
+        family_export: {
+          export_type: "transactions_csv",
+          start_date: "2026-01-01",
+          end_date: "2026-03-31",
+          filters: {
+            account_ids: [ account.id ],
+            excluded_category_ids: [ category.id ],
+            excluded_tag_ids: [ tag.id ]
+          }
+        }
+      }
+    end
+
+    assert_redirected_to family_exports_path
+    export = @family.family_exports.order(:created_at).last
+    assert export.transactions_csv?
+    assert_equal @non_admin, export.requested_by
+    assert_equal Date.new(2026, 1, 1), export.start_date
+    assert_equal Date.new(2026, 3, 31), export.end_date
+    assert_equal [ account.id ], export.selected_account_ids
+    assert_equal [ category.id ], export.excluded_category_ids
+    assert_equal [ tag.id ], export.excluded_tag_ids
+  end
+
+  test "custom export rejects accounts the requester cannot access" do
+    inaccessible_account = families(:empty).accounts.create!(
+      name: "Inaccessible export account",
+      balance: 0,
+      currency: "USD",
+      accountable: Depository.new
+    )
+    sign_in @non_admin
+
+    assert_no_difference "@family.family_exports.count" do
+      assert_no_enqueued_jobs only: FamilyDataExportJob do
+        post family_exports_path, params: {
+          family_export: {
+            export_type: "transactions_csv",
+            start_date: "2026-01-01",
+            end_date: "2026-03-31",
+            filters: { account_ids: [ inaccessible_account.id ] }
+          }
+        }
+      end
+    end
+
+    assert_response :unprocessable_entity
   end
 
   test "admin can view export list" do
@@ -80,6 +143,35 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_match export1.filename, response.body
     assert_match "Exporting...", response.body
+    assert_select "h2", text: "Full backup"
+    assert_select "h2", text: "Custom transaction export"
+  end
+
+  test "member only sees their own custom transaction exports" do
+    account = @non_admin.accessible_accounts.first
+    own_export = @family.family_exports.create!(
+      export_type: :transactions_csv,
+      requested_by: @non_admin,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current,
+      filters: { account_ids: [ account.id ] }
+    )
+    backup = @family.family_exports.create!
+    other_custom_export = @family.family_exports.create!(
+      export_type: :transactions_csv,
+      requested_by: @admin,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current,
+      filters: { account_ids: [ @admin.accessible_accounts.first.id ] }
+    )
+    sign_in @non_admin
+
+    get family_exports_path
+
+    assert_response :success
+    assert_match own_export.filename, response.body
+    assert_no_match backup.filename, response.body
+    assert_no_match other_custom_export.filename, response.body
   end
 
   test "admin can download completed export" do
@@ -190,6 +282,6 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
       delete family_export_path(export)
     end
 
-    assert_redirected_to root_path
+    assert_response :not_found
   end
 end

@@ -20,7 +20,8 @@ nav_sections = [
       { label: t(".rules_label"), path: rules_path, icon: "git-branch" },
       { label: t(".merchants_label"), path: family_merchants_path, icon: "store" },
       { label: t(".recurring_transactions_label"), path: recurring_transactions_path, icon: "repeat" },
-      { label: t(".scheduled_payments_label"), path: scheduled_payments_path, icon: "calendar" }
+      { label: t(".scheduled_payments_label"), path: scheduled_payments_path, icon: "calendar" },
+      { label: t(".exports_label"), path: family_exports_path, icon: "upload" }
     ]
   },
   (
@@ -35,7 +36,6 @@ nav_sections = [
         { label: t(".background_jobs_label"), path: settings_background_jobs_path, icon: "list-checks", if: Current.user&.super_admin? },
         { label: t(".self_hosting_label"), path: settings_hosting_path, icon: "database", if: self_hosted? },
         { label: t(".imports_label"), path: imports_path, icon: "download" },
-        { label: t(".exports_label"), path: family_exports_path, icon: "upload" },
         { label: t(".sso_providers_label"), path: admin_sso_providers_path, icon: "key-round", if: Current.user&.super_admin? },
         { label: t(".users_label"), path: admin_users_path, icon: "users", if: Current.user&.super_admin? }
       ]

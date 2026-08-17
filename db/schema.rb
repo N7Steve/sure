@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_08_12_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_08_17_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -803,7 +803,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_08_12_000000) do
     t.string "status", default: "pending", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "export_type", default: "full_backup", null: false
+    t.uuid "requested_by_id"
+    t.date "start_date"
+    t.date "end_date"
+    t.jsonb "filters", default: {}, null: false
+    t.integer "record_count"
+    t.index ["family_id", "export_type"], name: "index_family_exports_on_family_id_and_export_type"
     t.index ["family_id"], name: "index_family_exports_on_family_id"
+    t.index ["requested_by_id"], name: "index_family_exports_on_requested_by_id"
   end
 
   create_table "family_merchant_associations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2416,6 +2424,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_08_12_000000) do
   add_foreign_key "eval_samples", "eval_datasets"
   add_foreign_key "family_documents", "families"
   add_foreign_key "family_exports", "families"
+  add_foreign_key "family_exports", "users", column: "requested_by_id", on_delete: :nullify
   add_foreign_key "family_merchant_associations", "families"
   add_foreign_key "family_merchant_associations", "merchants"
   add_foreign_key "goal_accounts", "accounts", on_delete: :restrict

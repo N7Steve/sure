@@ -1,15 +1,40 @@
 class FamilyExportsController < ApplicationController
   include StreamExtensions
 
-  before_action :require_admin
   before_action :set_export, only: [ :download, :destroy, :cancel ]
 
   def new
-    # Modal view for initiating export
+    @export_type = params[:export_type].presence_in(FamilyExport.export_types.keys) || "full_backup"
+    return require_admin if @export_type == "full_backup" && !Current.user.admin?
+
+    @export = Current.family.family_exports.new(
+      export_type: @export_type,
+      requested_by: Current.user,
+      start_date: 1.year.ago.to_date,
+      end_date: Date.current
+    )
+    if @export.transactions_csv?
+      prepare_transaction_export_options
+      @export.filters = {
+        "account_ids" => @accounts.pluck(:id),
+        "excluded_category_ids" => [],
+        "excluded_tag_ids" => []
+      }
+    end
   end
 
   def create
-    @export = Current.family.family_exports.create!
+    @export_type = family_export_params[:export_type].presence_in(FamilyExport.export_types.keys) || "full_backup"
+    return require_admin if @export_type == "full_backup" && !Current.user.admin?
+
+    @export = build_export
+
+    unless @export.save
+      prepare_transaction_export_options if @export.transactions_csv?
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     FamilyDataExportJob.perform_later(@export)
 
     respond_to do |format|
@@ -21,7 +46,7 @@ class FamilyExportsController < ApplicationController
   end
 
   def index
-    @pagy, @exports = pagy(Current.family.family_exports.ordered, limit: safe_per_page)
+    @pagy, @exports = pagy(visible_exports.ordered, limit: safe_per_page)
     @breadcrumbs = [
       [ t("breadcrumbs.home"), root_path ],
       [ t("breadcrumbs.exports"), family_exports_path ]
@@ -35,7 +60,7 @@ class FamilyExportsController < ApplicationController
 
   def download
     if @export.downloadable?
-      redirect_to @export.export_file, allow_other_host: true
+      redirect_to rails_blob_path(@export.export_file, disposition: "attachment"), allow_other_host: true
     else
       redirect_to family_exports_path, alert: t("family_exports.export_not_ready")
     end
@@ -57,12 +82,68 @@ class FamilyExportsController < ApplicationController
   private
 
     def set_export
-      @export = Current.family.family_exports.find(params[:id])
+      @export = visible_exports.find(params[:id])
     end
 
     def require_admin
-      unless Current.user.admin?
-        redirect_to root_path, alert: t("family_exports.access_denied")
+      redirect_to root_path, alert: t("family_exports.access_denied")
+    end
+
+    def visible_exports
+      base_scope = Current.family.family_exports
+      own_transaction_exports = base_scope.where(
+        export_type: "transactions_csv",
+        requested_by_id: Current.user.id
+      )
+
+      return own_transaction_exports unless Current.user.admin?
+
+      base_scope.where(export_type: "full_backup").or(own_transaction_exports)
+    end
+
+    def family_export_params
+      params.fetch(:family_export, ActionController::Parameters.new).permit(
+        :export_type,
+        :start_date,
+        :end_date,
+        filters: {
+          account_ids: [],
+          excluded_category_ids: [],
+          excluded_tag_ids: []
+        }
+      )
+    end
+
+    def build_export
+      if @export_type == "transactions_csv"
+        permitted = family_export_params
+        Current.family.family_exports.new(
+          export_type: @export_type,
+          requested_by: Current.user,
+          start_date: permitted[:start_date],
+          end_date: permitted[:end_date],
+          filters: normalize_filters(permitted[:filters])
+        )
+      else
+        Current.family.family_exports.new(
+          export_type: "full_backup",
+          requested_by: Current.user
+        )
       end
+    end
+
+    def normalize_filters(raw_filters)
+      filters = raw_filters || {}
+      {
+        "account_ids" => Array(filters[:account_ids]).compact_blank.uniq,
+        "excluded_category_ids" => Array(filters[:excluded_category_ids]).compact_blank.uniq,
+        "excluded_tag_ids" => Array(filters[:excluded_tag_ids]).compact_blank.uniq
+      }
+    end
+
+    def prepare_transaction_export_options
+      @accounts = Current.user.accessible_accounts.sidebar_visible.not_excluded.alphabetically
+      @categories = Current.family.categories.includes(:parent).order(:name)
+      @tags = Current.family.tags.alphabetically
     end
 end

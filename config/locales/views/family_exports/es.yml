@@ -10,17 +10,56 @@ es:
       success: Exportación eliminada con éxito
     export_not_ready: La exportación no está lista para descargar
     exporting: Exportando...
+    new:
+      dialog_title: Exporta tus datos
+      dialog_subtitle: Descarga todos tus datos financieros
+      whats_included: "Qué se incluye:"
+      accounts_and_balances: Todas las cuentas y saldos
+      transaction_history: Historial de transacciones
+      investment_trades: Operaciones de inversión
+      categories_tags_rules: Categorías, etiquetas y reglas
+      note_label: Nota
+      note_description: Esta exportación incluye todos tus datos, pero solo parte de ellos puede volver a importarse mediante CSV. Las cuentas, transacciones y operaciones se pueden importar; el resto se conserva como copia de consulta.
+      cancel: Cancelar
+      export_data: Exportar datos
+      custom_dialog_title: Exportar transacciones a CSV
+      custom_dialog_subtitle: Elige las cuentas, fechas, categorías y etiquetas que se incluirán en el archivo
+      validation_error: Revisa las opciones de exportación
+      start_date: Fecha inicial
+      end_date: Fecha final
+      accounts: Cuentas que se incluirán
+      accounts_help: Solo se muestran las cuentas a las que tienes acceso. Todas están seleccionadas inicialmente.
+      excluded_categories: Categorías que se excluirán
+      excluded_categories_help: Al excluir una categoría padre también se excluyen sus subcategorías.
+      excluded_tags: Etiquetas que se excluirán
+      excluded_tags_help: No se exportarán las transacciones que tengan cualquiera de las etiquetas seleccionadas.
+      export_csv: Exportar CSV
     index:
       title: Exportaciones
       new: Nueva exportación
+      full_backup:
+        title: Backup completo
+        description: Crea un archivo completo de los datos financieros de la familia para conservarlo como copia de seguridad.
+        action: Crear backup completo
+      custom_export:
+        title: Exportación personalizada de transacciones
+        description: Crea un CSV para hojas de cálculo filtrado por cuentas, fechas, categorías y etiquetas.
+        action: Configurar exportación CSV
+    types:
+      full_backup: Backup completo
+      transactions_csv: CSV de transacciones
     table:
       title: Exportaciones
       header:
         date: Fecha
+        type: Tipo y periodo
         filename: Nombre del archivo
         status: Estado
         actions: Acciones
       row:
+        records:
+          one: 1 transacción
+          other: "%{count} transacciones"
         status:
           in_progress: En progreso
           complete: Completo

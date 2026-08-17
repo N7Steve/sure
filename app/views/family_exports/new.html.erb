@@ -1,38 +1,108 @@
-<%= render DS::Dialog.new do |dialog| %>
-  <% dialog.with_header(title: t(".dialog_title"), subtitle: t(".dialog_subtitle")) %>
+<%= render DS::Dialog.new(width: @export.transactions_csv? ? "lg" : "md") do |dialog| %>
+  <% if @export.transactions_csv? %>
+    <% dialog.with_header(title: t(".custom_dialog_title"), subtitle: t(".custom_dialog_subtitle")) %>
+  <% else %>
+    <% dialog.with_header(title: t(".dialog_title"), subtitle: t(".dialog_subtitle")) %>
+  <% end %>
 
   <% dialog.with_body do %>
-    <div class="space-y-4">
-      <div class="bg-container-inset rounded-lg p-4 space-y-3">
-        <h3 class="font-medium text-primary"><%= t(".whats_included") %></h3>
-        <ul class="space-y-2 text-sm text-secondary">
-          <li class="flex items-start gap-2">
-            <%= icon "check", class: "shrink-0 mt-0.5 text-positive" %>
-            <span><%= t(".accounts_and_balances") %></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <%= icon "check", class: "shrink-0 mt-0.5 text-positive" %>
-            <span><%= t(".transaction_history") %></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <%= icon "check", class: "shrink-0 mt-0.5 text-positive" %>
-            <span><%= t(".investment_trades") %></span>
-          </li>
-          <li class="flex items-start gap-2">
-            <%= icon "check", class: "shrink-0 mt-0.5 text-positive" %>
-            <span><%= t(".categories_tags_rules") %></span>
-          </li>
-        </ul>
-      </div>
+    <%= form_with model: @export, url: family_exports_path, method: :post, class: "space-y-4" do |form| %>
+      <%= form.hidden_field :export_type %>
 
-      <%= render DS::Alert.new(title: t(".note_label"), message: t(".note_description"), variant: :warning) %>
-
-      <%= form_with url: family_exports_path, method: :post, class: "space-y-4" do |form| %>
-        <div class="flex gap-3">
-          <%= link_to t(".cancel"), "#", class: "flex-1 text-center px-4 py-2 text-primary bg-surface border border-primary rounded-lg hover:bg-surface-hover", data: { action: "click->modal#close" } %>
-          <%= form.submit t(".export_data"), class: "flex-1 bg-inverse text-inverse rounded-lg px-4 py-2 cursor-pointer hover:bg-inverse-hover" %>
-        </div>
+      <% if @export.errors.any? %>
+        <%= render DS::Alert.new(
+          title: t(".validation_error"),
+          message: @export.errors.full_messages.to_sentence,
+          variant: :error
+        ) %>
       <% end %>
-    </div>
+
+      <% if @export.transactions_csv? %>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <%= form.label :start_date, t(".start_date"), class: "text-sm font-medium text-primary" %>
+            <%= form.date_field :start_date, required: true, class: "w-full px-3 py-2 border border-primary rounded-lg bg-container text-primary" %>
+          </div>
+          <div class="space-y-1">
+            <%= form.label :end_date, t(".end_date"), class: "text-sm font-medium text-primary" %>
+            <%= form.date_field :end_date, required: true, class: "w-full px-3 py-2 border border-primary rounded-lg bg-container text-primary" %>
+          </div>
+        </div>
+
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-primary"><%= t(".accounts") %></legend>
+          <p class="text-xs text-secondary"><%= t(".accounts_help") %></p>
+          <div class="max-h-48 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
+            <% selected_account_ids = @export.selected_account_ids.map(&:to_s) %>
+            <% @accounts.each do |account| %>
+              <label class="flex items-center gap-2 rounded-md p-2 hover:bg-surface-hover text-sm text-primary">
+                <%= check_box_tag "family_export[filters][account_ids][]", account.id, selected_account_ids.include?(account.id.to_s), class: "checkbox" %>
+                <span><%= account.name %></span>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-primary"><%= t(".excluded_categories") %></legend>
+            <p class="text-xs text-secondary"><%= t(".excluded_categories_help") %></p>
+            <div class="max-h-48 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2 space-y-1">
+              <% selected_category_ids = @export.excluded_category_ids.map(&:to_s) %>
+              <% @categories.each do |category| %>
+                <label class="flex items-center gap-2 rounded-md p-2 hover:bg-surface-hover text-sm text-primary">
+                  <%= check_box_tag "family_export[filters][excluded_category_ids][]", category.id, selected_category_ids.include?(category.id.to_s), class: "checkbox" %>
+                  <span><%= category.parent ? "#{category.parent.name} / #{category.name}" : category.name %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-primary"><%= t(".excluded_tags") %></legend>
+            <p class="text-xs text-secondary"><%= t(".excluded_tags_help") %></p>
+            <div class="max-h-48 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2 space-y-1">
+              <% selected_tag_ids = @export.excluded_tag_ids.map(&:to_s) %>
+              <% @tags.each do |tag| %>
+                <label class="flex items-center gap-2 rounded-md p-2 hover:bg-surface-hover text-sm text-primary">
+                  <%= check_box_tag "family_export[filters][excluded_tag_ids][]", tag.id, selected_tag_ids.include?(tag.id.to_s), class: "checkbox" %>
+                  <span><%= tag.name %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+        </div>
+      <% else %>
+        <div class="bg-container-inset rounded-lg p-4 space-y-3">
+          <h3 class="font-medium text-primary"><%= t(".whats_included") %></h3>
+          <ul class="space-y-2 text-sm text-secondary">
+            <% %w[accounts_and_balances transaction_history investment_trades categories_tags_rules].each do |item| %>
+              <li class="flex items-start gap-2">
+                <%= icon "check", class: "shrink-0 mt-0.5 text-positive" %>
+                <span><%= t(".#{item}") %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+
+        <%= render DS::Alert.new(title: t(".note_label"), message: t(".note_description"), variant: :warning) %>
+      <% end %>
+
+      <div class="flex gap-3">
+        <%= render DS::Button.new(
+          text: t(".cancel"),
+          variant: :outline,
+          full_width: true,
+          type: :button,
+          data: { action: "DS--dialog#close" }
+        ) %>
+        <%= render DS::Button.new(
+          text: @export.transactions_csv? ? t(".export_csv") : t(".export_data"),
+          variant: :primary,
+          full_width: true,
+          type: :submit
+        ) %>
+      </div>
+    <% end %>
   <% end %>
 <% end %>

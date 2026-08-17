@@ -1,6 +1,50 @@
 <%= content_for :page_title, t(".title") %>
 
 <%= settings_section do %>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <% if Current.user.admin? %>
+      <%= render DS::Card.new(class: "gap-4") do %>
+        <div class="flex items-start gap-3">
+          <div class="rounded-lg bg-container-inset p-2 text-secondary"><%= icon("archive") %></div>
+          <div class="space-y-1">
+            <h2 class="font-medium text-primary"><%= t(".full_backup.title") %></h2>
+            <p class="text-sm text-secondary"><%= t(".full_backup.description") %></p>
+          </div>
+        </div>
+        <div class="mt-auto">
+          <%= render DS::Link.new(
+            text: t(".full_backup.action"),
+            icon: "download",
+            href: new_family_export_path(export_type: :full_backup),
+            variant: :outline,
+            full_width: true,
+            frame: :modal
+          ) %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= render DS::Card.new(class: "gap-4") do %>
+      <div class="flex items-start gap-3">
+        <div class="rounded-lg bg-container-inset p-2 text-secondary"><%= icon("list-filter") %></div>
+        <div class="space-y-1">
+          <h2 class="font-medium text-primary"><%= t(".custom_export.title") %></h2>
+          <p class="text-sm text-secondary"><%= t(".custom_export.description") %></p>
+        </div>
+      </div>
+      <div class="mt-auto">
+        <%= render DS::Link.new(
+          text: t(".custom_export.action"),
+          icon: "file-spreadsheet",
+          href: new_family_export_path(export_type: :transactions_csv),
+          variant: :primary,
+          full_width: true,
+          frame: :modal
+        ) %>
+      </div>
+    <% end %>
+  </div>
+
   <% has_processing = @exports.any? { |e| e.pending? || e.processing? } %>
     <%= turbo_frame_tag "family_exports",
         data: has_processing ? {
@@ -25,6 +69,9 @@
                   <th class="px-2 py-3 text-left min-w-44">
                     <%= t("family_exports.table.header.date") %>
                   </th>
+                  <th class="px-2 py-3 text-left min-w-36">
+                    <%= t("family_exports.table.header.type") %>
+                  </th>
                   <th class="px-2 py-3 text-left min-w-64">
                     <%= t("family_exports.table.header.filename") %>
                   </th>
@@ -43,6 +90,17 @@
                     <span class="text-sm text-secondary">
                       <%= l(export.created_at, format: :long) %>
                     </span>
+                  </td>
+                  <td class="px-2 py-3">
+                    <div class="text-sm text-primary"><%= t("family_exports.types.#{export.export_type}") %></div>
+                    <% if export.transactions_csv? %>
+                      <div class="text-xs text-secondary">
+                        <%= l(export.start_date) %> – <%= l(export.end_date) %>
+                        <% if export.record_count.present? %>
+                          · <%= t("family_exports.table.row.records", count: export.record_count) %>
+                        <% end %>
+                      </div>
+                    <% end %>
                   </td>
                   <td class="px-2 py-3">
                     <span class="text-xs text-secondary truncate">
@@ -140,10 +198,4 @@
       <% end %>
     <% end %>
 
-    <%= link_to new_family_export_path,
-                class: "bg-container-inset inline-flex items-center justify-center gap-2 hover:bg-container-inset-hover rounded-lg px-4 py-2 w-full font-medium text-primary text-sm text-center",
-                data: { turbo_frame: :modal } do %>
-      <%= icon("plus") %>
-      <%= t(".new") %>
-    <% end %>
 <% end %>
