@@ -16,7 +16,7 @@ class FamilyExportsController < ApplicationController
     if @export.transactions_csv?
       prepare_transaction_export_options
       @export.filters = {
-        "account_ids" => @accounts.pluck(:id),
+        "account_ids" => @accounts.map(&:id),
         "excluded_category_ids" => [],
         "excluded_tag_ids" => []
       }
