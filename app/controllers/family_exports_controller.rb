@@ -10,7 +10,7 @@ class FamilyExportsController < ApplicationController
     @export = Current.family.family_exports.new(
       export_type: @export_type,
       requested_by: Current.user,
-      start_date: 1.year.ago.to_date,
+      start_date: 1.month.ago.to_date,
       end_date: Date.current
     )
     if @export.transactions_csv?

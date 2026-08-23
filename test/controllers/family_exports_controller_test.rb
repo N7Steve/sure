@@ -24,6 +24,8 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     get new_family_export_path(export_type: :transactions_csv)
     assert_response :success
     assert_select "h2", text: "Export transactions to CSV"
+    assert_select "input[name='family_export[start_date]'][value='#{1.month.ago.to_date.iso8601}']"
+    assert_select "input[name='family_export[end_date]'][value='#{Date.current.iso8601}']"
   end
 
   test "admin can view export modal" do
