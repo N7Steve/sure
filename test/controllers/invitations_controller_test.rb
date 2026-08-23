@@ -9,8 +9,10 @@ class InvitationsControllerTest < ActionDispatch::IntegrationTest
   test "should get new" do
     get new_invitation_url
     assert_response :success
+    assert_select "select#invitation_role option:first-child[value=member]"
     assert_select "option[value=?]", "member"
     assert_select "option[value=?]", "admin"
+    assert_includes response.body, I18n.t("invitations.new.super_admin_notice")
   end
 
   test "should create invitation for member" do

@@ -3,9 +3,9 @@ es:
   admin:
     users:
       index:
-        title: Gestión de usuarios
-        description: Gestiona los roles de usuario para tu instancia. Los superadministradores pueden acceder a la configuración del proveedor de SSO y a la gestión de usuarios.
-        section_title: Usuarios
+        title: Usuarios de la instancia
+        description: Gestiona los usuarios y roles de toda esta instalación. Los miembros y las invitaciones se gestionan desde el perfil del grupo actual.
+        section_title: Familias y grupos
         you: (Tú)
         trial_ends_at: La prueba finaliza
         not_available: n/a
@@ -13,6 +13,18 @@ es:
         unnamed_family: Familia/grupo sin nombre
         no_subscription: Sin suscripción
         family_summary: '%{members} miembros · %{accounts} cuentas · %{transactions} transacciones'
+        manage_current_family: Gestionar grupo actual
+        instance_context:
+          title: Administración global de la instancia
+          description: Estás viendo todas las familias y usuarios de esta instalación. Tu grupo actual es %{family}.
+          manage_family: Gestionar %{family}
+        badges:
+          current_family: Tu grupo
+          demo_family: Datos de demostración
+        subscription_status:
+          active: Suscripción activa
+          canceled: Suscripción cancelada
+          past_due: Suscripción vencida
         filters:
           role: Rol
           role_all: Todos los roles
@@ -32,6 +44,7 @@ es:
           session_count: Número de sesiones
           never: Nunca
           role: Rol
+          remove: Eliminar
         role_descriptions_title: Descripción de los roles
         roles:
           guest: Invitado
@@ -51,3 +64,25 @@ es:
       update:
         success: Rol de usuario actualizado correctamente.
         failure: Error al actualizar el rol de usuario.
+      destroy:
+        success: Se ha revocado el acceso y programado la eliminación permanente del usuario.
+        failure: No se pudo eliminar el usuario. Revisa el registro de depuración para obtener más información.
+        cannot_remove_self: No puedes eliminar tu propia cuenta desde aquí.
+        cannot_remove_last_super_admin: No puedes eliminar el último superadministrador activo.
+        confirmation_mismatch: El texto de confirmación no coincide. No se ha eliminado el usuario.
+      deletion:
+        title: Eliminar usuario permanentemente
+        warning: Esta acción revoca el acceso inmediatamente y programa la eliminación permanente del usuario y sus datos. No se puede deshacer.
+        instruction: Escribe %{confirmation} para confirmar.
+        email_label: Correo del usuario
+        family_name_label: Nombre del grupo familiar
+        family_warning_title: También se eliminará %{family}
+        family_warning_body: Este es el último usuario del grupo. Al eliminarlo se borrará permanentemente el grupo, junto con %{accounts} y %{transactions}.
+        account_count:
+          one: "%{formatted_count} cuenta"
+          other: "%{formatted_count} cuentas"
+        transaction_count:
+          one: "%{formatted_count} transacción"
+          other: "%{formatted_count} transacciones"
+        cancel: Cancelar
+        submit: Eliminar usuario permanentemente

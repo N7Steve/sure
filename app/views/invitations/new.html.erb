@@ -10,12 +10,30 @@
 
       <%= form.select :role,
         options_for_select([
-          (FeatureFlags.intro_ui? ? [t(".role_guest"), "guest"] : nil),
           [t(".role_member"), "member"],
-          [t(".role_admin"), "admin"]
+          [t(".role_admin"), "admin"],
+          (FeatureFlags.intro_ui? ? [t(".role_guest"), "guest"] : nil)
         ].compact),
         {},
         { label: t(".role_label") } %>
+
+      <div class="space-y-3 rounded-lg bg-container-inset p-4 text-sm">
+        <div class="flex items-start gap-3">
+          <%= render DS::Pill.new(label: t(".role_member"), tone: :neutral, marker: false) %>
+          <p class="text-secondary"><%= t(".role_descriptions.member") %></p>
+        </div>
+        <div class="flex items-start gap-3">
+          <%= render DS::Pill.new(label: t(".role_admin"), tone: :neutral, marker: false) %>
+          <p class="text-secondary"><%= t(".role_descriptions.admin") %></p>
+        </div>
+        <% if FeatureFlags.intro_ui? %>
+          <div class="flex items-start gap-3">
+            <%= render DS::Pill.new(label: t(".role_guest"), tone: :neutral, marker: false) %>
+            <p class="text-secondary"><%= t(".role_descriptions.guest") %></p>
+          </div>
+        <% end %>
+        <p class="border-t border-primary pt-3 text-secondary"><%= t(".super_admin_notice") %></p>
+      </div>
 
       <div class="w-full">
         <%= form.submit t(".submit"), class: "bg-inverse text-inverse rounded-lg px-4 py-2 w-full" %>

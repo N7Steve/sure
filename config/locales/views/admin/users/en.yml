@@ -3,8 +3,8 @@ en:
   admin:
     users:
       index:
-        title: "User Management"
-        description: "Manage user roles for your instance. Super admins can access SSO provider settings and user management."
+        title: "Instance Users"
+        description: "Manage users and roles across this installation. Family membership and invitations are managed from the current family's profile."
         section_title: "Families / Groups"
         you: "(You)"
         trial_ends_at: "Trial ends"
@@ -13,6 +13,18 @@ en:
         unnamed_family: "Unnamed Family/Group"
         no_subscription: "No subscription"
         family_summary: "%{members} members · %{accounts} accounts · %{transactions} transactions"
+        manage_current_family: "Manage current family"
+        instance_context:
+          title: "Instance-wide administration"
+          description: "You are viewing every family and user in this installation. Your current family is %{family}."
+          manage_family: "Manage %{family}"
+        badges:
+          current_family: "Your family"
+          demo_family: "Demo data"
+        subscription_status:
+          active: "Subscription active"
+          canceled: "Subscription canceled"
+          past_due: "Subscription past due"
         filters:
           role: "Role"
           role_all: "All roles"
@@ -66,7 +78,16 @@ en:
       deletion:
         title: "Permanently remove user"
         warning: "This immediately revokes access and schedules permanent deletion of the user and their data. This cannot be undone."
-        instruction: "Type %{email} to confirm."
+        instruction: "Type %{confirmation} to confirm."
         email_label: "User email"
+        family_name_label: "Family name"
+        family_warning_title: "This will also delete %{family}"
+        family_warning_body: "This is the family's last user. Removing them permanently deletes the family, including %{accounts} and %{transactions}."
+        account_count:
+          one: "%{formatted_count} account"
+          other: "%{formatted_count} accounts"
+        transaction_count:
+          one: "%{formatted_count} transaction"
+          other: "%{formatted_count} transactions"
         cancel: "Cancel"
         submit: "Permanently remove user"

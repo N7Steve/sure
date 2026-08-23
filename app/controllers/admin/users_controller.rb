@@ -24,6 +24,7 @@ module Admin
       )
 
       family_ids = users.map(&:family_id).uniq
+      @users_count_by_family = User.where(family_id: family_ids).group(:family_id).count
       @accounts_count_by_family = Account.where(family_id: family_ids).group(:family_id).count
       @entries_count_by_family = Entry.joins(:account).where(accounts: { family_id: family_ids }).group("accounts.family_id").count
 
@@ -38,6 +39,12 @@ module Admin
       @invitations_by_family = Invitation.pending
         .where(family_id: family_ids)
         .group_by(&:family_id)
+
+      @demo_family_ids = ApiKey
+        .joins(:user)
+        .where(display_key: ApiKey::DEMO_MONITORING_KEY)
+        .distinct
+        .pluck("users.family_id")
 
       @trials_expiring_in_7_days = Subscription
         .where(status: :trialing)
@@ -77,6 +84,7 @@ module Admin
       end
 
       authorize @user, :destroy?
+      prepare_deletion_context
       render layout: false
     end
 
@@ -91,7 +99,12 @@ module Admin
 
       authorize @user
 
-      unless ActiveSupport::SecurityUtils.secure_compare(params[:confirmation_email].to_s, @user.email)
+      prepare_deletion_context
+      confirmation_matches = ActiveSupport::SecurityUtils.secure_compare(
+        params[:confirmation_text].to_s,
+        @deletion_confirmation
+      )
+      unless confirmation_matches
         redirect_to admin_users_path, alert: t(".confirmation_mismatch")
         return
       end
@@ -108,6 +121,23 @@ module Admin
       else
         redirect_to admin_users_path, alert: @user.errors.full_messages.to_sentence.presence || t(".failure")
       end
+    rescue ActiveRecord::RecordNotDestroyed => error
+      DebugLogEntry.capture(
+        category: "user_management",
+        level: "error",
+        message: "Permanent user removal failed while destroying an associated record",
+        source: self.class.name,
+        family: @user&.family,
+        user: @user,
+        metadata: {
+          target_user_id: @user&.id,
+          error_class: error.class.name,
+          error_message: error.message,
+          record_type: error.record&.class&.name,
+          record_id: error.record&.id
+        }
+      )
+      redirect_to admin_users_path, alert: t(".failure")
     end
 
     private
@@ -118,6 +148,18 @@ module Admin
 
       def user_params
         params.require(:user).permit(:role)
+      end
+
+      def prepare_deletion_context
+        family = @user.family
+        @deletes_family = family.users.count == 1
+        @family_accounts_count = family.accounts.count
+        @family_transactions_count = family.entries.count
+        @deletion_confirmation = if @deletes_family && family.name.present?
+          family.name
+        else
+          @user.email
+        end
       end
 
       def apply_trial_filter(scope)

@@ -1,9 +1,15 @@
 <%= content_for :page_title, t(".title") %>
 
 <div class="bg-container rounded-xl shadow-border-xs p-4 space-y-6">
-  <div>
-    <p class="text-sm text-secondary"><%= t(".description") %></p>
-  </div>
+  <%= render DS::Alert.new(title: t(".instance_context.title"), variant: :info) do %>
+    <div class="space-y-2 text-sm">
+      <p><%= t(".instance_context.description", family: Current.family.name) %></p>
+      <%= render DS::Link.new(
+            text: t(".instance_context.manage_family", family: Current.family.name),
+            href: settings_profile_path
+          ) %>
+    </div>
+  <% end %>
 
   <!-- Filters -->
   <div>
@@ -64,10 +70,18 @@
               <div class="flex items-center gap-3">
                 <%= icon "users", class: "w-5 h-5 text-secondary shrink-0" %>
                 <div>
-                  <p class="font-semibold text-primary"><%= family.name.presence || t(".unnamed_family") %></p>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-semibold text-primary"><%= family.name.presence || t(".unnamed_family") %></p>
+                    <% if family.id == Current.family.id %>
+                      <%= render DS::Pill.new(label: t(".badges.current_family"), tone: :info) %>
+                    <% end %>
+                    <% if @demo_family_ids.include?(family.id) %>
+                      <%= render DS::Pill.new(label: t(".badges.demo_family"), tone: :neutral) %>
+                    <% end %>
+                  </div>
                   <p class="text-xs text-secondary">
                     <%= t(".family_summary",
-                          members: users.size,
+                          members: @users_count_by_family[family.id] || 0,
                           accounts: number_with_delimiter(@accounts_count_by_family[family.id] || 0),
                           transactions: number_with_delimiter(@entries_count_by_family[family.id] || 0)) %>
                   </p>
@@ -80,7 +94,10 @@
                     <%= t(".table.trial_ends_at") %>: <%= sub.trial_ends_at&.to_fs(:long) || t(".not_available") %>
                   </span>
                 <% elsif sub %>
-                  <%= render DS::Pill.new(label: sub.status.humanize, tone: sub.active? ? :success : :neutral) %>
+                  <%= render DS::Pill.new(
+                        label: t(".subscription_status.#{sub.status}", default: sub.status.humanize),
+                        tone: sub.active? ? :success : :neutral
+                      ) %>
                 <% else %>
                   <span class="text-xs text-secondary"><%= t(".no_subscription") %></span>
                 <% end %>
@@ -120,7 +137,13 @@
                       </td>
                       <td class="px-4 py-3 text-right">
                         <% if user.id == Current.user.id %>
-                          <span class="text-sm text-secondary"><%= t(".you") %></span>
+                          <div class="flex items-center justify-end gap-2">
+                            <%= render DS::Pill.new(
+                                  label: t(".roles.#{user.role}"),
+                                  tone: user.super_admin? ? :success : :neutral
+                                ) %>
+                            <span class="text-sm text-secondary"><%= t(".you") %></span>
+                          </div>
                         <% else %>
                           <div class="flex items-center justify-end gap-2">
                             <%= form_with model: [:admin, user], method: :patch, class: "flex items-center", data: { controller: "auto-submit-form" } do |form| %>
@@ -189,6 +212,15 @@
                   </tbody>
                 <% end %>
               </table>
+              <% if family.id == Current.family.id %>
+                <div class="flex justify-end border-t border-primary px-4 py-3">
+                  <%= render DS::Link.new(
+                        text: t(".manage_current_family"),
+                        href: settings_profile_path,
+                        icon: "arrow-right"
+                      ) %>
+                </div>
+              <% end %>
               <% if pending_invitations.any? %>
                 <%= form_with url: invitations_admin_family_path(family), method: :delete,
                               data: { admin_invitation_delete_target: "destroyAllForm" },

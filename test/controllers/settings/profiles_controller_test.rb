@@ -11,6 +11,8 @@ class Settings::ProfilesControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
     get settings_profile_path
     assert_response :success
+    assert_includes response.body, I18n.t("settings.profiles.show.sharing_policy_title")
+    assert_includes response.body, I18n.t("settings.profiles.show.sharing_policy_manage")
   end
 
   test "intro user sees profile without settings navigation" do

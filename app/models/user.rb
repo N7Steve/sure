@@ -281,6 +281,11 @@ class User < ApplicationRecord
       .where(resource_owner_id: id, revoked_at: nil)
       .update_all(revoked_at: Time.current)
     sessions.destroy_all
+
+    # The system-managed demo monitoring key is intentionally protected from
+    # ordinary UI revocation. Permanent user removal is a trusted teardown path,
+    # though, and must remove it before `destroy_all` runs the protection callback.
+    api_keys.where(display_key: ApiKey::DEMO_MONITORING_KEY).delete_all
     api_keys.destroy_all
     mobile_devices.destroy_all
     webauthn_credentials.destroy_all

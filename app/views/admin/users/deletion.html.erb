@@ -2,11 +2,36 @@
   <% dialog.with_header(title: t(".title"), subtitle: t(".warning")) %>
 
   <% dialog.with_body do %>
-    <p class="mb-4 text-sm text-secondary"><%= t(".instruction", email: @user.email) %></p>
+    <% if @deletes_family %>
+      <div class="mb-4">
+        <%= render DS::Alert.new(
+              title: t(".family_warning_title", family: @user.family.name.presence || t("admin.users.index.unnamed_family")),
+              variant: :destructive
+            ) do %>
+          <p class="text-sm">
+            <%= t(".family_warning_body",
+                  accounts: t(
+                    ".account_count",
+                    count: @family_accounts_count,
+                    formatted_count: number_with_delimiter(@family_accounts_count)
+                  ),
+                  transactions: t(
+                    ".transaction_count",
+                    count: @family_transactions_count,
+                    formatted_count: number_with_delimiter(@family_transactions_count)
+                  )) %>
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <p class="mb-4 text-sm text-secondary">
+      <%= t(".instruction", confirmation: @deletion_confirmation) %>
+    </p>
 
     <%= styled_form_with url: admin_user_path(@user), method: :delete, data: { turbo_frame: "_top" } do |form| %>
-      <%= form.text_field :confirmation_email,
-            label: t(".email_label"),
+      <%= form.text_field :confirmation_text,
+            label: @deletes_family ? t(".family_name_label") : t(".email_label"),
             autocomplete: "off",
             spellcheck: false,
             required: true,

@@ -23,6 +23,11 @@ es:
       role_guest: Invitado
       role_label: Rol
       role_member: Miembro
+      role_descriptions:
+        member: Acceso normal a sus propias cuentas, transacciones y ajustes.
+        admin: También puede gestionar miembros, invitaciones, proveedores, importaciones y ajustes avanzados del grupo.
+        guest: Acceso restringido y centrado en el asistente para flujos de introducción.
+      super_admin_notice: Los superadministradores gestionan toda la instalación y no se pueden asignar mediante una invitación familiar.
       submit: Enviar invitación
       subtitle: Envía una invitación para unirse a tu cuenta de %{moniker} en %{product_name}
       title: Invitar a alguien

@@ -23,6 +23,11 @@ en:
       role_guest: Guest
       role_label: Role
       role_member: Member
+      role_descriptions:
+        member: Standard access to their own accounts, transactions, and settings.
+        admin: Can also manage members, invitations, providers, imports, and advanced family settings.
+        guest: Restricted assistant-first access intended for introductory workflows.
+      super_admin_notice: Super admins manage the entire installation and cannot be assigned through a family invitation.
       submit: Send Invitation
       subtitle: Send an invitation to join your %{moniker} account on %{product_name}
       title: Invite Someone

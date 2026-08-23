@@ -207,6 +207,9 @@ es:
         household_title: Grupo Familiar
         invitation_link: Enlace de invitación
         invite_member: Añadir miembro
+        sharing_policy_title: Compartición de cuentas para futuros miembros
+        sharing_policy_description: "Configuración actual: %{policy}. Se aplicará al añadir cuentas o miembros nuevos."
+        sharing_policy_manage: Cambiar preferencia de compartición
         last_name: Apellido
         page_title: Información del Perfil
         pending: Pendiente
@@ -294,7 +297,7 @@ es:
       statement_vault_label: Archivo de extractos
       tags_label: Etiquetas
       transactions_section_title: Transacciones
-      users_label: Usuarios
+      users_label: Usuarios de la instancia
       whats_new_label: Novedades
       api_keys_label: Clave API
       appearance_label: Apariencia

@@ -264,6 +264,9 @@ en:
         household_title: Household
         invitation_link: Invitation link
         invite_member: Add member
+        sharing_policy_title: Account sharing for future members
+        sharing_policy_description: "Current default: %{policy}. This applies when new accounts or members are added."
+        sharing_policy_manage: Change sharing preference
         last_name: Last Name
         page_title: Profile Info
         pending: Pending
@@ -353,7 +356,7 @@ en:
       system_health_label: System health
       tags_label: Tags
       transactions_section_title: Transactions
-      users_label: Users
+      users_label: Instance users
       whats_new_label: What's new
       api_keys_label: API Keys
       appearance_label: Appearance

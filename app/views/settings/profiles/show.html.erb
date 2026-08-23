@@ -41,6 +41,20 @@
                 "data-auto-submit-form-target": "auto" %>
         <% end %>
       <% end %>
+      <%= render DS::Alert.new(title: t(".sharing_policy_title"), variant: :info) do %>
+        <div class="space-y-2 text-sm">
+          <p>
+            <%= t(".sharing_policy_description",
+                  policy: t("settings.preferences.show.sharing_#{Current.family.default_account_sharing}")) %>
+          </p>
+          <% if Current.user.admin? %>
+            <%= render DS::Link.new(
+                  text: t(".sharing_policy_manage"),
+                  href: settings_preferences_path
+                ) %>
+          <% end %>
+        </div>
+      <% end %>
       <div class="bg-container-inset rounded-xl p-1">
         <div class="px-4 py-2">
           <p class="uppercase text-xs text-secondary font-medium"><%= Current.family.name %> &middot; <%= Current.family.users.size %></p>
