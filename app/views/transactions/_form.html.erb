@@ -49,7 +49,12 @@
     </div>
 
     <%= f.fields_for :entryable do |ef| %>
-      <%= ef.collection_select :category_id, categories, :id, :name, { prompt: t(".category_prompt"), label: t(".category"), variant: :badge, searchable: true, menu_placement: :down } %>
+      <%= render DS::CategorySelect.new(
+            form: ef,
+            categories: categories,
+            selected_id: ef.object.category_id,
+            blank_label: t(".category_prompt")
+          ) %>
       <%= ef.collection_select :merchant_id,
                 merchants,
                 :id, :name,

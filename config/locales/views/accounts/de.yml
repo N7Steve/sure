@@ -16,8 +16,6 @@ de:
       excluded_label: Ausgeschlossen
       archived_label: Archiviert
       delete: Konto löschen
-      archive: Konto archivieren
-      unarchive: Konto dearchivieren
       change_simplefin_account: SimpleFIN-Konto wechseln
       complete_setup: Setup abschließen
       exclude_from_reports: Aus allen Berichten ausschließen
@@ -50,16 +48,9 @@ de:
       institution_domain_placeholder: "z. B. chase.com"
       notes_label: Notizen
       notes_placeholder: Zusätzliche Informationen wie Kontonummern, Sort codes, IBAN, Routing-Nummern usw.
-      exclude_from_reports_label: Von Berichten und Kennzahlen ausschließen
-      exclude_from_reports_description: Ausgeschlossene Konten werden in Berichten und Nettovermögensberechnungen ausgeblendet.
-      archive_label: Konto archivieren
-      archive_description: Archivierte Konten werden in der Seitenleiste ausgeblendet, zählen aber weiterhin für Nettovermögen und Berichte.
       enable_category_matcher_hint: Ist die Option an, wird die vom Anbieter vorgeschlagene Kategorie auf importierte Transaktionen angewendet. Schalte sie aus, damit neue Transaktionen ohne Kategorie bleiben.
       enable_category_matcher_label: Kategoriezuordnung aktivieren
       exclude_from_reports: Aus allen Berichten ausschließen
-    accountable_group:
-      excluded_badge: "(Ausgeschlossen)"
-      archived_badge: "(Archiviert)"
     index:
       accounts: Konten
       account_groups:

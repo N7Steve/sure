@@ -61,7 +61,7 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     sign_in @non_admin
     post cancel_family_export_path(export)
 
-    assert_response :not_found
+    assert_redirected_to root_path
     assert_equal "processing", export.reload.status
   end
 

@@ -7,9 +7,14 @@ class IncomeStatement
 
   attr_reader :family, :user
 
-  def initialize(family, user: nil)
+  # `accounts:` overrides the account scope entirely (e.g. a personal
+  # budget's "owned accounts only" view) instead of inferring it from
+  # `user.finance_accounts`. `user` is still kept for cache-key/estimate
+  # purposes when both are given.
+  def initialize(family, user: nil, accounts: nil)
     @family = family
     @user = user || Current.user
+    @accounts = accounts
   end
 
   def totals(transactions_scope: nil, date_range:)
@@ -247,7 +252,11 @@ class IncomeStatement
     end
 
     def included_account_ids
-      @included_account_ids ||= user ? user.finance_accounts.pluck(:id) : nil
+      @included_account_ids ||= if @accounts
+        @accounts.pluck(:id)
+      elsif user
+        user.finance_accounts.pluck(:id)
+      end
     end
 
     def included_account_ids_hash
@@ -258,9 +267,9 @@ class IncomeStatement
       sql_hash = Digest::MD5.hexdigest(transactions_scope.to_sql)
 
       Rails.cache.fetch([
-        "income_statement", "totals_query", "v4", family.id, user&.id,
-        included_account_ids_hash, sql_hash, date_range.begin, date_range.end,
-        family.entries_cache_version, family.accounts.maximum(:updated_at)&.to_i
+      "income_statement", "totals_query", "v4", family.id, user&.id,
+      included_account_ids_hash, sql_hash, date_range.begin, date_range.end,
+      family.entries_cache_version, family.accounts.maximum(:updated_at)&.to_i
       ]) { Totals.new(family, transactions_scope: transactions_scope, date_range: date_range, included_account_ids: included_account_ids).call }
     end
 

@@ -18,36 +18,6 @@ class FamilyDataExportJobTest < ActiveJob::TestCase
     assert @export.export_file.attached?
   end
 
-  test "generates and attaches a filtered transaction CSV" do
-    user = users(:family_admin)
-    account = user.accessible_accounts.first
-    account.entries.create!(
-      date: Date.current,
-      amount: 12.34,
-      currency: account.currency,
-      name: "CSV job transaction",
-      entryable: Transaction.new(kind: "standard")
-    )
-    export = @family.family_exports.create!(
-      export_type: :transactions_csv,
-      requested_by: user,
-      start_date: Date.current,
-      end_date: Date.current,
-      filters: { account_ids: [ account.id ] }
-    )
-
-    perform_enqueued_jobs do
-      FamilyDataExportJob.perform_later(export)
-    end
-
-    export.reload
-    assert export.completed?
-    assert export.export_file.attached?
-    assert_equal "text/csv; charset=utf-8", export.export_file.content_type
-    assert_operator export.record_count, :>=, 1
-    assert_includes export.export_file.download, "CSV job transaction"
-  end
-
   test "does not restart an export in a terminal status" do
     @export.update_columns(status: "failed")
 

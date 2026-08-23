@@ -1,6 +1,7 @@
 class FamilyExportsController < ApplicationController
   include StreamExtensions
 
+  before_action :require_admin
   before_action :set_export, only: [ :download, :destroy, :cancel ]
 
   def new

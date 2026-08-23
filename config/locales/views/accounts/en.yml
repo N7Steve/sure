@@ -58,20 +58,11 @@ en:
       institution_domain_placeholder: e.g., chase.com
       notes_label: Notes
       notes_placeholder: Store additional information like account numbers, sort codes, IBAN, routing numbers, etc.
-      exclude_from_reports_label: Exclude from reports and metrics
-      exclude_from_reports_description: Excluded accounts are hidden from reports and net worth calculations.
-      archive_label: Archive account
-      archive_description: Archived accounts are hidden from the sidebar but still count in your net worth and reports.
       exclude_from_reports: Exclude from all reports
       enable_category_matcher_label: Enable category matcher
       enable_category_matcher_hint: When enabled, the provider's suggested category is applied to imported transactions. Disable to leave new transactions uncategorized.
     index:
       accounts: Accounts
-      account_groups:
-        total: Total
-        active: Active
-        excluded: Excluded
-        archived: Archived
       cancel_sync: Cancel sync
       manual_accounts:
         other_accounts: Other accounts

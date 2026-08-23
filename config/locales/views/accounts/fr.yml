@@ -9,9 +9,6 @@ fr:
       change_simplefin_account: Changer le compte SimpleFIN
       complete_setup: Configuration complète
       default_label: Par défaut
-      disabled_label: Désactivé
-      excluded_label: Exclu
-      archived_label: Archivé
       delete: Supprimer le compte
       disable: Désactiver le compte
       edit: Modifier
@@ -24,8 +21,6 @@ fr:
       remove_default: Retirer par défaut
       set_default: Définir par défaut
       sharing: Partage
-      archive: Archiver le compte
-      unarchive: Désarchiver le compte
       troubleshoot: Dépannage
       unlink_provider: Délier du fournisseur
     chart:
@@ -61,14 +56,7 @@ fr:
       name_placeholder: Nom de compte d'exemple
       notes_label: Notes
       notes_placeholder: Stockez des informations supplémentaires comme les numéros de compte, codes de tri, IBAN, numéros de routage, etc.
-      exclude_from_reports_label: Exclure des rapports et métriques
-      exclude_from_reports_description: Les comptes exclus sont masqués dans les rapports et les calculs de valeur nette.
-      archive_label: Archiver le compte
-      archive_description: Les comptes archivés sont masqués dans la barre latérale mais continuent de compter dans votre valeur nette et vos rapports.
       opening_balance_date_label: Date du solde d'ouverture
-    accountable_group:
-      excluded_badge: "(Exclu)"
-      archived_badge: "(Archivé)"
     index:
       accounts: Comptes
       account_groups:

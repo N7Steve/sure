@@ -76,7 +76,10 @@ class TransfersController < ApplicationController
 
   def update
     outflow_account = @transfer.outflow_transaction.entry.account
+    inflow_account = @transfer.inflow_transaction.entry.account
+
     return unless require_account_permission!(outflow_account, redirect_path: transactions_url)
+    return unless require_account_permission!(inflow_account, redirect_path: transactions_url)
 
     Transfer.transaction do
       update_transfer_status
@@ -116,6 +119,7 @@ class TransfersController < ApplicationController
     inflow_account = inflow_entry.account
 
     return unless require_account_permission!(outflow_account, redirect_path: transactions_url)
+    return unless require_account_permission!(inflow_account, redirect_path: transactions_url)
 
     @transfer.destroy!
 
@@ -325,77 +329,4 @@ class TransfersController < ApplicationController
       end
     end
 
-    def update_transfer_fees_and_amount
-      new_amount = transfer_update_params[:amount]
-      new_source_fee = transfer_update_params[:source_fee_amount]
-      new_destination_fee = transfer_update_params[:destination_fee_amount]
-
-      current_source_fee = @transfer.derived_source_fee_amount
-      current_destination_fee = @transfer.derived_destination_fee_amount
-      source_fee_changed = new_source_fee.present? && new_source_fee.to_d != current_source_fee
-      dest_fee_changed = new_destination_fee.present? && new_destination_fee.to_d != current_destination_fee
-      amount_changed = new_amount.present? && new_amount.to_d != @transfer.amount.to_d
-
-      return unless amount_changed || source_fee_changed || dest_fee_changed
-
-      @transfer.amount = new_amount.to_d if amount_changed
-
-      if amount_changed
-        outflow_entry = @transfer.outflow_transaction.entry
-        outflow_entry.amount = @transfer.amount
-        outflow_entry.save!
-
-        inflow_entry = @transfer.inflow_transaction.entry
-        converted = Money.new(@transfer.amount, @transfer.from_account.currency)
-                      .exchange_to(@transfer.to_account.currency, date: @transfer.date)
-        inflow_entry.amount = -(converted.amount)
-        inflow_entry.save!
-      end
-
-      if source_fee_changed
-        update_fee_transaction(
-          account: @transfer.from_account,
-          old_fee: current_source_fee,
-          new_fee: new_source_fee.to_d,
-          name: "Transfer fee — #{@transfer.name}"
-        )
-      end
-
-      if dest_fee_changed
-        update_fee_transaction(
-          account: @transfer.to_account,
-          old_fee: current_destination_fee,
-          new_fee: new_destination_fee.to_d,
-          name: "Transfer fee — #{@transfer.name}"
-        )
-      end
-
-      @transfer.save!
-    end
-
-    def update_fee_transaction(account:, old_fee:, new_fee:, name:)
-      if old_fee > 0 && new_fee > 0
-        fee_tx = @transfer.fee_transactions.find { |t| t.entry.account_id == account.id }
-        if fee_tx
-          fee_tx.entry.update!(amount: new_fee)
-        end
-      elsif old_fee > 0 && new_fee == 0
-        fee_tx = @transfer.fee_transactions.find { |t| t.entry.account_id == account.id }
-        fee_tx&.destroy!
-      elsif old_fee == 0 && new_fee > 0
-        fee_category = account.family.categories.find_or_create_by!(name: I18n.t("models.category.defaults.fees"))
-        fee_tx = Transaction.new(
-          kind: "standard",
-          category: fee_category,
-          entry: account.entries.build(
-            amount: new_fee,
-            currency: account.currency,
-            date: @transfer.date,
-            name: name,
-          )
-        )
-        fee_tx.save!
-        @transfer.fee_transactions << fee_tx
-      end
-    end
 end

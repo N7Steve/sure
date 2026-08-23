@@ -16,17 +16,18 @@ es:
     index:
       empty: Aún no hay comercios
       new: Nuevo comercio
+      import: Importar comercios
       merge: Fusionar comercios
       title: Comercios
-      family_title: "Comercios de %{moniker}"
-      family_empty: "Aún no hay comercios de %{moniker}"
+      family_title: Comercios de %{moniker}
+      family_empty: Aún no hay comercios de %{moniker}
       provider_title: Comercios del proveedor
-      provider_empty: "Aún no hay comercios del proveedor vinculados a %{moniker}"
+      provider_empty: Aún no hay comercios del proveedor vinculados a %{moniker}
       provider_read_only: Los comercios del proveedor se sincronizan desde tus instituciones conectadas. No se pueden editar aquí.
       provider_info: Estos comercios han sido detectados automáticamente por tus conexiones bancarias o por IA. Puedes editarlos para crear tu propia copia o eliminarlos para desvincularlos de tus transacciones.
       enhance_info:
-        one: "A %{count} comercio del proveedor le falta información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar duplicados."
-        other: "A %{count} comercios del proveedor les falta información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar duplicados."
+        one: A %{count} comercio del proveedor le falta la información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar comercios duplicados.
+        other: A %{count} comercios del proveedor les falta la información del sitio web. Mejora con IA para detectar sitios web, mostrar logotipos y fusionar comercios duplicados.
       enhance_button: Mejorar con IA
       unlinked_title: Desvinculados recientemente
       unlinked_info: Estos comercios se han eliminado recientemente de tus transacciones. Desaparecerán de esta lista tras 30 días, a menos que se vuelvan a asignar a una transacción.
@@ -34,10 +35,12 @@ es:
         merchant: Comercio
         actions: Acciones
         source: Origen
+    family_merchant:
+      edit: Editar
+      delete: Eliminar
     merchant:
       confirm_accept: Eliminar comercio
-      confirm_body: ¿Estás seguro de que deseas eliminar este comercio? Eliminar este comercio 
-        desvinculará todas las transacciones asociadas y puede afectar a tus informes.
+      confirm_body: ¿Estás seguro de que deseas eliminar este comercio? Eliminar este comercio desvinculará todas las transacciones asociadas y puede afectar a tus informes.
       confirm_title: ¿Eliminar comercio?
       delete: Eliminar comercio
       edit: Editar comercio
@@ -53,8 +56,8 @@ es:
       title: Nuevo comercio
     perform_merge:
       success:
-        one: "%{count} comercio fusionado correctamente"
-        other: "%{count} comercios fusionados correctamente"
+        one: Se ha fusionado correctamente %{count} comercio
+        other: Se han fusionado correctamente %{count} comercios
       no_merchants_selected: No se han seleccionado comercios para fusionar
       target_not_found: No se ha encontrado el comercio de destino
       invalid_merchants: Se han seleccionado comercios no válidos

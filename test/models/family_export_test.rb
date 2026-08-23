@@ -14,58 +14,6 @@ class FamilyExportTest < ActiveSupport::TestCase
     assert_equal "pending", @export.status
   end
 
-  test "has full backup as the default export type" do
-    assert @export.full_backup?
-  end
-
-  test "transaction CSV requires requester dates and selected accounts" do
-    export = @family.family_exports.new(export_type: :transactions_csv)
-
-    assert_not export.valid?
-    assert export.errors[:requested_by].present?
-    assert export.errors[:start_date].present?
-    assert export.errors[:end_date].present?
-    assert export.errors[:filters].present?
-  end
-
-  test "transaction CSV validates and exposes normalized filter ids" do
-    user = users(:family_admin)
-    account = user.accessible_accounts.first
-    category = @family.categories.first
-    tag = @family.tags.first
-    export = @family.family_exports.new(
-      export_type: :transactions_csv,
-      requested_by: user,
-      start_date: Date.new(2026, 1, 1),
-      end_date: Date.new(2026, 1, 31),
-      filters: {
-        account_ids: [ account.id ],
-        excluded_category_ids: [ category.id ],
-        excluded_tag_ids: [ tag.id ]
-      }
-    )
-
-    assert export.valid?
-    assert_equal [ account.id ], export.selected_account_ids
-    assert_equal [ category.id ], export.excluded_category_ids
-    assert_equal [ tag.id ], export.excluded_tag_ids
-    assert_equal "transactions_2026-01-01_to_2026-01-31.csv", export.filename
-  end
-
-  test "transaction CSV rejects an inverted date range" do
-    user = users(:family_admin)
-    export = @family.family_exports.new(
-      export_type: :transactions_csv,
-      requested_by: user,
-      start_date: Date.new(2026, 2, 1),
-      end_date: Date.new(2026, 1, 1),
-      filters: { account_ids: [ user.accessible_accounts.first.id ] }
-    )
-
-    assert_not export.valid?
-    assert export.errors[:end_date].present?
-  end
-
   test "force_fail! fails a lost export but refuses fresh or terminal ones" do
     @export.update_columns(status: "processing", updated_at: 2.hours.ago)
     assert @export.force_fail!

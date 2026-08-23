@@ -35,6 +35,27 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_enqueued_with(job: SyncJob)
   end
 
+  test "create without an account re-renders the form instead of raising" do
+    assert_no_difference [ "Entry.count", "Transaction.count" ] do
+      post transactions_url, params: {
+        entry: {
+          account_id: "",
+          name: "New transaction",
+          date: Date.current,
+          currency: "USD",
+          amount: 100,
+          nature: "inflow",
+          entryable_type: "Transaction",
+          entryable_attributes: {
+            category_id: Category.first.id
+          }
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+  end
+
   test "updates with transaction details" do
     assert_no_difference [ "Entry.count", "Transaction.count" ] do
       patch transaction_url(@entry), params: {
@@ -74,93 +95,76 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_enqueued_with(job: SyncJob)
   end
 
-  test "index excludes transactions from excluded accounts" do
+  test "re-renders show with mark-recurring state when update fails validation" do
     family = families(:empty)
     sign_in users(:empty)
-    account = family.accounts.create! name: "Active Account", balance: 0, currency: "USD", accountable: Depository.new
-    excluded_account = family.accounts.create! name: "Excluded Account", balance: 0, currency: "USD", accountable: Depository.new, excluded: true
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    merchant = family.merchants.create! name: "Test Merchant"
+    entry = create_transaction(account: account, amount: 100, merchant: merchant)
 
-    visible_entry = create_transaction(account: account, name: "Visible Transaction", amount: 50)
-    excluded_entry = create_transaction(account: excluded_account, name: "Hidden Transaction", amount: 100)
+    family.recurring_transactions.create!(
+      account: account,
+      merchant: merchant,
+      amount: entry.amount,
+      currency: entry.currency,
+      expected_day_of_month: entry.date.day,
+      last_occurrence_date: entry.date,
+      next_expected_date: 1.month.from_now,
+      status: "active",
+      manual: true,
+      occurrence_count: 1
+    )
 
-    get transactions_url(per_page: 50)
-    assert_response :success
+    patch transaction_url(entry), params: {
+      entry: {
+        name: "",
+        date: entry.date,
+        currency: entry.currency,
+        amount: entry.amount.abs,
+        nature: "outflow",
+        entryable_type: entry.entryable_type,
+        entryable_attributes: { id: entry.entryable_id }
+      }
+    }
 
-    # Visible transaction should appear, excluded should not
-    assert_dom "#" + dom_id(visible_entry), count: 1
-    assert_dom "#" + dom_id(excluded_entry), count: 0
-
-    # Totals should only count visible transactions
-    search = Transaction::Search.new(family)
-    assert_equal 1, search.totals.count
+    assert_response :unprocessable_entity
+    assert_includes response.body, "A manual recurring transaction already exists for this pattern"
+    assert_select "button[disabled]", text: /Mark as Recurring/
   end
 
-  test "index includes excluded accounts when active_accounts_only is false" do
+  test "turbo_stream update refreshes mark-recurring state when it newly matches" do
     family = families(:empty)
     sign_in users(:empty)
-    account = family.accounts.create! name: "Active Account", balance: 0, currency: "USD", accountable: Depository.new
-    excluded_account = family.accounts.create! name: "Excluded Account", balance: 0, currency: "USD", accountable: Depository.new, excluded: true
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    merchant = family.merchants.create! name: "Test Merchant"
+    entry = create_transaction(account: account, amount: 100, name: "Other Name")
 
-    visible_entry = create_transaction(account: account, name: "Visible Transaction", amount: 50)
-    excluded_entry = create_transaction(account: excluded_account, name: "Previously Hidden", amount: 100)
+    family.recurring_transactions.create!(
+      account: account,
+      merchant: merchant,
+      amount: entry.amount,
+      currency: entry.currency,
+      expected_day_of_month: entry.date.day,
+      last_occurrence_date: entry.date,
+      next_expected_date: 1.month.from_now,
+      status: "active",
+      manual: true,
+      occurrence_count: 1
+    )
 
-    get transactions_url(per_page: 50, q: { active_accounts_only: "false" })
+    patch transaction_url(entry), params: {
+      entry: {
+        date: entry.date,
+        currency: entry.currency,
+        amount: entry.amount.abs,
+        nature: "outflow",
+        entryable_type: entry.entryable_type,
+        entryable_attributes: { id: entry.entryable_id, merchant_id: merchant.id }
+      }
+    }, as: :turbo_stream
+
     assert_response :success
-
-    # Both transactions should appear
-    assert_dom "#" + dom_id(visible_entry), count: 1
-    assert_dom "#" + dom_id(excluded_entry), count: 1
-
-    # Totals should count both transactions
-    search = Transaction::Search.new(family, filters: { "active_accounts_only" => "false" })
-    assert_equal 2, search.totals.count
-  end
-
-  test "index handles name collision between active and excluded accounts" do
-    family = families(:empty)
-    sign_in users(:empty)
-    active_account = family.accounts.create! name: "Savings", balance: 0, currency: "USD", accountable: Depository.new
-    excluded_account = family.accounts.create! name: "Savings", balance: 0, currency: "USD", accountable: Depository.new, excluded: true
-
-    visible_entry = create_transaction(account: active_account, name: "Active Savings Txn", amount: 50)
-    excluded_entry = create_transaction(account: excluded_account, name: "Excluded Savings Txn", amount: 100)
-
-    # Default: only active account's transaction should appear
-    get transactions_url(per_page: 50)
-    assert_response :success
-    assert_dom "#" + dom_id(visible_entry), count: 1
-    assert_dom "#" + dom_id(excluded_entry), count: 0
-
-    search = Transaction::Search.new(family)
-    assert_equal 1, search.totals.count
-
-    # With toggle off: both should appear
-    get transactions_url(per_page: 50, q: { active_accounts_only: "false" })
-    assert_response :success
-    assert_dom "#" + dom_id(visible_entry), count: 1
-    assert_dom "#" + dom_id(excluded_entry), count: 1
-
-    search = Transaction::Search.new(family, filters: { "active_accounts_only" => "false" })
-    assert_equal 2, search.totals.count
-  end
-
-  test "explicit account_ids filter overrides exclusion filter" do
-    family = families(:empty)
-    sign_in users(:empty)
-    active_account = family.accounts.create! name: "Active", balance: 0, currency: "USD", accountable: Depository.new
-    excluded_account = family.accounts.create! name: "Excluded", balance: 0, currency: "USD", accountable: Depository.new, excluded: true
-
-    active_entry = create_transaction(account: active_account, name: "Active Txn", amount: 50)
-    excluded_entry = create_transaction(account: excluded_account, name: "Excluded Txn", amount: 100)
-
-    # Explicitly requesting the excluded account by ID respects active_accounts_only=true
-    get transactions_url(per_page: 50, q: { account_ids: [ excluded_account.id.to_s ] })
-    assert_response :success
-
-    assert_dom "#" + dom_id(excluded_entry), count: 0
-
-    search = Transaction::Search.new(family, filters: { "account_ids" => [ excluded_account.id.to_s ] })
-    assert_equal 0, search.totals.count
+    assert_select "turbo-stream[target='#{dom_id(entry, :mark_recurring)}'] button[disabled]", text: /Mark as Recurring/
   end
 
   test "transaction count represents filtered total" do
@@ -328,6 +332,35 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   assert_operator overflow_count, :>, 0, "Overflow should show some transactions"
 end
 
+  test "filtered requests without per_page keep the stored page size" do
+    family = families(:empty)
+    sign_in users(:empty)
+
+    family.accounts.each { |account| account.entries.delete_all }
+
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+
+    25.times do |i|
+      create_transaction(
+        account: account,
+        name: "Transaction #{i + 1}",
+        amount: 100 + i,
+        date: Date.current - i.days
+      )
+    end
+
+    get transactions_url(per_page: 20)
+    assert_response :success
+
+    # A filtered request that omits per_page has query params present, so it
+    # is not eligible for the "restore stored params" redirect - it must fall
+    # back to the previously stored per_page instead of the hardcoded default.
+    get transactions_url(q: { search: "Transaction" })
+    assert_response :success
+    assert_select "select[name='per_page'] option[value='20'][selected]"
+    assert_equal 20, css_select("turbo-frame[id^='entry_']").count
+  end
+
   test "pagination does not duplicate or skip transactions with same date and timestamp" do
     family = families(:empty)
     user = users(:empty)
@@ -479,6 +512,115 @@ end
       status: "active",
       manual: true,
       occurrence_count: 1
+    )
+
+    assert_no_difference "RecurringTransaction.count" do
+      post mark_as_recurring_transaction_path(transaction)
+    end
+
+    assert_redirected_to transactions_path
+    assert_equal "A manual recurring transaction already exists for this pattern", flash[:alert]
+  end
+
+  test "mark_as_recurring allows a second manual recurring transaction with same merchant but different amount" do
+    family = families(:empty)
+    sign_in users(:empty)
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    merchant = family.merchants.create! name: "Test Merchant"
+    entry = create_transaction(account: account, amount: 34, merchant: merchant)
+    transaction = entry.entryable
+
+    # Existing manual recurring row for the same merchant, but a different amount
+    family.recurring_transactions.create!(
+      account: account,
+      merchant: merchant,
+      amount: 12,
+      currency: entry.currency,
+      expected_day_of_month: entry.date.day,
+      last_occurrence_date: entry.date,
+      next_expected_date: 1.month.from_now,
+      status: "active",
+      manual: true,
+      occurrence_count: 1
+    )
+
+    assert_difference "family.recurring_transactions.count", 1 do
+      post mark_as_recurring_transaction_path(transaction)
+    end
+
+    assert_redirected_to transactions_path
+    assert_equal "Transaction marked as recurring", flash[:notice]
+  end
+
+  test "mark_as_recurring allows a second manual recurring transaction with same name but different amount" do
+    family = families(:empty)
+    sign_in users(:empty)
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    entry = create_transaction(account: account, name: "Example Payee", amount: 34)
+    transaction = entry.entryable
+
+    # Existing manual recurring row for the same payee name, but a different amount
+    family.recurring_transactions.create!(
+      account: account,
+      name: "Example Payee",
+      amount: 12,
+      currency: entry.currency,
+      expected_day_of_month: entry.date.day,
+      last_occurrence_date: entry.date,
+      next_expected_date: 1.month.from_now,
+      status: "active",
+      manual: true,
+      occurrence_count: 1
+    )
+
+    assert_difference "family.recurring_transactions.count", 1 do
+      post mark_as_recurring_transaction_path(transaction)
+    end
+
+    assert_redirected_to transactions_path
+    assert_equal "Transaction marked as recurring", flash[:notice]
+  end
+
+  test "mark_as_recurring shows alert if recurring transaction with same name and amount already exists" do
+    family = families(:empty)
+    sign_in users(:empty)
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    entry = create_transaction(account: account, name: "Example Payee", amount: 100)
+    transaction = entry.entryable
+
+    family.recurring_transactions.create!(
+      account: account,
+      name: "Example Payee",
+      amount: entry.amount,
+      currency: entry.currency,
+      expected_day_of_month: entry.date.day,
+      last_occurrence_date: entry.date,
+      next_expected_date: 1.month.from_now,
+      status: "active",
+      manual: true,
+      occurrence_count: 1
+    )
+
+    assert_no_difference "RecurringTransaction.count" do
+      post mark_as_recurring_transaction_path(transaction)
+    end
+
+    assert_redirected_to transactions_path
+    assert_equal "A manual recurring transaction already exists for this pattern", flash[:alert]
+  end
+
+  test "mark_as_recurring shows already-exists alert when a concurrent request wins the race" do
+    family = families(:empty)
+    sign_in users(:empty)
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    merchant = family.merchants.create! name: "Test Merchant"
+    entry = create_transaction(account: account, amount: 100, merchant: merchant)
+    transaction = entry.entryable
+
+    # Simulate another request creating the identical pattern between our
+    # pre-check and our create call.
+    RecurringTransaction.expects(:create_from_transaction).raises(
+      ActiveRecord::RecordNotUnique.new("duplicate key value violates unique constraint")
     )
 
     assert_no_difference "RecurringTransaction.count" do

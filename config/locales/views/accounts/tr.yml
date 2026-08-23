@@ -6,11 +6,6 @@ tr:
         success: Kayıt başarıyla silindi.
   accounts:
     account:
-      archive: Hesabı arşivle
-      unarchive: Hesabı arşivden çıkar
-      disabled_label: Devre dışı
-      excluded_label: Hariç tutulan
-      archived_label: Arşivlenen
       change_simplefin_account: SimpleFIN hesabını değiştir
       complete_setup: Kurulumu tamamla
       default_label: Varsayılan
@@ -68,21 +63,9 @@ tr:
       notes_label: Notlar
       notes_placeholder: Hesap numaraları, sort code, IBAN, routing numarası gibi
         ek bilgileri saklayın.
-      exclude_from_reports_label: Raporlardan ve ölçümlerden hariç tut
-      exclude_from_reports_description: Hariç tutulan hesaplar raporlarda ve net değer hesaplamalarında gizlenir.
-      archive_label: Hesabı arşivle
-      archive_description: Arşivlenen hesaplar kenar çubuğundan gizlenir ancak net değerinizde ve raporlarda sayılmaya devam eder.
       opening_balance_date_label: Açılış bakiyesi tarihi
-    accountable_group:
-      excluded_badge: "(Hariç tutulan)"
-      archived_badge: "(Arşivlenen)"
     index:
       accounts: Hesaplar
-      account_groups:
-        total: Toplam
-        active: Aktif
-        excluded: Hariç tutulan
-        archived: Arşivlenen
       cancel_sync: Senkronizasyonu iptal et
       manual_accounts:
         other_accounts: Diğer hesaplar

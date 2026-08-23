@@ -9,6 +9,7 @@ es:
       alpha_vantage: Alpha Vantage
       mfapi: MFAPI.in
       binance_public: Binance
+      moex_public: MOEX
     combobox:
-      display: "%{symbol} - %{name} (%{exchange})"
-      exchange_label: "%{symbol} (%{exchange})"
+      display: '%{symbol} - %{name} (%{exchange})'
+      exchange_label: '%{symbol} (%{exchange})'

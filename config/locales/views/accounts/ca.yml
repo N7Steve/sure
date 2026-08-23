@@ -71,11 +71,6 @@ ca:
       archived_badge: "(Arxivat)"
     index:
       accounts: Comptes
-      account_groups:
-        total: Total
-        active: Actiu
-        excluded: Exclòs
-        archived: Arxivat
       cancel_sync: Cancel·la la sincronització
       manual_accounts:
         other_accounts: Altres comptes

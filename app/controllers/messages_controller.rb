@@ -38,17 +38,6 @@ class MessagesController < ApplicationController
     head :not_found
   end
 
-  # Called by the chat watchdog when an assistant "Thinking…" bubble has waited
-  # too long for a response that never arrived. Idempotent and scoped to the
-  # current user's chat.
-  def report_timeout
-    message = @chat.messages.find(params[:id])
-    @chat.handle_undelivered_response!(message)
-    head :ok
-  rescue ActiveRecord::RecordNotFound
-    head :not_found
-  end
-
   private
     def set_chat
       @chat = Current.user.chats.find(params[:chat_id])

@@ -22,13 +22,8 @@ zh-TW:
       set_default: 設為預設
       remove_default: 取消預設
       default_label: 預設
-      disabled_label: 已停用
-      excluded_label: 已排除
-      archived_label: 已封存
       delete: 刪除帳戶
       sharing: 共享
-      archive: 封存帳戶
-      unarchive: 取消封存帳戶
     chart:
       data_not_available: 所選時段內無資料
     create:
@@ -55,23 +50,11 @@ zh-TW:
       institution_domain_placeholder: 例如：esunbank.com.tw
       notes_label: 備註
       notes_placeholder: 儲存額外資訊，例如帳號、分行代碼、IBAN、銀行轉帳號碼 (Routing numbers) 等。
-      exclude_from_reports_label: 從報告和指標中排除
-      exclude_from_reports_description: 被排除的帳戶將不會顯示在報告和淨值計算中。
-      archive_label: 封存帳戶
-      archive_description: 封存的帳戶將從側邊欄隱藏，但仍計入您的淨值和報告中。
       exclude_from_reports: 從所有報表中排除
       enable_category_matcher_label: 啟用分類比對
       enable_category_matcher_hint: 啟用後，供應商建議的分類會套用到匯入的交易。停用則新交易會維持未分類。
-    accountable_group:
-      excluded_badge: （已排除）
-      archived_badge: （已封存）
     index:
       accounts: 帳戶管理
-      account_groups:
-        total: 總計
-        active: 活躍
-        excluded: 已排除
-        archived: 已封存
       cancel_sync: 取消同步
       manual_accounts:
         other_accounts: 其他帳戶

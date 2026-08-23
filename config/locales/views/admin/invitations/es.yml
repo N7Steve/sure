@@ -3,6 +3,6 @@ es:
   admin:
     invitations:
       destroy:
-        success: "Invitación eliminada."
+        success: Invitación eliminada.
       destroy_all:
-        success: "Se han eliminado todas las invitaciones de esta familia."
+        success: Se han eliminado todas las invitaciones de esta familia.

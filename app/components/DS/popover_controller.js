@@ -42,6 +42,16 @@ export default class extends Controller {
     return !this.contentTarget.classList.contains("hidden");
   }
 
+  // Derived from the content element's own class rather than tracked as
+  // separate state. A Turbo morph (e.g. a same-page refresh while this
+  // popover is mounted) re-renders the content element closed without
+  // going through toggle()/close(), which would otherwise leave a plain
+  // instance property out of sync with the DOM — swallowing the next
+  // click because toggle() would think it still needs to close.
+  get show() {
+    return !this.contentTarget.classList.contains("hidden");
+  }
+
   disconnect() {
     this.removeEventListeners();
     this.stopAutoUpdate();
