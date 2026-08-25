@@ -443,7 +443,7 @@ class ReportsController < ApplicationController
         .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Transaction::BUDGET_EXCLUDED_KINDS)
-        .includes(entry: :account, category: :parent)
+        .includes(:merchant, entry: :account, category: :parent)
       transactions = exclude_tax_advantaged_accounts(transactions)
 
       # Apply filters (includes finance account scoping)
@@ -506,8 +506,8 @@ class ReportsController < ApplicationController
       end
 
       # Helper to process an entry (transaction or trade)
-      process_entry = ->(category, entry, is_trade) do
-        kind = is_trade ? "trade" : entry.entryable.kind
+      process_entry = ->(category, entry, entryable, is_trade) do
+        kind = is_trade ? "trade" : entryable.kind
 
         type = if kind.in?(%w[transfer_to_excluded transfer_from_excluded])
                  "transfer"
@@ -525,7 +525,7 @@ class ReportsController < ApplicationController
         end
 
         if kind.in?(%w[transfer_to_excluded transfer_from_excluded])
-          transfer = entry.entryable.transfer
+          transfer = entryable.transfer
           if transfer && transfer.outflow_transaction && transfer.inflow_transaction
             outflow_acc = transfer.outflow_transaction.entry.account
             inflow_acc = transfer.inflow_transaction.entry.account
@@ -566,7 +566,9 @@ class ReportsController < ApplicationController
           grouped_data[parent_key][:subcategories][category.id][:has_transactions] = true unless is_trade
           grouped_data[parent_key][:subcategories][category.id][:entries] << {
             entry: entry,
-            amount: converted_amount
+            amount: converted_amount,
+            merchant: is_trade ? nil : entryable.merchant,
+            show_merchant: !is_trade
           }
         else
           # This is a root category (no parent)
@@ -581,12 +583,12 @@ class ReportsController < ApplicationController
 
       # Process transactions
       transactions.each do |transaction|
-        process_entry.call(transaction.category, transaction.entry, false)
+        process_entry.call(transaction.category, transaction.entry, transaction, false)
       end
 
       # Process trades
       trades.each do |trade|
-        process_entry.call(trade.category, trade.entry, true)
+        process_entry.call(trade.category, trade.entry, trade, true)
       end
 
       # Convert to array and sort subcategories

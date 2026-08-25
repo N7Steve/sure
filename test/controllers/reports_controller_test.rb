@@ -424,6 +424,8 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     parent_category = @family.categories.create!(name: "Ranked spending", color: "#FF5733")
     subcategory = @family.categories.create!(name: "Ranked electronics", parent: parent_category, color: "#33FF57")
     account = @family.accounts.first
+    merchant = merchants(:amazon)
+    merchant.update!(logo_url: "https://example.com/amazon.png")
 
     12.times do |index|
       rank = index + 1
@@ -432,6 +434,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
         name: "Ranked entry #{rank}",
         amount: rank,
         category: subcategory,
+        merchant: rank == 12 ? merchant : nil,
         date: Date.current
       )
     end
@@ -446,6 +449,12 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
 
     entry_names = row.css("[data-testid='report-entry-name']").map { |node| node.text.strip }
     assert_equal (3..12).to_a.reverse.map { |rank| "Ranked entry #{rank}" }, entry_names
+
+    merchant_names = row.css("[data-testid='report-entry-merchant']").map { |node| node.text.strip }
+    assert_equal 10, merchant_names.size
+    assert_equal "Amazon", merchant_names.first
+    assert_equal 1, row.css("img[alt='Amazon']").size
+    assert_not_includes row.text, Date.current.strftime(@family.date_format)
   end
 
   test "index links income and expense categories to filtered transactions" do

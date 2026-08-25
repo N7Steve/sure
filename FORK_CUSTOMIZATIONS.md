@@ -132,7 +132,7 @@ El fork distingue conceptos que no son intercambiables:
 - Dashboard de informes con secciones configurables, colapsables y reordenables.
 - Resumen financiero y desglose de transacciones/categorías con enlaces a las transacciones subyacentes.
 - En los bloques de gasto e ingreso, cada subcategoría es un desplegable que muestra dentro sus 10 movimientos de mayor importe, ordenados de mayor a menor. Si existen más de 10, los restantes se omiten de la vista, pero siguen formando parte del recuento, el total y el porcentaje de la subcategoría.
-- Cada movimiento del desplegable muestra nombre, fecha, cuenta e importe, y permite abrir su detalle en el drawer. La selección de los 10 primeros se realiza después de convertir los importes a la moneda de la familia, por lo que el orden es coherente entre cuentas con distintas monedas.
+- Cada movimiento del desplegable muestra nombre, merchant, cuenta e importe, utiliza el logo del merchant cuando está disponible y permite abrir su detalle en el drawer. La fecha se omite por no ser relevante para este análisis. La selección de los 10 primeros se realiza después de convertir los importes a la moneda de la familia, por lo que el orden es coherente entre cuentas con distintas monedas.
 - Exportación CSV del desglose y ayuda para llevarlo a Google Sheets.
 - `IncomeStatement` y totales adaptados a las reglas del fork, incluidas cuentas excluidas, movimientos internos e inversiones.
 - `SharedExpensesCalculator` para distribuir gastos compartidos y calcular métricas personalizadas de gasto e ingreso.

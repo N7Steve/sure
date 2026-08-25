@@ -66,14 +66,22 @@
       <div class="bg-container-inset px-4 py-2 lg:pl-16 lg:pr-6" data-testid="subcategory-entries">
         <% item[:entries].each_with_index do |record, index| %>
           <% entry = record[:entry] %>
+          <% merchant = record[:merchant] %>
           <div class="flex items-center gap-3 py-2 <%= "border-b border-secondary" if index < item[:entries].size - 1 %>"
                data-entry-id="<%= entry.id %>">
-            <%= render DS::FilledIcon.new(
-              variant: :text,
-              text: entry.name,
-              size: "sm",
-              rounded: true
-            ) %>
+            <% if merchant&.logo_url.present? %>
+              <%= image_tag Setting.transform_brand_fetch_url(merchant.logo_url),
+                    alt: merchant.name,
+                    class: "w-6 h-6 shrink-0 rounded-full border border-secondary",
+                    loading: "lazy" %>
+            <% else %>
+              <%= render DS::FilledIcon.new(
+                variant: :text,
+                text: merchant&.name || entry.name,
+                size: "sm",
+                rounded: true
+              ) %>
+            <% end %>
 
             <div class="min-w-0 flex-1">
               <%= link_to entry.name,
@@ -81,7 +89,10 @@
                     class: "block truncate font-medium text-primary hover:underline",
                     data: { turbo_frame: "drawer", turbo_prefetch: false, testid: "report-entry-name" } %>
               <p class="truncate text-xs text-subdued">
-                <%= format_date(entry.date) %> · <%= entry.account.name %>
+                <% if record[:show_merchant] %>
+                  <span data-testid="report-entry-merchant"><%= merchant&.name || t("transactions.transaction.general_merchant") %></span> ·
+                <% end %>
+                <%= entry.account.name %>
               </p>
             </div>
 
