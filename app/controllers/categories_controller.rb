@@ -157,6 +157,7 @@ class CategoriesController < ApplicationController
           locals: {
             category: category,
             selected: true,
+            search_name: category.display_name,
             view_helpers: helpers
           }
         )

@@ -8,6 +8,13 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
   test "should get new" do
     get new_transfer_url
     assert_response :success
+
+    assert_select "input[type='hidden'][name='transfer[from_account_id]']", count: 1
+    assert_select "input[type='hidden'][name='transfer[to_account_id]']", count: 1
+    assert_select "[data-controller='category-select']" do
+      assert_select "input[type='hidden'][name='transfer[category_id]']", count: 1
+      assert_select "[role='option'][data-category-id='#{categories(:subcategory).id}'].pl-8", count: 1
+    end
   end
 
   test "can create transfers" do

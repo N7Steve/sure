@@ -3,11 +3,11 @@ class TransfersController < ApplicationController
 
   before_action :set_transfer, only: %i[show destroy update update_tags mark_as_recurring]
   before_action :set_accounts, only: %i[new create]
+  before_action :set_new_transfer_form_options, only: %i[new create]
 
   def new
     @transfer = Transfer.new
     @from_account_id = params[:from_account_id]
-    @tags = Current.family.tags.alphabetically
   end
 
   def show
@@ -55,7 +55,6 @@ class TransfersController < ApplicationController
       end
     else
       @from_account_id = transfer_params[:from_account_id]
-      @tags = Current.family.tags.alphabetically
       render :new, status: :unprocessable_entity
     end
   rescue Money::ConversionError
@@ -63,14 +62,12 @@ class TransfersController < ApplicationController
     @transfer.tag_ids = transfer_params[:tag_ids]
     @transfer.errors.add(:base, t(".exchange_rate_unavailable"))
     set_accounts
-    @tags = Current.family.tags.alphabetically
     render :new, status: :unprocessable_entity
   rescue ArgumentError
     @transfer ||= Transfer.new
     @transfer.tag_ids = transfer_params[:tag_ids]
     @transfer.errors.add(:date, t(".date_invalid"))
     set_accounts
-    @tags = Current.family.tags.alphabetically
     render :new, status: :unprocessable_entity
   end
 
@@ -217,6 +214,11 @@ class TransfersController < ApplicationController
           :account_providers,
           logo_attachment: :blob
         )
+    end
+
+    def set_new_transfer_form_options
+      @categories = Current.family.categories.alphabetically_by_hierarchy.to_a
+      @tags = Current.family.tags.alphabetically.to_a
     end
 
     def transfer_update_params

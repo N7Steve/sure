@@ -24,6 +24,23 @@ class TransactionCategorySelectTest < ApplicationSystemTestCase
     assert Category.exists?(name: "Inline Test Category")
   end
 
+  test "shows subcategories nested under their parent" do
+    subcategory = categories(:subcategory)
+
+    visit new_transaction_url
+
+    within "[data-controller='category-select']" do
+      find("button", match: :first).click
+
+      nested_option = find("[role='option'][data-category-id='#{subcategory.id}']")
+
+      assert_includes nested_option[:class].split, "pl-8"
+      assert_equal subcategory.display_name_with_parent,
+                   nested_option["data-category-search-name"]
+      assert_text subcategory.display_name
+    end
+  end
+
   test "can clear a category from an existing transaction" do
     transaction = transactions(:one)
     transaction.update!(category: categories(:food_and_drink))

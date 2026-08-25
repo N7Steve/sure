@@ -10,7 +10,7 @@ class DS::CategorySelect < DesignSystemComponent
     blank_label: nil
   )
     @form = form
-    @categories = categories
+    @categories = categories.to_a
     @selected_id = selected_id&.to_s
     @disabled = disabled
     @auto_submit = auto_submit
@@ -28,4 +28,18 @@ class DS::CategorySelect < DesignSystemComponent
   def menu_id
     "#{field_id}_menu"
   end
+
+  def search_name_for(category)
+    return category.display_name if category.parent_id.blank?
+
+    parent = categories_by_id[category.parent_id.to_s]
+    return category.display_name unless parent
+
+    "#{parent.display_name} > #{category.display_name}"
+  end
+
+  private
+    def categories_by_id
+      @categories_by_id ||= categories.index_by { |category| category.id.to_s }
+    end
 end

@@ -17,6 +17,12 @@ class TransfersTest < ApplicationSystemTestCase
     select_ds("From", accounts(:depository))
     select_ds("To", accounts(:credit_card))
 
+    category = categories(:subcategory)
+    within "[data-controller='category-select']" do
+      find("button", match: :first).click
+      find("[role='option'][data-category-id='#{category.id}']").click
+    end
+
     fill_in "transfer[amount]", with: 500
     fill_in "Date", with: transfer_date
 
@@ -25,6 +31,10 @@ class TransfersTest < ApplicationSystemTestCase
     within "#entry-group-#{transfer_date}" do
       assert_text "Payment to"
     end
+
+    transfer = Transfer.order(:created_at).last
+    assert_equal category, transfer.outflow_transaction.category
+    assert_equal category, transfer.inflow_transaction.category
   end
 
   test "shows exchange rate field for different currencies" do

@@ -61,7 +61,10 @@ export default class extends Controller {
 
     this.optionTargets.forEach((option) => {
       const name = option.dataset.categoryName.toLowerCase();
-      const matches = name.includes(query);
+      const searchName = (
+        option.dataset.categorySearchName || name
+      ).toLowerCase();
+      const matches = searchName.includes(query);
 
       option.classList.toggle("hidden", !matches);
 

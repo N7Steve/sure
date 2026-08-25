@@ -1,23 +1,37 @@
-<%# locals: (category:, selected:, view_helpers:) %>
+<%# locals: (category:, selected:, search_name:, view_helpers:) %>
+
+<% is_subcategory = category.parent_id.present? %>
 
 <button type="button"
         role="option"
         aria-selected="<%= selected %>"
         data-category-select-target="option"
         data-category-id="<%= category.id %>"
-        data-category-name="<%= category.name %>"
-        data-category-display-label="<%= category.name %>"
+        data-category-name="<%= category.display_name %>"
+        data-category-search-name="<%= search_name %>"
+        data-category-display-label="<%= category.display_name %>"
         data-action="click->category-select#selectCategory"
-        class="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if selected %>">
+        class="flex items-center gap-2 w-full py-2 text-sm text-primary text-left rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if selected %> <%= is_subcategory ? "pl-8 pr-3" : "px-3" %>">
 
-  <span class="check-icon w-4 <%= "invisible" unless selected %>">
+  <span class="check-icon w-4 shrink-0 <%= "invisible" unless selected %>">
     <%= view_helpers.icon("check") %>
   </span>
 
-  <span data-category-select-badge>
-    <%= view_helpers.render partial: "categories/badge",
-                            formats: [ :html ],
-                            locals: { category: category } %>
+  <% if is_subcategory %>
+    <span class="text-secondary flex shrink-0">
+      <%= view_helpers.icon("corner-down-right", size: "sm") %>
+    </span>
+  <% end %>
 
+  <span data-category-select-badge class="min-w-0">
+    <%= view_helpers.render DS::Pill.new(
+          label: category.display_name,
+          custom_color: category.color,
+          icon: category.lucide_icon.presence,
+          icon_size: "sm",
+          marker: false,
+          size: :md,
+          truncate: true,
+          title: category.display_name) %>
   </span>
 </button>
