@@ -69,14 +69,11 @@
           <%# Render subcategories if present %>
           <% if group[:subcategories].present? && group[:subcategories].any? %>
             <% group[:subcategories].each_with_index do |subcategory, sub_idx| %>
-              <%= render "reports/category_row",
+              <%= render "reports/subcategory_row",
                 item: subcategory,
                 total: total,
                 color_class: color_class,
-                level: :subcategory,
                 hide_percentage: type == :transfer,
-                start_date: start_date,
-                end_date: end_date,
                 show_border: sub_idx < group[:subcategories].size - 1 %>
             <% end %>
           <% end %>

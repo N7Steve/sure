@@ -1,6 +1,8 @@
 class ReportsController < ApplicationController
   include Periodable
 
+  CATEGORY_ENTRY_PREVIEW_LIMIT = 10
+
   # Allow API key authentication for exports (for Google Sheets integration)
   # Note: We run authentication_for_export which handles both session and API key auth
   skip_authentication only: :export_transactions
@@ -494,11 +496,12 @@ class ReportsController < ApplicationController
         {
           category_id: category.id,
           category_name: category.name,
-          category_color: category.color,
+          category_color: category.color || Category::UNCATEGORIZED_COLOR,
           category_icon: category.lucide_icon,
           total: 0,
           count: 0,
-          has_transactions: false
+          has_transactions: false,
+          entries: []
         }
       end
 
@@ -561,6 +564,10 @@ class ReportsController < ApplicationController
           grouped_data[parent_key][:subcategories][category.id][:count] += 1
           grouped_data[parent_key][:subcategories][category.id][:total] += converted_amount
           grouped_data[parent_key][:subcategories][category.id][:has_transactions] = true unless is_trade
+          grouped_data[parent_key][:subcategories][category.id][:entries] << {
+            entry: entry,
+            amount: converted_amount
+          }
         else
           # This is a root category (no parent)
           parent_key = [ category.id, type ]
@@ -584,7 +591,14 @@ class ReportsController < ApplicationController
 
       # Convert to array and sort subcategories
       result = grouped_data.values.map do |parent_data|
-        subcategories = parent_data[:subcategories].values.sort_by(&sort_logic)
+        subcategories = parent_data[:subcategories].values.map do |subcategory|
+          entries = subcategory[:entries]
+            .sort_by { |record| [ -record[:amount], -record[:entry].date.jd, record[:entry].id.to_s ] }
+            .first(CATEGORY_ENTRY_PREVIEW_LIMIT)
+
+          subcategory.merge(entries: entries)
+        end.sort_by(&sort_logic)
+
         parent_data.merge(subcategories: subcategories)
       end
 

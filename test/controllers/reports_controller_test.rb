@@ -420,6 +420,34 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-category='category-#{subcategory_games.id}']", text: /^Games/
   end
 
+  test "subcategory disclosures show only the 10 highest entries in descending order" do
+    parent_category = @family.categories.create!(name: "Ranked spending", color: "#FF5733")
+    subcategory = @family.categories.create!(name: "Ranked electronics", parent: parent_category, color: "#33FF57")
+    account = @family.accounts.first
+
+    12.times do |index|
+      rank = index + 1
+      create_transaction(
+        account: account,
+        name: "Ranked entry #{rank}",
+        amount: rank,
+        category: subcategory,
+        date: Date.current
+      )
+    end
+
+    get reports_path(period_type: :monthly)
+    assert_response :ok
+
+    row = css_select("tr[data-category='category-#{subcategory.id}']").first
+    assert_not_nil row
+    assert_equal 1, row.css("details").size
+    assert_equal 10, row.css("[data-testid='subcategory-entries'] [data-entry-id]").size
+
+    entry_names = row.css("[data-testid='report-entry-name']").map { |node| node.text.strip }
+    assert_equal (3..12).to_a.reverse.map { |rank| "Ranked entry #{rank}" }, entry_names
+  end
+
   test "index links income and expense categories to filtered transactions" do
     start_date = Date.current.beginning_of_month
     end_date = Date.current.end_of_month

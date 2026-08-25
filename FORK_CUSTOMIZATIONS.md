@@ -131,6 +131,8 @@ El fork distingue conceptos que no son intercambiables:
 
 - Dashboard de informes con secciones configurables, colapsables y reordenables.
 - Resumen financiero y desglose de transacciones/categorías con enlaces a las transacciones subyacentes.
+- En los bloques de gasto e ingreso, cada subcategoría es un desplegable que muestra dentro sus 10 movimientos de mayor importe, ordenados de mayor a menor. Si existen más de 10, los restantes se omiten de la vista, pero siguen formando parte del recuento, el total y el porcentaje de la subcategoría.
+- Cada movimiento del desplegable muestra nombre, fecha, cuenta e importe, y permite abrir su detalle en el drawer. La selección de los 10 primeros se realiza después de convertir los importes a la moneda de la familia, por lo que el orden es coherente entre cuentas con distintas monedas.
 - Exportación CSV del desglose y ayuda para llevarlo a Google Sheets.
 - `IncomeStatement` y totales adaptados a las reglas del fork, incluidas cuentas excluidas, movimientos internos e inversiones.
 - `SharedExpensesCalculator` para distribuir gastos compartidos y calcular métricas personalizadas de gasto e ingreso.
@@ -149,8 +151,9 @@ El fork distingue conceptos que no son intercambiables:
 - `app/views/reports/_summary_dashboard.html.erb`
 - `app/views/reports/_breakdown_table.html.erb`
 - `app/views/reports/_category_row.html.erb`
+- `app/views/reports/_subcategory_row.html.erb`
 - `app/views/reports/_transactions_breakdown.html.erb`
-- Locales de informes en inglés y español y pruebas de controladores/modelos relacionadas.
+- Locales de informes en inglés y español y pruebas de controladores/modelos relacionadas, incluida la regresión que verifica el orden descendente y el límite de 10 movimientos por subcategoría en `test/controllers/reports_controller_test.rb`.
 
 ## 5. Roboadvisor e inversiones en informes
 
