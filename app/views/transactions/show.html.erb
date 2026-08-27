@@ -133,40 +133,15 @@
                     disabled: amount_locked,
                     disable_currency: amount_locked %>
             </div>
-            <% if @entry.from_scheduled_payment? %>
-              <div class="form-field">
-                <div class="form-field__body">
-                  <label class="form-field__label"><%= t(".category_label") %></label>
-                  <% cat = @entry.entryable.category %>
-                  <% if cat.present? %>
-                    <% hex_color = cat.respond_to?(:color) ? cat.color : "#737373" %>
-                    <span class="inline-flex items-center gap-2 text-sm font-medium rounded-full px-3 py-1 border"
-                          style="background-color: color-mix(in oklab, <%= hex_color %> 10%, transparent);
-                                 border-color: color-mix(in oklab, <%= hex_color %> 20%, transparent);
-                                 color: <%= hex_color %>;">
-                      <% if cat.respond_to?(:lucide_icon) && cat.lucide_icon.present? %>
-                        <%= icon cat.lucide_icon, size: "sm", color: "current" %>
-                      <% else %>
-                        <span class="size-1.5 rounded-full" style="background-color: <%= hex_color %>;"></span>
-                      <% end %>
-                      <%= cat.name %>
-                    </span>
-                  <% else %>
-                    <p class="text-sm text-secondary py-1"><%= t(".uncategorized") %></p>
-                  <% end %>
-                </div>
-              </div>
-            <% else %>
-              <%= f.fields_for :entryable do |ef| %>
-                <%= render DS::CategorySelect.new(
-                      form: ef,
-                      categories: Current.family.categories.alphabetically_by_hierarchy,
-                      selected_id: ef.object.category_id,
-                      disabled: @entry.split_child? || @annotate_locked,
-                      auto_submit: true,
-                      blank_label: t(".uncategorized")
-                    ) %>
-              <% end %>
+            <%= f.fields_for :entryable do |ef| %>
+              <%= render DS::CategorySelect.new(
+                    form: ef,
+                    categories: Current.family.categories.alphabetically_by_hierarchy,
+                    selected_id: ef.object.category_id,
+                    disabled: @entry.split_child? || @annotate_locked,
+                    auto_submit: true,
+                    blank_label: t(".uncategorized")
+                  ) %>
             <% end %>
           <% end %>
         <% end %>
@@ -188,64 +163,28 @@
                 { label: t(".account_label") },
                 { disabled: true } %>
             <%= f.fields_for :entryable do |ef| %>
-              <% if @entry.from_scheduled_payment? %>
-                <div class="form-field">
-                  <div class="form-field__body">
-                    <label class="form-field__label"><%= t(".merchant_label") %></label>
-                    <% merchant = @entry.entryable.merchant %>
-                    <% if merchant.present? %>
-                      <div class="flex items-center gap-2 py-1">
-                        <% if merchant.respond_to?(:logo_url) && merchant.logo_url.present? %>
-                          <%= image_tag Setting.transform_brand_fetch_url(merchant.logo_url),
-                              class: "w-6 h-6 rounded-full border border-secondary", loading: "lazy" %>
-                        <% else %>
-                          <%= render DS::FilledIcon.new(variant: :text, text: merchant.name, size: "sm", rounded: true) %>
-                        <% end %>
-                        <span class="text-sm text-primary"><%= merchant.name %></span>
-                      </div>
-                    <% else %>
-                      <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
-                    <% end %>
-                  </div>
-                </div>
-                <div class="form-field">
-                  <div class="form-field__body">
-                    <label class="form-field__label"><%= t(".tags_label") %></label>
-                    <% entry_tags = @entry.entryable.tags %>
-                    <% if entry_tags.any? %>
-                      <div class="flex flex-wrap gap-1 py-1">
-                        <% entry_tags.each do |tag| %>
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-container-inset text-primary border border-secondary">
-                            <%= tag.name %>
-                          </span>
-                        <% end %>
-                      </div>
-                    <% else %>
-                      <p class="text-sm text-secondary py-1"><%= t(".none") %></p>
-                    <% end %>
-                  </div>
-                </div>
-              <% else %>
-                <%= ef.collection_select :merchant_id,
-                      Current.family.available_merchants_for(Current.user).alphabetically,
-                      :id, :name,
-                      { include_blank: t(".none"),
-                        label: t(".merchant_label"),
-                        variant: :logo, searchable: true, menu_placement: :auto, disabled: @entry.split_child? || @annotate_locked },
-                      "data-auto-submit-form-target": "auto" %>
-                <%= render DS::TagSelect.new(
-                      form: ef,
-                      tags: Current.family.tags.alphabetically,
-                      selected_ids: ef.object.tag_ids,
-                      disabled: @annotate_locked,
-                      auto_submit: true,
-                      update_url: tags_transaction_path(@entry)
-                    ) %>
-              <% end %>
+              <%= render DS::MerchantSelect.new(
+                    form: ef,
+                    method: :merchant_id,
+                    merchants: Current.family.available_merchants_for(Current.user).alphabetically,
+                    selected_id: ef.object.merchant_id,
+                    include_blank: t(".none"),
+                    label: t(".merchant_label"),
+                    disabled: @entry.split_child? || @annotate_locked,
+                    auto_submit: true
+                  ) %>
+              <%= render DS::TagSelect.new(
+                    form: ef,
+                    tags: Current.family.tags.alphabetically,
+                    selected_ids: ef.object.tag_ids,
+                    disabled: @annotate_locked,
+                    auto_submit: true,
+                    update_url: tags_transaction_path(@entry)
+                  ) %>
             <% end %>
           <% end %>
         <% end %>
-        <%= render "transactions/notes", entry: @entry, can_annotate: !@annotate_locked && !@entry.from_scheduled_payment? %>
+        <%= render "transactions/notes", entry: @entry, can_annotate: !@annotate_locked %>
       </div>
     <% end %>
 

@@ -49,13 +49,12 @@
           role="listbox" tabindex="-1">
       <% items.each do |item| %>
         <% is_selected = item[:value] == selected_value %>
-        <% obj = item[:object] %>
+        <% is_child = child?(item) %>
 
-        <% is_subcategory = obj&.respond_to?(:subcategory?) && obj.subcategory? %>
         <%# Options use tabindex="-1" always — keyboard focus is managed
             programmatically so listbox items never appear in the Tab
             sequence and skip past the trigger to the next form field. %>
-        <div class="filterable-item text-primary text-sm cursor-pointer flex items-center gap-2 py-2 rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if is_selected %> <%= is_subcategory ? "pl-8 pr-3" : "px-3" %>"
+        <div class="filterable-item text-primary text-sm cursor-pointer flex items-center gap-2 py-2 rounded-lg hover:bg-container-inset-hover <%= "bg-container-inset" if is_selected %> <%= is_child ? "pl-8 pr-3" : "px-3" %>"
               role="option"
               tabindex="-1"
               aria-selected="<%= is_selected %>"
@@ -68,7 +67,7 @@
             <%= helpers.icon("check") %>
           </span>
 
-          <% if is_subcategory %>
+          <% if is_child %>
             <span class="text-secondary flex shrink-0">
               <%= helpers.icon("corner-down-right", size: "sm") %>
             </span>
