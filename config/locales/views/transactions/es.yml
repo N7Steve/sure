@@ -332,6 +332,7 @@ es:
         tag_filter: Etiqueta
         type_filter: Tipo
       search:
+        clear_all: Borrar todo
         equal_to: igual a
         greater_than: mayor que
         less_than: menor que

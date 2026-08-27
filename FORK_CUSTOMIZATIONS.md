@@ -198,6 +198,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 - Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría; no deben moverse al disclosure de detalles.
 - Autocompletado de descripciones por cuenta mediante `Transactions::DescriptionsController` y Stimulus.
 - Búsqueda por comercio y filtros por cuentas, categorías, comercios, tipos, etiquetas, estado, fechas e importe.
+- Los filtros se conservan exclusivamente en la URL: el historial del navegador puede restaurarlos, pero una nueva entrada a Transacciones comienza sin filtros. Los chips incluyen una acción «Borrar todo» y el tamaño inicial de página es de 20 movimientos.
 - Detalle enriquecido con edición automática, indicadores, posibles duplicados, protección, contexto de transferencias/pagos programados y permisos de anotación.
 - Actualización rápida de categoría, etiquetas y actividad de inversión.
 - Borrado masivo y vistas Turbo actualizadas.

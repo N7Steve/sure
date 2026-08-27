@@ -347,6 +347,63 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   assert_operator overflow_count, :>, 0, "Overflow should show some transactions"
 end
 
+  test "defaults to twenty transactions per page" do
+    family = families(:empty)
+    sign_in users(:empty)
+
+    family.accounts.each { |account| account.entries.delete_all }
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+
+    25.times do |i|
+      create_transaction(
+        account: account,
+        name: "Default page transaction #{i + 1}",
+        amount: 100 + i,
+        date: Date.current - i.days
+      )
+    end
+
+    get transactions_url
+
+    assert_response :success
+    assert_select "select[name='per_page'] option[value='20'][selected]"
+    assert_equal 20, css_select("turbo-frame[id^='entry_']").count
+  end
+
+  test "fresh navigation does not restore filters but the filtered URL still does" do
+    family = families(:empty)
+    sign_in users(:empty)
+
+    family.accounts.each { |account| account.entries.delete_all }
+    account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
+    matching_entry = create_transaction(account: account, name: "Needle transaction", amount: 101)
+    other_entry = create_transaction(account: account, name: "Other transaction", amount: 202)
+    filtered_url = transactions_url(q: { search: "Needle" })
+
+    get filtered_url
+
+    assert_response :success
+    assert_select "##{dom_id(matching_entry)}", count: 1
+    assert_select "##{dom_id(other_entry)}", count: 0
+    assert_select "#transaction-search-filters a[href='#{transactions_path}']",
+                  text: I18n.t("transactions.searches.search.clear_all")
+
+    get reports_url
+    assert_response :success
+
+    get transactions_url
+
+    assert_response :success
+    assert_select "##{dom_id(matching_entry)}", count: 1
+    assert_select "##{dom_id(other_entry)}", count: 1
+
+    get filtered_url
+
+    assert_response :success
+    assert_select "##{dom_id(matching_entry)}", count: 1
+    assert_select "##{dom_id(other_entry)}", count: 0
+  end
+
   test "filtered requests without per_page keep the stored page size" do
     family = families(:empty)
     sign_in users(:empty)
@@ -367,9 +424,7 @@ end
     get transactions_url(per_page: 20)
     assert_response :success
 
-    # A filtered request that omits per_page has query params present, so it
-    # is not eligible for the "restore stored params" redirect - it must fall
-    # back to the previously stored per_page instead of the hardcoded default.
+    # Page size remains a preference even though filters and page no longer do.
     get transactions_url(q: { search: "Transaction" })
     assert_response :success
     assert_select "select[name='per_page'] option[value='20'][selected]"

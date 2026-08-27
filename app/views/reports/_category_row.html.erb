@@ -14,7 +14,7 @@
   else
     { categories: [ item[:category_name] ], start_date: row_start_date, end_date: row_end_date }
   end
-  transactions_href = clickable ? transactions_path(q: filter, filter_cleared: "1") : nil
+  transactions_href = clickable ? transactions_path(q: filter) : nil
 %>
 
 <tr data-category="category-<%= item[:category_id] %>"

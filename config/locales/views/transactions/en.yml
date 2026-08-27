@@ -345,6 +345,7 @@ en:
         tag_filter: Tag
         type_filter: Type
       search:
+        clear_all: Clear all
         equal_to: equal to
         greater_than: greater than
         less_than: less than

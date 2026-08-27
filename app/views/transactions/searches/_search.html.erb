@@ -22,4 +22,14 @@
       <% end %>
     <% end %>
   <% end %>
+
+  <% if @q.present? %>
+    <li>
+      <%= render DS::Link.new(
+        text: t(".clear_all", default: t("transactions.searches.menu.clear_filters")),
+        variant: "ghost",
+        href: transactions_path
+      ) %>
+    </li>
+  <% end %>
 </ul>

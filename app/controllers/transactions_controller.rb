@@ -1,10 +1,12 @@
 class TransactionsController < ApplicationController
   include EntryableResource
 
+  DEFAULT_PER_PAGE = 20
+
   before_action :set_entry_for_unlock, only: :unlock
   before_action :set_entry, only: %i[show update destroy retract_scheduled]
   before_action :set_entry_for_tags, only: :update_tags
-  before_action :store_params!, only: :index
+  before_action :store_per_page!, only: :index
 
   def show
     super
@@ -47,7 +49,7 @@ class TransactionsController < ApplicationController
                          }
                        )
 
-    @pagy, @transactions = pagy(base_scope, limit: safe_per_page(stored_params["per_page"]))
+    @pagy, @transactions = pagy(base_scope, limit: safe_per_page(stored_params["per_page"].presence || DEFAULT_PER_PAGE))
     Transaction::ActivitySecurityPreloader.new(@transactions).preload
 
     # Prepare accounts for the filter partial
@@ -166,11 +168,6 @@ class TransactionsController < ApplicationController
     end
 
     updated_params["q"] = q_params.presence
-
-    # Add flag to indicate filters were explicitly cleared
-    updated_params["filter_cleared"] = "1" if updated_params["q"].blank?
-
-    Current.session.update!(prev_transaction_page_params: updated_params)
 
     redirect_to transactions_path(updated_params)
   end
@@ -729,28 +726,14 @@ class TransactionsController < ApplicationController
       cleaned_params
     end
 
-    def store_params!
-      if should_restore_params?
-        params_to_restore = {}
-
-        params_to_restore[:q] = stored_params["q"].presence || {}
-        params_to_restore[:page] = stored_params["page"].presence || 1
-        params_to_restore[:per_page] = stored_params["per_page"].presence || 50
-
-        redirect_to transactions_path(params_to_restore)
-      else
-        Current.session.update!(
-          prev_transaction_page_params: {
-            q: search_params,
-            page: params[:page],
-            per_page: params[:per_page].presence || stored_params["per_page"]
-          }
-        )
-      end
-    end
-
-    def should_restore_params?
-      request.query_parameters.blank? && (stored_params["q"].present? || stored_params["page"].present? || stored_params["per_page"].present?)
+    def store_per_page!
+      # Filters and page live only in the URL. This lets browser history restore
+      # them while a fresh navigation to /transactions starts unfiltered.
+      Current.session.update!(
+        prev_transaction_page_params: {
+          per_page: params[:per_page].presence || stored_params["per_page"]
+        }.compact
+      )
     end
 
     def stored_params
