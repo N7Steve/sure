@@ -164,6 +164,45 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 200.0, highlighted["income"]
   end
 
+  test "dashboard money flow widget uses the family's custom monthly period" do
+    travel_to Date.new(2026, 10, 10) do
+      @family.update!(month_start_day: 25)
+      account = @family.accounts.create!(name: "Custom Period Checking", currency: @family.currency, balance: 0, accountable: Depository.new)
+
+      create_transaction(account: account, name: "Before period", amount: 900, date: Date.new(2026, 8, 24))
+      create_transaction(account: account, name: "Period expense", amount: 50, date: Date.new(2026, 8, 25))
+      create_transaction(account: account, name: "Period income", amount: -200, date: Date.new(2026, 9, 24))
+      create_transaction(account: account, name: "After period", amount: 700, date: Date.new(2026, 9, 25))
+
+      get root_path, params: {
+        money_flow_month: "2026-08-01",
+        money_flow_account_ids: [ account.id ]
+      }
+
+      assert_response :ok
+      highlighted = money_flow_bars.find { |bar| bar["highlighted"] }
+
+      assert_equal "2026-08-25", highlighted["date"]
+      assert_equal 50.0, highlighted["expense"]
+      assert_equal 200.0, highlighted["income"]
+
+      income_href = css_select("a[href*='q%5Btypes%5D%5B%5D=income']").first["href"]
+      assert_includes income_href, "q%5Bstart_date%5D=2026-08-25"
+      assert_includes income_href, "q%5Bend_date%5D=2026-09-24"
+    end
+  end
+
+  test "dashboard money flow widget defaults to the active custom monthly period" do
+    travel_to Date.new(2026, 8, 20) do
+      @family.update!(month_start_day: 25)
+
+      get root_path
+
+      assert_response :ok
+      assert_equal "2026-07-25", money_flow_bars.last["date"]
+    end
+  end
+
   test "dashboard money flow widget ignores account ids not accessible to the current user" do
     other_family = Family.create!(name: "Other Family", currency: "USD")
     other_account = other_family.accounts.create!(name: "Other Family Checking", currency: "USD", balance: 0, accountable: Depository.new)

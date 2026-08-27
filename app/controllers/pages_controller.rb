@@ -438,10 +438,11 @@ class PagesController < ApplicationController
     end
 
     def money_flow_month_param
-      current_month = Date.current.beginning_of_month
-      month = Date.strptime(params[:money_flow_month], "%Y-%m-%d").beginning_of_month
-      # Clamp future months: build_money_flow_data caps each bar's end_date at
-      # Date.current, which would otherwise be earlier than a future month's
+      current_month = Current.family.custom_month_start_for(Date.current)
+      requested_month = Date.strptime(params[:money_flow_month], "%Y-%m-%d")
+      month = Date.new(requested_month.year, requested_month.month, Current.family.month_start_day)
+      # Clamp future periods: build_money_flow_data caps each bar's end_date at
+      # Date.current, which would otherwise be earlier than a future period's
       # start_date and blow up Period.custom's date-range validation.
       month > current_month ? current_month : month
     rescue ArgumentError, TypeError
@@ -463,9 +464,10 @@ class PagesController < ApplicationController
       selected_totals = nil
 
       bars = months.map do |month_start|
-        # Cap at today so an in-progress month (most commonly the current one)
+        month_end = Current.family.custom_month_end_for(month_start)
+        # Cap at today so an in-progress period (most commonly the current one)
         # doesn't report totals for its not-yet-arrived days.
-        end_date = [ month_start.end_of_month, Date.current ].min
+        end_date = [ month_end, Date.current ].min
         period = Period.custom(start_date: month_start, end_date: end_date)
         totals = income_statement.totals_for(period, account_ids: account_ids)
 
@@ -486,7 +488,7 @@ class PagesController < ApplicationController
           income: totals.income_money.amount.to_f.round(2),
           expense: totals.expense_money.amount.to_f.round(2),
           highlighted: month_start == selected_month,
-          partial: end_date < month_start.end_of_month
+          partial: end_date < month_end
         }
       end
 
