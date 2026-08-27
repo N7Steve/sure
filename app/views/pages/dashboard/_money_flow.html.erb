@@ -29,8 +29,7 @@
           <%= icon("chevron-down", size: "sm") %>
         <% end %>
 
-        <% (0..11).each do |i| %>
-          <% month = Current.family.custom_month_start_for(Date.current) - i.months %>
+        <% money_flow_data[:month_options].each do |month| %>
           <% menu.with_item(
                variant: :link,
                text: I18n.l(month, format: :month_year).capitalize,

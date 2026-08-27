@@ -175,7 +175,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
       create_transaction(account: account, name: "After period", amount: 700, date: Date.new(2026, 9, 25))
 
       get root_path, params: {
-        money_flow_month: "2026-08-01",
+        money_flow_month: "2026-09-01",
         money_flow_account_ids: [ account.id ]
       }
 
@@ -183,6 +183,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
       highlighted = money_flow_bars.find { |bar| bar["highlighted"] }
 
       assert_equal "2026-08-25", highlighted["date"]
+      assert_equal I18n.l(Date.new(2026, 9, 1), format: :short_month_year), highlighted["label"]
       assert_equal 50.0, highlighted["expense"]
       assert_equal 200.0, highlighted["income"]
 
@@ -193,13 +194,29 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "dashboard money flow widget defaults to the active custom monthly period" do
-    travel_to Date.new(2026, 8, 20) do
+    travel_to Date.new(2026, 8, 27) do
       @family.update!(month_start_day: 25)
 
       get root_path
 
       assert_response :ok
-      assert_equal "2026-07-25", money_flow_bars.last["date"]
+      highlighted = money_flow_bars.last
+      assert_equal "2026-08-25", highlighted["date"]
+      assert_equal I18n.l(Date.new(2026, 9, 1), format: :short_month_year), highlighted["label"]
+      assert_select "#money-flow-section", text: /#{I18n.l(Date.new(2026, 9, 1), format: :month_year)}/i
+    end
+  end
+
+  test "dashboard money flow widget keeps the starting month through day 15" do
+    travel_to Date.new(2026, 8, 27) do
+      @family.update!(month_start_day: 15)
+
+      get root_path
+
+      assert_response :ok
+      highlighted = money_flow_bars.last
+      assert_equal "2026-08-15", highlighted["date"]
+      assert_equal I18n.l(Date.new(2026, 8, 1), format: :short_month_year), highlighted["label"]
     end
   end
 

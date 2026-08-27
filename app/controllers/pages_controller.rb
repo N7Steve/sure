@@ -438,15 +438,15 @@ class PagesController < ApplicationController
     end
 
     def money_flow_month_param
-      current_month = Current.family.custom_month_start_for(Date.current)
+      current_period_start = Current.family.custom_month_start_for(Date.current)
       requested_month = Date.strptime(params[:money_flow_month], "%Y-%m-%d")
-      month = Date.new(requested_month.year, requested_month.month, Current.family.month_start_day)
+      requested_period_start = money_flow_period_start_for(requested_month)
       # Clamp future periods: build_money_flow_data caps each bar's end_date at
       # Date.current, which would otherwise be earlier than a future period's
       # start_date and blow up Period.custom's date-range validation.
-      month > current_month ? current_month : month
+      requested_period_start > current_period_start ? current_period_start : requested_period_start
     rescue ArgumentError, TypeError
-      current_month
+      current_period_start
     end
 
     # nil means "all accessible accounts" (the widget's default, unfiltered state)
@@ -465,6 +465,7 @@ class PagesController < ApplicationController
 
       bars = months.map do |month_start|
         month_end = Current.family.custom_month_end_for(month_start)
+        display_month = money_flow_display_month(month_start)
         # Cap at today so an in-progress period (most commonly the current one)
         # doesn't report totals for its not-yet-arrived days.
         end_date = [ month_end, Date.current ].min
@@ -478,13 +479,13 @@ class PagesController < ApplicationController
 
         {
           date: month_start,
-          label: I18n.l(month_start, format: :short_month_year),
+          label: I18n.l(display_month, format: :short_month_year),
           # Fallback for the axis when the full label does not fit its band.
           # `short_month_year` is only short in some locales — "Mar 2026" in
           # English, but "Mar de 2026" in ca/es/pt, which is wide enough to
           # collide with its neighbours on a phone. The bar chart measures the
           # rendered labels and drops to this when they overlap.
-          short_label: I18n.l(month_start, format: "%b"),
+          short_label: I18n.l(display_month, format: "%b"),
           income: totals.income_money.amount.to_f.round(2),
           expense: totals.expense_money.amount.to_f.round(2),
           highlighted: month_start == selected_month,
@@ -495,12 +496,29 @@ class PagesController < ApplicationController
       {
         bars: bars,
         period: selected_period,
-        month: selected_month,
+        month: money_flow_display_month(selected_month),
+        month_options: (0..11).map do |i|
+          money_flow_display_month(Current.family.custom_month_start_for(Date.current) - i.months)
+        end,
         income: selected_totals.income_money,
         expense: selected_totals.expense_money,
         balance: selected_totals.income_money - selected_totals.expense_money,
         account_ids: account_ids
       }
+    end
+
+    # A late-month start represents the following named month: a period from
+    # August 25 through September 24 is shown as September. Starts on or before
+    # the 15th keep the calendar month in which the period begins.
+    def money_flow_display_month(period_start)
+      month = period_start.beginning_of_month
+      Current.family.month_start_day > 15 ? month + 1.month : month
+    end
+
+    def money_flow_period_start_for(display_month)
+      period_month = display_month.beginning_of_month
+      period_month -= 1.month if Current.family.month_start_day > 15
+      Date.new(period_month.year, period_month.month, Current.family.month_start_day)
     end
 
     def ensure_intro_guest!

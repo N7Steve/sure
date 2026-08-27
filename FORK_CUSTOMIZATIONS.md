@@ -240,12 +240,12 @@ Estos cambios son propios aunque muchos estén entrelazados con las funciones an
 - Mejoras responsive de sidebar, navegación, menú de usuario y formularios.
 - Toast para deshacer el descarte de insights.
 - Ajustes visuales en presupuestos, operaciones, cuentas, informes y dashboard.
-- El widget **Money In / Out** respeta el `month_start_day` configurado por la familia: cada barra y el resumen usan periodos mensuales personalizados (por ejemplo, del día 25 al 24 del mes siguiente), el periodo activo se limita a la fecha actual y los enlaces de desglose conservan exactamente ese rango. El selector mensual también se ancla al inicio personalizado para mantener coherentes la etiqueta, la barra resaltada y los totales.
+- El widget **Money In / Out** respeta el `month_start_day` configurado por la familia: cada barra y el resumen usan periodos mensuales personalizados (por ejemplo, del día 25 al 24 del mes siguiente), el periodo activo se limita a la fecha actual y los enlaces de desglose conservan exactamente ese rango. Los periodos que empiezan entre los días 1 y 15 conservan el nombre de ese mes; los que empiezan después del 15 se muestran como el mes siguiente (25 de agosto–24 de septiembre se presenta como “septiembre”). El selector mensual utiliza la misma regla para mantener coherentes la etiqueta, la barra resaltada y los totales.
 - Traducciones propias, principalmente en `en` y `es`; el diff contiene además arreglos puntuales en otros idiomas.
 
 Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker}.js`, layout principal y vistas de cuentas/transacciones.
 
-El ajuste de **Money In / Out** vive en `app/controllers/pages_controller.rb` y `app/views/pages/dashboard/_money_flow.html.erb`; su regresión está cubierta en `test/controllers/pages_controller_test.rb` con casos para los límites 24/25, el cruce al mes siguiente y la selección automática del periodo personalizado activo.
+El ajuste de **Money In / Out** vive en `app/controllers/pages_controller.rb` y `app/views/pages/dashboard/_money_flow.html.erb`; su regresión está cubierta en `test/controllers/pages_controller_test.rb` con casos para los límites 24/25, el cruce al mes siguiente, el corte de etiquetado 15/16 y la selección automática del periodo personalizado activo.
 
 ## 10. Sincronización, proveedores y soporte técnico
 
