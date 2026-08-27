@@ -55,6 +55,19 @@
             selected_id: ef.object.category_id,
             blank_label: t(".category_prompt")
           ) %>
+      <%= render DS::MerchantSelect.new(
+            form: ef,
+            method: :merchant_id,
+            merchants: merchants,
+            selected_id: ef.object.merchant_id,
+            include_blank: t(".none"),
+            label: t(".merchant_label")
+          ) %>
+      <%= render DS::TagSelect.new(
+            form: ef,
+            tags: tags,
+            selected_ids: ef.object.tag_ids
+          ) %>
     <% end %>
 
     <% convert_input = capture do %>
@@ -101,21 +114,6 @@
 
   <%= render DS::Disclosure.new(title: t(".details"), animated: true) do %>
     <section class="space-y-2">
-      <%= f.fields_for :entryable do |ef| %>
-        <%= render DS::MerchantSelect.new(
-              form: ef,
-              method: :merchant_id,
-              merchants: merchants,
-              selected_id: ef.object.merchant_id,
-              include_blank: t(".none"),
-              label: t(".merchant_label")
-            ) %>
-        <%= render DS::TagSelect.new(
-              form: ef,
-              tags: tags,
-              selected_ids: ef.object.tag_ids
-            ) %>
-      <% end %>
       <%= f.text_area :notes,
                       label: t(".note_label"),
                       placeholder: t(".note_placeholder"),

@@ -195,7 +195,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 
 - Índice y controlador ampliados para CRUD, filtros, preferencias de vista y conversión a operaciones de inversión.
 - Vista compacta persistente y alternador compacta/detallada.
-- Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión.
+- Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría; no deben moverse al disclosure de detalles.
 - Autocompletado de descripciones por cuenta mediante `Transactions::DescriptionsController` y Stimulus.
 - Búsqueda por comercio y filtros por cuentas, categorías, comercios, tipos, etiquetas, estado, fechas e importe.
 - Detalle enriquecido con edición automática, indicadores, posibles duplicados, protección, contexto de transferencias/pagos programados y permisos de anotación.
@@ -207,6 +207,7 @@ Archivos principales: `transactions_controller.rb`, `transactions/bulk_deletions
 ## 7. Transferencias, matching y división de transacciones
 
 - Gestión y presentación de transferencias desde formularios y detalle.
+- El formulario de transferencias oculta por completo la sección de comisiones bancarias; el soporte de comisiones existente en el modelo, la API y los datos históricos se conserva.
 - Creación, validación y reclasificación de ambos lados de una transferencia.
 - Matching corregido para cuentas excluidas.
 - Clases especiales para transferencias a/desde cuentas excluidas y aportaciones a inversiones.
