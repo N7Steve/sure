@@ -186,7 +186,19 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", count: 0
     assert_select "[role=dialog]", count: 1
+    assert_select "turbo-frame#modal", count: 1
     assert_select "form[action=?]", scheduled_payments_path, count: 1
+  end
+
+  test "edit payment opens in the modal frame" do
+    payment = create_payment
+    get edit_scheduled_payment_path(payment), headers: { "Turbo-Frame" => "modal" }
+
+    assert_response :success
+    assert_select "h1", count: 0
+    assert_select "[role=dialog]", count: 1
+    assert_select "turbo-frame#modal", count: 1
+    assert_select "form[action=?]", scheduled_payment_path(payment), count: 1
   end
 
   test "read-only account access cannot modify or confirm a schedule" do
@@ -349,7 +361,9 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     calendar_links.each do |link|
       assert link.at_css("img[alt='']")
       assert_match(/250/, link.text)
+      assert_no_match(/[–-]/, link.text)
       assert_no_match(/#{Regexp.escape(payment.title)}/, link.text)
+      assert_includes link["class"].split, "justify-center"
       assert_includes link["class"].split, "bg-info/10"
       assert_includes link["class"].split, "text-info"
     end
@@ -362,6 +376,22 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     %w[payment status amount actions].each do |heading|
       assert_select ".hidden.lg\\:grid", text: /#{Regexp.escape(I18n.t("scheduled_payments.table.#{heading}"))}/
     end
+  end
+
+  test "transfer schedules use the transaction table transfer icon" do
+    payment = create_payment(payment_type: "transfer", target_account: accounts(:credit_card))
+
+    get scheduled_payments_url
+    assert_response :success
+    row = css_select("##{dom_id(payment, "occurrence_#{Date.current.iso8601}")}").sole
+    assert row.at_css("[role=img][aria-label='#{I18n.t("scheduled_payments.form.payment_types.transfer")}'] svg")
+    assert_nil row.at_css("img")
+
+    get scheduled_payments_url, params: { view: "schedules" }
+    assert_response :success
+    row = css_select("##{dom_id(payment)}").sole
+    assert row.at_css("[role=img][aria-label='#{I18n.t("scheduled_payments.form.payment_types.transfer")}'] svg")
+    assert_nil row.at_css("img")
   end
 
   test "new payment link targets the modal frame" do

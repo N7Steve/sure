@@ -1,5 +1,5 @@
 class ScheduledPaymentsController < ApplicationController
-  layout "application"
+  layout -> { turbo_frame_request? ? false : "application" }
   rescue_from ArgumentError, ActiveRecord::RecordInvalid, Money::ConversionError, with: :invalid_payment_operation
 
   def index
@@ -98,9 +98,16 @@ class ScheduledPaymentsController < ApplicationController
     end
     if updated
       flash[:notice] = t("scheduled_payments.updated")
-      redirect_to agenda_return_path
+      target = agenda_return_path
+      respond_to do |format|
+        format.html { redirect_to target }
+        format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, target) }
+      end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.turbo_stream { render :edit, formats: [ :html ], status: :unprocessable_entity }
+      end
     end
   end
 

@@ -1,1 +1,6 @@
-<%= render "editor", title: t("scheduled_payments.agenda.edit") %>
+<%= render DS::Dialog.new(width: "lg") do |dialog| %>
+  <% dialog.with_header(title: t("scheduled_payments.agenda.edit")) %>
+  <% dialog.with_body do %>
+    <%= render "form", scheduled_payment: @scheduled_payment, modal: true %>
+  <% end %>
+<% end %>

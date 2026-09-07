@@ -14,7 +14,7 @@
         <% @agenda.days.each do |day| %>
           <div class="min-h-24 min-w-0 border-t border-primary p-2 <%= day.in_month ? 'bg-container' : 'bg-surface-inset' %>" data-agenda-day="<%= day.date.iso8601 %>">
             <time datetime="<%= day.date.iso8601 %>" class="text-sm <%= day.date == Date.current ? 'font-bold text-link' : 'text-secondary' %>" <%= 'aria-current=date' if day.date == Date.current %>><%= day.date.day %></time>
-            <div class="mt-2 space-y-1">
+            <div class="mt-2 space-y-1 text-center">
               <%= render partial: "scheduled_payments/calendar_chip", collection: day.occurrences, as: :occurrence %>
             </div>
           </div>
@@ -30,7 +30,7 @@
     <% @agenda.occupied_month_days.each do |day| %>
       <%= render DS::Card.new do %>
         <h2 class="mb-3 text-sm font-medium text-primary"><time datetime="<%= day.date.iso8601 %>"><%= l(day.date, format: :long) %></time></h2>
-        <div class="space-y-2">
+        <div class="space-y-2 text-center">
           <%= render partial: "scheduled_payments/calendar_chip", collection: day.occurrences, as: :occurrence %>
         </div>
       <% end %>

@@ -35,7 +35,7 @@
           <% if @agenda.writable?(payment) %>
             <div class="col-span-2 lg:col-span-3 flex items-center justify-end gap-1">
               <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm, href: edit_scheduled_payment_path(payment, **agenda_context_params),
-                    title: t("scheduled_payments.agenda.edit"), aria: { label: t("scheduled_payments.agenda.edit") }) %>
+                    frame: :modal, title: t("scheduled_payments.agenda.edit"), aria: { label: t("scheduled_payments.agenda.edit") }) %>
               <% unless payment.completed? %>
                 <%= render DS::Button.new(icon: payment.active? ? "pause" : "play", variant: "ghost", size: :sm,
                       href: toggle_status_scheduled_payment_path(payment, **agenda_context_params), method: :post,

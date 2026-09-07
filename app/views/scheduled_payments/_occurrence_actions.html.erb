@@ -20,7 +20,7 @@
   <% end %>
   <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm,
         aria: { label: t("scheduled_payments.agenda.edit") }, title: t("scheduled_payments.agenda.edit"),
-        href: edit_scheduled_payment_path(payment, **agenda_context_params)) %>
+        href: edit_scheduled_payment_path(payment, **agenda_context_params), frame: :modal) %>
 <% else %>
   <span class="text-xs text-secondary"><%= t("scheduled_payments.agenda.read_only") %></span>
 <% end %>

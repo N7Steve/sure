@@ -1,5 +1,8 @@
 <%# locals: (payment:, size: "lg") %>
-<% if payment.merchant&.logo_url.present? %>
+<% if payment.transfer? %>
+  <%= render DS::FilledIcon.new(icon: "arrow-right-left", hex_color: Category::TRANSFER_COLOR, size: size, rounded: true,
+        description: t("scheduled_payments.form.payment_types.transfer")) %>
+<% elsif payment.merchant&.logo_url.present? %>
   <%= image_tag Setting.transform_brand_fetch_url(payment.merchant.logo_url),
         class: class_names("rounded-full shrink-0 object-cover", size.to_s == "sm" ? "w-6 h-6" : "w-9 h-9"),
         loading: "lazy", alt: "" %>

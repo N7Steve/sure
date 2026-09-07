@@ -4,9 +4,8 @@
 <% label = "#{payment.title} · #{amount}" %>
 <% chip_content = capture do %>
   <%= render "scheduled_payments/merchant_icon", payment: payment, size: "sm" %>
-  <span aria-hidden="true">–</span>
   <span class="truncate"><%= amount %></span>
 <% end %>
 <%= render DS::Link.new(**agenda_calendar_link(occurrence), text: chip_content, variant: "ghost", size: :sm,
-      class: "flex w-full min-w-0 privacy-sensitive #{agenda_calendar_classes(occurrence)}",
+      class: "flex w-full min-w-0 justify-center privacy-sensitive #{agenda_calendar_classes(occurrence)}",
       title: payment.title, aria: { label: "#{l(occurrence.scheduled_date, format: :long)}: #{label}" }) %>
