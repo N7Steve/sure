@@ -6,26 +6,27 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** sobre:
+Inventario generado el **23 de agosto de 2026** y actualizado tras la integración de `upstream` del **7 de septiembre de 2026**:
 
 | Concepto | Valor |
 | --- | --- |
 | Fork | `origin` → `https://github.com/N7Steve/sure.git` |
 | Repositorio principal | `upstream` → `https://github.com/we-promise/sure.git` |
 | Rama inventariada | `main` |
-| Base de `upstream/main` | `79c826c0e3391063834887936bbe44dc1d90d0cf` |
-| HEAD del fork antes de los cambios actuales | `a01ed52905933a8846427077fccfb56a11303a40` |
+| Referencia de `upstream/main` documentada tras la integración | `9ec28abacc52056b3c5544b7bc5549c6d175d701` |
+| HEAD del fork con la integración y la corrección de `IncomeStatement` | `06f247d6b08a1a690fe3085c3a41ebcb4332e9b2` |
 | Merge-base | `79c826c0e3391063834887936bbe44dc1d90d0cf` |
-| Diferencia comprometida | 205 commits; 230 archivos; +7.710 / -797 líneas |
-| Cambios actuales sin commit | 15 archivos; +331 / -26 líneas, además de este inventario |
+| Forma de integración | Contenido de `upstream` integrado mediante commits squash; el SHA de `upstream/main` no es ancestro de `HEAD` |
+| Cambios actuales sin commit | Ajustes de UI/Bills/período personalizado en 7 archivos de aplicación/pruebas, además de este inventario |
 
-El alcance histórico de esta versión del documento es `upstream/main...a01ed5290`. Las ramas locales no fusionadas en `main` no forman parte del inventario.
+El alcance histórico inicial de este documento era `upstream/main...a01ed5290`. Después de la integración squash, el triple-dot contra `upstream/main` ya no representa únicamente las personalizaciones del fork: al no compartir el nuevo commit upstream como ancestro, Git muestra también gran parte del código oficial como diferencia. Para futuras auditorías se debe conservar explícitamente el SHA upstream integrado y comparar contra él por contenido o usar una rama temporal con historia real antes de resolver el siguiente merge.
 
 ## Resumen de propiedad
 
 | Área | Propiedad | Debe preservarse al actualizar upstream |
 | --- | --- | --- |
 | Pagos recurrentes / programados | Propia | Modelos, generación, confirmación/rechazo, transferencias recurrentes e integración en transacciones |
+| Bills / recurrencias detectadas | Upstream, oculto | Conservar la implementación como referencia reutilizable, pero sin superficies de acceso visibles; Pagos programados es el único producto recurrente expuesto |
 | Informes personalizados | Propia | Resumen, desglose, gastos compartidos, exportación y secciones reordenables |
 | Exclusión y archivo de cuentas | Propia | Las tres semánticas distintas: excluida, archivada y excluida sólo de informes |
 | Roboadvisor e inversiones | Propia | Rendimiento, flujos, liquidez neta estimada y tratamiento fiscal |
@@ -33,13 +34,14 @@ El alcance histórico de esta versión del documento es `upstream/main...a01ed52
 | Transferencias y divisiones | Propia o muy modificada | Clasificación con cuentas excluidas, conversión y splitting |
 | Exportaciones de familia | Propia | Copia completa y CSV personalizado de transacciones |
 | UI/UX | Propia o adaptada | Vistas compactas, cuentas agrupadas, componentes interactivos y mejoras responsive |
+| Períodos mensuales del dashboard | Propia | Money In / Out y gasto acumulado deben respetar conjuntamente `family.month_start_day` |
 | Sincronización y proveedores | Soporte del fork | Cambios que mantienen la coherencia de cuentas y sincronizaciones con las funciones anteriores |
 | Gestión familiar y usuarios | Propia, todavía sin commit | Claridad de roles/alcance y borrado seguro de la última persona de una familia |
 | Workflows, scripts y documentos auxiliares | Revisar caso a caso | Están en el diff del fork, pero no todos son funcionalidad de producto |
 
-## 1. Gestión familiar y de usuarios (cambios actuales sin commit)
+## 1. Gestión familiar y de usuarios
 
-Este bloque es posterior al HEAD de referencia y debe incluirse en el próximo commit junto con este inventario.
+Este bloque se incorporó después del HEAD usado para el inventario original y ya forma parte de la línea actual del fork.
 
 ### Comportamiento propio
 
@@ -95,6 +97,20 @@ Es el bloque funcional propio más grande. No debe reducirse a una simple etique
 - Operación: `lib/tasks/scheduled_payments.rake`, `informe_scheduled_payments.md`.
 - Cobertura: pruebas de modelo, controlador y job, más fixtures `scheduled_payment*`.
 
+### Convivencia con Bills incorporado desde upstream
+
+La integración de septiembre de 2026 añadió el subsistema upstream **Bills**, basado principalmente en `RecurringTransaction` y `RecurringOccurrence`. El código de ambos sistemas puede convivir, pero en este fork sólo Pagos programados se presenta como funcionalidad de producto:
+
+- **Pagos programados** es la función primaria del fork: el usuario define pagos futuros explícitos, se generan ocurrencias pendientes y puede confirmarlas, rechazarlas, omitirlas o ejecutarlas automáticamente.
+- **Bills** es una implementación upstream que se conserva oculta: detecta patrones recurrentes en movimientos existentes, permite confirmar series, proyectar vencimientos, registrar pagos y presentar planificación por nóminas.
+- Bills no debe tener ninguna superficie de acceso visible en el fork, incluso para usuarios con `Preview Features`: sin entrada en la navegación global, sin tarjeta en **Transacciones recurrentes** y sin enlaces promocionales o de descubrimiento desde otras pantallas.
+- Sus modelos, controladores, rutas y pruebas pueden mantenerse internamente para facilitar futuras actualizaciones upstream y servir como fuente de funcionalidades, pero la ruta directa `/bills` no se considera parte de la interfaz soportada del fork.
+- No migrar, fusionar ni eliminar modelos de `ScheduledPayment*` en favor de `RecurringTransaction*` sin una decisión funcional y una migración de datos explícitas.
+- Las funciones útiles de Bills podrán trasladarse selectivamente a Pagos programados en el futuro. Cada traslado debe adaptarse al dominio `ScheduledPayment*`, conservar su flujo de ocurrencias/confirmación y añadir pruebas propias; no se debe hacer visible Bills como atajo para ofrecer esa función.
+- Cuando upstream cambie Bills, revisar especialmente `transactions_controller`, `transaction.rb`, presupuestos, categorías y las vistas de transacciones, porque son los puntos donde ambos subsistemas se solapan.
+
+Archivos upstream que forman esta frontera: `app/controllers/bills_controller.rb`, `app/views/bills/`, `app/models/recurring_transaction.rb`, `app/models/recurring_occurrence.rb`, `app/views/recurring_transactions/`, rutas de Bills y sus pruebas. La ocultación afecta como mínimo a `app/views/layouts/application.html.erb`, la tarjeta Bills de `app/views/recurring_transactions/index.html.erb` y cualquier enlace nuevo que upstream añada. No reintroducir `bills_nav_item` ni accesos equivalentes automáticamente durante un merge.
+
 ## 3. Visibilidad, exclusión y archivo de cuentas
 
 El fork distingue conceptos que no son intercambiables:
@@ -135,6 +151,8 @@ El fork distingue conceptos que no son intercambiables:
 - Cada movimiento del desplegable muestra nombre, merchant, cuenta e importe, utiliza el logo del merchant cuando está disponible y permite abrir su detalle en el drawer. La fecha se omite por no ser relevante para este análisis. La selección de los 10 primeros se realiza después de convertir los importes a la moneda de la familia, por lo que el orden es coherente entre cuentas con distintas monedas.
 - Exportación CSV del desglose y ayuda para llevarlo a Google Sheets.
 - `IncomeStatement` y totales adaptados a las reglas del fork, incluidas cuentas excluidas, movimientos internos e inversiones.
+- `IncomeStatement::Totals::TotalsRow` conserva obligatoriamente los campos `is_transfer_to_excluded` e `is_transfer_from_excluded`. Deben estar presentes de extremo a extremo en el constructor, `Data.define`, todos los `SELECT`/`UNION` y los `GROUP BY`. La refactorización upstream mediante `IncomeStatement::ScopedTransactionsQuery` se conserva, pero no puede eliminar estas extensiones del fork.
+- Los resultados de `IncomeStatement::Totals` se serializan en la caché compartida. Si cambia el número o significado de los miembros de `TotalsRow`, se debe incrementar la versión de la clave `income_statement/totals_query` (actualmente `v5`). De lo contrario, un despliegue puede fallar en producción con `TypeError: struct IncomeStatement::Totals::TotalsRow not compatible (struct size differs)`. No usar `Rails.cache.clear` ni `FLUSHDB` como solución, porque Redis también sirve a Sidekiq.
 - `SharedExpensesCalculator` para distribuir gastos compartidos y calcular métricas personalizadas de gasto e ingreso.
 - Búsqueda de transacciones y series de patrimonio usadas como soporte de los informes.
 - Caché/invalidez ajustadas para que los cambios de cuenta se reflejen inmediatamente.
@@ -196,6 +214,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 - Índice y controlador ampliados para CRUD, filtros, preferencias de vista y conversión a operaciones de inversión.
 - Vista compacta persistente y alternador compacta/detallada.
 - Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría; no deben moverse al disclosure de detalles.
+- En creación y edición, **importe y fecha comparten una única fila de dos columnas** para reducir la altura del formulario. En el detalle editable, naturaleza permanece en su propia fila; las transferencias conservan la fecha en una fila independiente porque no muestran el campo de importe ordinario.
 - Autocompletado de descripciones por cuenta mediante `Transactions::DescriptionsController` y Stimulus.
 - Búsqueda por comercio y filtros por cuentas, categorías, comercios, tipos, etiquetas, estado, fechas e importe.
 - Los filtros se conservan exclusivamente en la URL: el historial del navegador puede restaurarlos, pero una nueva entrada a Transacciones comienza sin filtros. Los chips incluyen una acción «Borrar todo» y el tamaño inicial de página es de 20 movimientos.
@@ -243,13 +262,26 @@ Estos cambios son propios aunque muchos estén entrelazados con las funciones an
 - Toast para deshacer el descarte de insights.
 - Ajustes visuales en presupuestos, operaciones, cuentas, informes y dashboard.
 - El widget **Money In / Out** respeta el `month_start_day` configurado por la familia: cada barra y el resumen usan periodos mensuales personalizados (por ejemplo, del día 25 al 24 del mes siguiente), el periodo activo se limita a la fecha actual y los enlaces de desglose conservan exactamente ese rango. Los periodos que empiezan entre los días 1 y 15 conservan el nombre de ese mes; los que empiezan después del 15 se muestran como el mes siguiente (25 de agosto–24 de septiembre se presenta como “septiembre”). El selector mensual utiliza la misma regla para mantener coherentes la etiqueta, la barra resaltada y los totales.
+- El widget upstream de **gasto acumulado / Spending Trend** sigue exactamente la misma semántica de mes configurado que Money In / Out. Su curva actual, curva comparativa, selector, etiquetas del eje y totales se construyen con períodos personalizados; por ejemplo, septiembre comienza el 25 de agosto cuando `month_start_day = 25`. El período activo se limita a hoy, mientras que la comparación usa el período personalizado anterior completo.
 - Traducciones propias, principalmente en `en` y `es`; el diff contiene además arreglos puntuales en otros idiomas.
 
 Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker}.js`, layout principal y vistas de cuentas/transacciones.
 
-El ajuste de **Money In / Out** vive en `app/controllers/pages_controller.rb` y `app/views/pages/dashboard/_money_flow.html.erb`; su regresión está cubierta en `test/controllers/pages_controller_test.rb` con casos para los límites 24/25, el cruce al mes siguiente, el corte de etiquetado 15/16 y la selección automática del periodo personalizado activo.
+Los ajustes de **Money In / Out** y **Spending Trend** comparten `dashboard_display_month` y `dashboard_period_start_for` en `app/controllers/pages_controller.rb`. Sus vistas son `app/views/pages/dashboard/_money_flow.html.erb` y `_spending_trend.html.erb`; la regresión está cubierta en `test/controllers/pages_controller_test.rb`, incluido el caso 25 de agosto–24 de septiembre.
 
-## 10. Sincronización, proveedores y soporte técnico
+## 10. Funcionalidad upstream incorporada en septiembre de 2026
+
+Estas áreas proceden principalmente del repositorio oficial y se aceptaron en el fork. No son personalizaciones que deban divergir sin motivo, pero deben revisarse en futuros merges por sus puntos de contacto con las funciones propias:
+
+- Bills, recurrencias detectadas y planificación por nóminas, conservadas internamente pero ocultas según la decisión descrita anteriormente.
+- Integraciones de Trade Republic y Wise con SCA, además de mejoras de refresco de Plaid.
+- Ciclo de vida ampliado de Goals y cambios de presupuestos como rollover y movimientos entre categorías.
+- Idempotencia al crear transacciones, divisiones durante importación QIF y mejoras de jerarquía de categorías.
+- Diagnósticos de salud de IA/worker, administración de usuarios y familias, localización `pt-PT` y ajustes de hosting.
+
+En conflictos futuros, conservar preferentemente la evolución upstream dentro de estas áreas, salvo donde choque con una regla explícita de este inventario: Pagos programados como sistema primario, semántica de cuentas excluidas/archivadas, períodos mensuales personalizados, formularios compactos y permisos/tenancy del fork.
+
+## 11. Sincronización, proveedores y soporte técnico
 
 Este bloque aparece en el diff del fork y soporta las personalizaciones, aunque parte llegó en commits squash y debe revisarse con más cuidado al compararlo con nuevas versiones de upstream.
 
@@ -262,7 +294,7 @@ Este bloque aparece en el diff del fork y soporta las personalizaciones, aunque 
 
 Rutas afectadas: `app/models/concerns/syncable.rb`, modelos/importers/syncers de los proveedores anteriores, `app/models/indexa_capital_item.rb`, `app/models/family.rb`, `config/initializers/sidekiq.rb` y `config/schedule.yml`.
 
-## 11. Otros cambios propios o auxiliares
+## 12. Otros cambios propios o auxiliares
 
 - Eliminación de presupuestos desde la UI/controlador.
 - Ajustes menores en insights, usuario, sesiones, assistant functions, tags y budgets.
@@ -292,7 +324,7 @@ El orden y el efecto sobre datos deben preservarse:
 
 ## Manifiesto de rutas afectadas
 
-Las 230 rutas comprometidas se agrupan así. Esta lista de áreas es más estable y útil que copiar un `--name-status` que quedaría obsoleto en el siguiente commit:
+Las 230 rutas del inventario original se agrupaban así. Tras la integración squash de septiembre el recuento bruto dejó de ser representativo, pero esta lista de áreas sigue siendo más estable y útil que copiar un `--name-status` que quedaría obsoleto en el siguiente commit:
 
 - `.github/workflows/`: automatización propia del fork.
 - `app/components/DS/`, `app/components/UI/`: componentes e interacciones personalizadas.
@@ -334,8 +366,11 @@ git diff
 4. En conflictos de transacciones/transferencias, comprobar también pagos programados, informes y exportaciones; comparten modelos y controladores.
 5. No aceptar automáticamente el `db/schema.rb`: validar primero las nueve migraciones propias.
 6. Si upstream incorpora una función equivalente, decidir expresamente si migrar a ella y añadir pruebas de regresión antes de retirar la implementación del fork.
-7. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
-8. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
+7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada.
+8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores de transferencias con cuentas excluidas y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
+9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
+10. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
+11. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
 
 ## Comandos de auditoría
 

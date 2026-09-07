@@ -453,7 +453,7 @@ class PagesController < ApplicationController
     def money_flow_month_param
       current_period_start = Current.family.custom_month_start_for(Date.current)
       requested_month = Date.strptime(params[:money_flow_month], "%Y-%m-%d")
-      requested_period_start = money_flow_period_start_for(requested_month)
+      requested_period_start = dashboard_period_start_for(requested_month)
       # Clamp future periods: build_money_flow_data caps each bar's end_date at
       # Date.current, which would otherwise be earlier than a future period's
       # start_date and blow up Period.custom's date-range validation.
@@ -471,25 +471,28 @@ class PagesController < ApplicationController
     end
 
     def spending_trend_month_param
-      current_month = Date.current.beginning_of_month
-      month = Date.strptime(params[:spending_month], "%Y-%m-%d").beginning_of_month
+      current_period_start = Current.family.custom_month_start_for(Date.current)
+      requested_month = Date.strptime(params[:spending_month], "%Y-%m-%d")
+      requested_period_start = dashboard_period_start_for(requested_month)
       # Same clamp as money_flow: a future month's period would end before it
       # starts once capped at Date.current, which Period.custom rejects.
-      month > current_month ? current_month : month
+      requested_period_start > current_period_start ? current_period_start : requested_period_start
     rescue ArgumentError, TypeError
-      current_month
+      current_period_start
     end
 
-    # Cumulative daily spending for the selected month (capped at today while
-    # the month is in progress) against the previous month's full curve, so
-    # the two lines share one day-of-month axis.
-    def build_spending_trend_data(income_statement, selected_month)
-      month_start = selected_month.beginning_of_month
-      month_end = month_start.end_of_month
-      current_period = Period.custom(start_date: month_start, end_date: [ month_end, Date.current ].min)
+    # Cumulative daily spending for the selected configured month (capped at
+    # today while it is in progress) against the previous configured month's
+    # full curve, so the two lines share one period-day axis.
+    def build_spending_trend_data(income_statement, selected_period_start)
+      period_end = Current.family.custom_month_end_for(selected_period_start)
+      current_period = Period.custom(start_date: selected_period_start, end_date: [ period_end, Date.current ].min)
 
-      previous_month_start = (month_start - 1.month).beginning_of_month
-      previous_period = Period.custom(start_date: previous_month_start, end_date: previous_month_start.end_of_month)
+      previous_period_start = selected_period_start - 1.month
+      previous_period = Period.custom(
+        start_date: previous_period_start,
+        end_date: Current.family.custom_month_end_for(previous_period_start)
+      )
 
       current_daily = income_statement.daily_expense_series(period: current_period).index_by(&:date)
       previous_daily = income_statement.daily_expense_series(period: previous_period).index_by(&:date)
@@ -501,15 +504,26 @@ class PagesController < ApplicationController
       previous_total = previous_series.last&.fetch(:value) || 0
       currency = income_statement.family.currency
 
-      # The axis spans the longer of the two months so both curves share it.
-      axis_days = [ month_end.day, previous_period.end_date.day ].max
+      # The axis spans the longer of the two configured monthly periods so
+      # both curves share it (custom months can still vary from 28-31 days).
+      full_current_period_days = (period_end - selected_period_start).to_i + 1
+      axis_days = [ full_current_period_days, previous_period.days ].max
 
       {
-        month: month_start,
+        month: dashboard_display_month(selected_period_start),
+        month_options: (0..11).map do |i|
+          dashboard_display_month(Current.family.custom_month_start_for(Date.current) - i.months)
+        end,
         current_period: current_period,
         previous_period: previous_period,
         days: axis_days,
-        axis_labels: spending_trend_axis_labels(month_start, previous_month_start, axis_days),
+        axis_labels: spending_trend_axis_labels(
+          selected_period_start,
+          period_end,
+          previous_period_start,
+          previous_period.end_date,
+          axis_days
+        ),
         current: current_series,
         previous: previous_series,
         current_total: Money.new(current_total, currency),
@@ -518,15 +532,21 @@ class PagesController < ApplicationController
       }
     end
 
-    # Localized tick labels, one per axis day. The selected month owns the
-    # axis up to its length; when the previous month is longer, its dates
-    # label the tail so a tick never rolls past month-end into the next month
-    # (e.g. day 31 of a February view is "Jan 31", not "Mar 3").
-    def spending_trend_axis_labels(month_start, previous_month_start, days)
-      month_length = month_start.end_of_month.day
+    # Localized tick labels, one per axis day. The selected configured period
+    # owns the axis up to its length; when the previous one is longer, its
+    # dates label the tail so a tick never rolls beyond either period.
+    def spending_trend_axis_labels(period_start, period_end, previous_period_start, previous_period_end, days)
+      period_length = (period_end - period_start).to_i + 1
+      previous_period_length = (previous_period_end - previous_period_start).to_i + 1
 
-      (1..days).map do |day|
-        date = day <= month_length ? month_start + (day - 1) : previous_month_start + (day - 1)
+      (0...days).map do |offset|
+        date = if offset < period_length
+          period_start + offset
+        elsif offset < previous_period_length
+          previous_period_start + offset
+        else
+          period_end
+        end
         I18n.l(date, format: :short)
       end
     end
@@ -554,7 +574,7 @@ class PagesController < ApplicationController
 
       bars = months.map do |month_start|
         month_end = Current.family.custom_month_end_for(month_start)
-        display_month = money_flow_display_month(month_start)
+        display_month = dashboard_display_month(month_start)
         # Cap at today so an in-progress period (most commonly the current one)
         # doesn't report totals for its not-yet-arrived days.
         end_date = [ month_end, Date.current ].min
@@ -585,9 +605,9 @@ class PagesController < ApplicationController
       {
         bars: bars,
         period: selected_period,
-        month: money_flow_display_month(selected_month),
+        month: dashboard_display_month(selected_month),
         month_options: (0..11).map do |i|
-          money_flow_display_month(Current.family.custom_month_start_for(Date.current) - i.months)
+          dashboard_display_month(Current.family.custom_month_start_for(Date.current) - i.months)
         end,
         income: selected_totals.income_money,
         expense: selected_totals.expense_money,
@@ -599,12 +619,12 @@ class PagesController < ApplicationController
     # A late-month start represents the following named month: a period from
     # August 25 through September 24 is shown as September. Starts on or before
     # the 15th keep the calendar month in which the period begins.
-    def money_flow_display_month(period_start)
+    def dashboard_display_month(period_start)
       month = period_start.beginning_of_month
       Current.family.month_start_day > 15 ? month + 1.month : month
     end
 
-    def money_flow_period_start_for(display_month)
+    def dashboard_period_start_for(display_month)
       period_month = display_month.beginning_of_month
       period_month -= 1.month if Current.family.month_start_day > 15
       Date.new(period_month.year, period_month.month, Current.family.month_start_day)

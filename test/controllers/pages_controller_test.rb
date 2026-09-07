@@ -453,6 +453,32 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert chart.fetch("days") >= Date.current.day
   end
 
+  test "dashboard spending trend widget uses the family's custom monthly period" do
+    travel_to Date.new(2026, 9, 7) do
+      @family.update!(month_start_day: 25)
+      account = @family.accounts.create!(name: "Custom Spending Period", currency: @family.currency, balance: 0, accountable: Depository.new)
+
+      create_transaction(account: account, name: "Before period", amount: 900, date: Date.new(2026, 8, 24))
+      create_transaction(account: account, name: "Period start", amount: 50, date: Date.new(2026, 8, 25))
+      create_transaction(account: account, name: "Current period", amount: 25, date: Date.new(2026, 9, 7))
+      create_transaction(account: account, name: "Previous period", amount: 200, date: Date.new(2026, 7, 25))
+
+      get root_path, params: { spending_month: "2026-09-01" }
+
+      assert_response :ok
+      chart = spending_trend_chart_data
+
+      assert_equal "2026-08-25", chart.fetch("current").first.fetch("date")
+      assert_equal "2026-09-07", chart.fetch("current").last.fetch("date")
+      assert_equal 75.0, chart.fetch("current").last.fetch("value")
+      assert_equal "2026-07-25", chart.fetch("previous").first.fetch("date")
+      assert_equal "2026-08-24", chart.fetch("previous").last.fetch("date")
+      assert_equal 200.0, chart.fetch("previous").last.fetch("value")
+      assert_equal I18n.l(Date.new(2026, 8, 25), format: :short), chart.fetch("axis_labels").first
+      assert_select "#spending-trend-section", text: /#{I18n.l(Date.new(2026, 9, 1), format: :month_year)}/i
+    end
+  end
+
   test "dashboard spending trend axis labels follow the month that owns each day" do
     account = @family.accounts.create!(name: "Spending Trend Axis Checking", currency: @family.currency, balance: 0, accountable: Depository.new)
 
