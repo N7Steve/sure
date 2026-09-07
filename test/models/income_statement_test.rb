@@ -66,6 +66,21 @@ class IncomeStatementTest < ActiveSupport::TestCase
     assert_equal expected_total_expense, expense_totals.category_totals.find { |ct| ct.category.id == @food_category.id }.total
   end
 
+  test "reports transfers involving excluded accounts as synthetic categories" do
+    create_transaction(account: @checking_account, amount: 125, kind: "transfer_to_excluded")
+    create_transaction(account: @checking_account, amount: -75, kind: "transfer_from_excluded")
+
+    income_statement = IncomeStatement.new(@family)
+    expense_totals = income_statement.expense_totals(period: Period.last_30_days)
+    income_totals = income_statement.income_totals(period: Period.last_30_days)
+
+    transfer_out = expense_totals.category_totals.find { |category_total| category_total.category.transfer_to_excluded? }
+    transfer_in = income_totals.category_totals.find { |category_total| category_total.category.transfer_from_excluded? }
+
+    assert_equal 125, transfer_out.total
+    assert_equal 75, transfer_in.total
+  end
+
   test "orphaned categories still count as root category totals" do
     orphan_category = @family.categories.create! name: "Orphaned Category"
     orphan_category.update_column(:parent_id, SecureRandom.uuid)

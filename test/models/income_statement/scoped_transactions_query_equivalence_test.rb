@@ -117,6 +117,14 @@ class IncomeStatement::ScopedTransactionsQueryEquivalenceTest < ActiveSupport::T
 
     # Row order is not guaranteed by GROUP BY, so compare order-insensitively.
     def normalize(rows)
-      rows.map(&:to_h).sort_by(&:inspect)
+      # The fork adds transfer-to/from-excluded flags after the upstream
+      # refactor. Compare the upstream fields here; fork-only behavior has
+      # dedicated coverage in IncomeStatementTest.
+      upstream_fields = %i[
+        parent_category_id category_id classification total
+        transactions_count is_uncategorized_investment
+      ]
+
+      rows.map { |row| row.to_h.slice(*upstream_fields) }.sort_by(&:inspect)
     end
 end
