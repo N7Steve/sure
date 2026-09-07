@@ -1,0 +1,7 @@
+<%# locals: (title:) %>
+<%= content_for :page_title, title %>
+<div class="max-w-3xl space-y-6 pb-6">
+  <%= render DS::Link.new(text: t("scheduled_payments.agenda.title"), icon: "arrow-left", variant: "ghost", href: agenda_back_path) %>
+  <h1 class="text-xl font-medium text-primary"><%= title %></h1>
+  <%= render "form", scheduled_payment: @scheduled_payment %>
+</div>

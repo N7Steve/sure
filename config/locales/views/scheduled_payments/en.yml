@@ -1,6 +1,42 @@
 ---
 en:
   scheduled_payments:
+    agenda:
+      title: Agenda
+      subtitle: Your payments, income and transfers in one place.
+      new: New payment
+      edit: Edit schedule
+      views_label: Agenda views
+      views:
+        overview: Overview
+        calendar: Calendar
+        schedules: Schedules
+      metrics:
+        active: Active schedules
+        remaining: Left to pay this month
+        pending: Pending movements
+      active_hint:
+        one: "of %{count} schedule in total"
+        other: "of %{count} schedules in total"
+      remaining_hint: Expenses only. Amounts shown separately by currency.
+      pending_hint: Expenses, income and transfers for the month.
+      older_pending:
+        one: "You have %{count} pending confirmation from earlier months."
+        other: "You have %{count} pending confirmations from earlier months."
+      review_older: Review pending
+      month_payments: This month's movements
+      empty_month: No scheduled movements this month
+      empty_schedules: No schedules yet
+      previous_month: Previous month
+      next_month: Next month
+      read_only: Read only
+      retract: Undo confirmation
+      pause: Pause
+      resume: Resume
+      delete: Delete schedule
+      next_run: "Next run: %{date}"
+      calendar_payment: "%{title} · %{amount} · %{status}"
+    run_now: Generate pending payments
     title: Scheduled Payments
     pending_section: Pending confirmations
     created: Scheduled payment created
@@ -28,6 +64,10 @@ en:
       pending: Pending
       skipped: Skipped
       confirmed: Confirmed
+      overdue: Overdue
+      active: Active
+      paused: Paused
+      completed: Completed
     table:
       payment: Payment
       date: Date
@@ -43,10 +83,6 @@ en:
     entry_skipped: "Entry skipped"
     entry_retracted: "Confirmation undone, transaction removed"
     empty_month: "No scheduled payments for this month"
-    status:
-      active: Active
-      paused: Paused
-      completed: Completed
     new: New
     empty:
       title: No scheduled payments
@@ -87,3 +123,7 @@ en:
       auto_confirm_hint: Automatically create the transaction without manual confirmation
     retracted: Scheduled transaction omitted
     retract_error: This transaction is not linked to a scheduled payment
+    invalid_operation: "The payment could not be updated. Check the date, amount, and exchange rate and try again."
+    generation_failed:
+      one: "One scheduled payment could not be generated. Check its settings and the application log."
+      other: "%{count} scheduled payments could not be generated. Check their settings and the application log."

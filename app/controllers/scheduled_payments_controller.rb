@@ -1,41 +1,29 @@
 class ScheduledPaymentsController < ApplicationController
-  layout "settings"
+  layout "application"
+  rescue_from ArgumentError, ActiveRecord::RecordInvalid, Money::ConversionError, with: :invalid_payment_operation
 
   def index
-    @scheduled_payments = Current.family.scheduled_payments
-                                .accessible_by(Current.user)
-                                .includes(:account, :merchant, :category, :target_account)
-                                .order(next_run_date: :asc)
-
-    @pending_entries = ScheduledPaymentEntry
-      .joins(:scheduled_payment)
-      .where(scheduled_payment_id: Current.family.scheduled_payments.accessible_by(Current.user).select(:id))
-      .pending
-      .includes(scheduled_payment: [:account, :merchant, :category, :target_account])
-      .order(scheduled_date: :asc)
-
-    # Preload pending counts per scheduled payment for inline display
-    @pending_counts = @pending_entries.reorder("").group(:scheduled_payment_id).count
-
-    # Build a hash of scheduled_payment_id => oldest pending entry (for inline confirm/reject)
-    @oldest_pending_per_sp = {}
-    @pending_entries.each do |entry|
-      sp_id = entry.scheduled_payment_id
-      if @oldest_pending_per_sp[sp_id].nil? || entry.scheduled_date < @oldest_pending_per_sp[sp_id].scheduled_date
-        @oldest_pending_per_sp[sp_id] = entry
-      end
-    end
+    @view = ScheduledPayment::Agenda::VIEWS.include?(params[:view]) ? params[:view] : "overview"
+    @agenda = ScheduledPayment::Agenda.new(family: Current.family, user: Current.user, month: params[:month])
   end
 
   def new
     if params[:from_entry_id].present?
       source_entry = Current.family.entries
         .joins(:account)
-        .merge(Account.accessible_by(Current.user))
+        .merge(Account.writable_by(Current.user))
+        .where(entryable_type: "Transaction")
         .find(params[:from_entry_id])
 
       transaction = source_entry.entryable
       is_transfer = transaction.transfer.present?
+      if is_transfer
+        source_entry = transaction.transfer.outflow_transaction.entry
+        [ source_entry.account, transaction.transfer.to_account ].each do |account|
+          Current.family.accounts.writable_by(Current.user).find(account.id)
+        end
+        transaction = source_entry.entryable
+      end
 
       @scheduled_payment = Current.family.scheduled_payments.build(
         title: source_entry.name,
@@ -81,7 +69,7 @@ class ScheduledPaymentsController < ApplicationController
       end
 
       flash[:notice] = t("scheduled_payments.created")
-      redirect_to transactions_path(tab: "scheduled")
+      redirect_to agenda_return_path
     else
       render :new, status: :unprocessable_entity
     end
@@ -93,33 +81,43 @@ class ScheduledPaymentsController < ApplicationController
 
   def update
     @scheduled_payment = find_scheduled_payment
-    if @scheduled_payment.update(scheduled_payment_params)
+    attributes = scheduled_payment_params
+    updated = @scheduled_payment.with_lock do
+      # Association writers (tags) can write before model validation fails.
+      raise ActiveRecord::Rollback unless @scheduled_payment.update(attributes)
+
       @scheduled_payment.sync_confirmed_entries!
+      true
+    end
+    if updated
       flash[:notice] = t("scheduled_payments.updated")
-      redirect_to scheduled_payments_path
+      redirect_to agenda_return_path
     else
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
-    find_scheduled_payment.destroy!
+    sp = find_scheduled_payment
+    sp.with_lock { sp.destroy! }
     flash[:notice] = t("scheduled_payments.deleted")
-    redirect_to scheduled_payments_path
+    redirect_to agenda_return_path
   end
 
   def toggle_status
     sp = find_scheduled_payment
 
-    if sp.completed?
-      flash[:alert] = t("scheduled_payments.cannot_toggle_completed", default: "Cannot reactivate a completed scheduled payment")
-      redirect_to scheduled_payments_path
-      return
-    end
+    sp.with_lock do
+      if sp.completed?
+        flash[:alert] = t("scheduled_payments.cannot_toggle_completed", default: "Cannot reactivate a completed scheduled payment")
+        redirect_to agenda_return_path
+        return
+      end
 
-    sp.active? ? sp.update!(status: "paused") : sp.update!(status: "active")
+      sp.active? ? sp.update!(status: "paused") : sp.update!(status: "active")
+    end
     flash[:notice] = sp.active? ? t("scheduled_payments.activated", default: "Scheduled payment activated") : t("scheduled_payments.paused", default: "Scheduled payment paused")
-    redirect_to scheduled_payments_path
+    redirect_to agenda_return_path
   end
 
   def confirm_entry_form
@@ -127,7 +125,7 @@ class ScheduledPaymentsController < ApplicationController
     @entry_to_confirm = params[:entry_id].present? ?
       @scheduled_payment.scheduled_payment_entries.where(status: %w[pending skipped rejected]).find(params[:entry_id]) :
       nil
-    @scheduled_date = params[:scheduled_date].present? ? Date.parse(params[:scheduled_date]) : @entry_to_confirm&.scheduled_date
+    @scheduled_date = params[:scheduled_date].present? ? Date.iso8601(params[:scheduled_date].to_s) : @entry_to_confirm&.scheduled_date
 
     # Lógica de fecha preseleccionada
     @default_date = if @scheduled_date && @scheduled_date >= Date.current
@@ -142,57 +140,40 @@ class ScheduledPaymentsController < ApplicationController
 
   def confirm_entry
     entry = find_pending_entry
-    custom_date = params[:confirm_date].present? ? Date.parse(params[:confirm_date]) : nil
-    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount]) : nil
+    custom_date = params[:confirm_date].present? ? Date.iso8601(params[:confirm_date].to_s) : nil
+    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount].to_s) : nil
     entry.confirm!(date_override: custom_date, amount_override: custom_amount)
     flash[:notice] = t("scheduled_payments.entry_confirmed")
-    redirect_back_or_to scheduled_payments_path
+    redirect_to agenda_return_path
   end
 
   def reject_entry
     entry = find_pending_entry
     entry.reject!(params[:reason])
     flash[:notice] = t("scheduled_payments.entry_rejected")
-    redirect_back_or_to scheduled_payments_path
+    redirect_to agenda_return_path
   end
 
   def confirm_scheduled_date
     sp = find_scheduled_payment
-    date = Date.parse(params[:scheduled_date])
-    custom_date = params[:confirm_date].present? ? Date.parse(params[:confirm_date]) : nil
-    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount]) : nil
+    date = Date.iso8601(params[:scheduled_date].to_s)
+    custom_date = params[:confirm_date].present? ? Date.iso8601(params[:confirm_date].to_s) : nil
+    custom_amount = params[:confirm_amount].present? ? BigDecimal(params[:confirm_amount].to_s) : nil
 
-    ActiveRecord::Base.transaction do
-      spe = sp.scheduled_payment_entries.find_or_initialize_by(scheduled_date: date)
-      if spe.new_record?
-        spe.status = "pending"
-        spe.save!
-      end
-      spe.confirm!(date_override: custom_date, amount_override: custom_amount) unless spe.confirmed?
-
-      sp.advance_next_run_date! if sp.next_run_date == date
-    end
+    sp.confirm_on!(date, date_override: custom_date, amount_override: custom_amount)
 
     flash[:notice] = t("scheduled_payments.entry_confirmed")
-    redirect_back_or_to transactions_path(tab: "scheduled")
+    redirect_to agenda_return_path
   end
 
   def skip_scheduled_date
     sp = find_scheduled_payment
-    date = Date.parse(params[:scheduled_date])
+    date = Date.iso8601(params[:scheduled_date].to_s)
 
-    ActiveRecord::Base.transaction do
-      spe = sp.scheduled_payment_entries.find_or_initialize_by(scheduled_date: date)
-      spe.assign_attributes(status: "skipped", rejection_reason: "skipped_by_user")
-      spe.save!
-
-      # If this skipped date matches the SP's next_run_date, advance it so the
-      # cron doesn't try to generate this entry again.
-      sp.advance_next_run_date! if sp.next_run_date == date
-    end
+    sp.skip_on!(date)
 
     flash[:notice] = t("scheduled_payments.entry_skipped", default: "Entry skipped")
-    redirect_back_or_to transactions_path(tab: "scheduled")
+    redirect_to agenda_return_path
   end
 
   def retract_entry
@@ -200,37 +181,50 @@ class ScheduledPaymentsController < ApplicationController
     entry = sp.scheduled_payment_entries.confirmed.find(params[:entry_id])
     entry.retract!
     flash[:notice] = t("scheduled_payments.entry_retracted", default: "Confirmation undone, transaction removed")
-    redirect_back_or_to transactions_path(tab: "scheduled")
+    redirect_to agenda_return_path
   end
 
   def restore_entry
     sp = find_scheduled_payment
     entry = sp.scheduled_payment_entries.where(status: %w[skipped rejected]).find(params[:entry_id])
 
-    if entry.scheduled_date <= Date.current
+    past_due = entry.scheduled_date <= Date.current
+    entry.restore!
+    if past_due
       # Date has passed — auto-confirm (creates the transaction)
-      entry.confirm!
       flash[:notice] = t("scheduled_payments.entry_confirmed")
     else
       # Date hasn't arrived — destroy the SPE so it reverts to "Programado"
       # (in the unified table, "Programado" = no SPE exists for that date)
-      entry.destroy!
       flash[:notice] = t("scheduled_payments.entry_restored", default: "Entry restored")
     end
 
-    redirect_back_or_to transactions_path(tab: "scheduled")
+    redirect_to agenda_return_path
   end
 
   def run_now
-    GenerateScheduledPaymentsJob.perform_now
-    flash[:notice] = t("scheduled_payments.job_ran", default: "Scheduled payments job executed successfully")
-    redirect_to scheduled_payments_path
+    failures = GenerateScheduledPaymentsJob.perform_now(Current.family.id, Current.user.id)
+    if failures.zero?
+      flash[:notice] = t("scheduled_payments.job_ran", default: "Scheduled payments job executed successfully")
+    else
+      flash[:alert] = t("scheduled_payments.generation_failed", count: failures)
+    end
+    redirect_to agenda_return_path
   end
 
   private
 
+  def agenda_return_path
+    return scheduled_payments_path unless params[:agenda_view].present? || params[:agenda_month].present?
+
+    view = ScheduledPayment::Agenda::VIEWS.include?(params[:agenda_view]) ? params[:agenda_view] : "overview"
+    scheduled_payments_path(view: view, month: ScheduledPayment::Agenda.month_from(params[:agenda_month]).iso8601)
+  end
+
   def find_scheduled_payment
-    Current.family.scheduled_payments.accessible_by(Current.user).find(params[:id])
+    payment = Current.family.scheduled_payments.writable_by(Current.user).find(params[:id])
+    payment.ensure_writable_by!(Current.user)
+    payment
   end
 
   def find_pending_entry
@@ -239,11 +233,22 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def scheduled_payment_params
-    params.require(:scheduled_payment).permit(
+    attributes = params.require(:scheduled_payment).permit(
       :title, :amount, :currency, :frequency,
       :start_date, :end_date, :account_id, :category_id,
       :merchant_id, :target_account_id, :payment_type, :auto_confirm,
       tag_ids: []
     )
+    %i[account_id target_account_id].each do |key|
+      Current.family.accounts.writable_by(Current.user).find(attributes[key]) if attributes[key].present?
+    end
+    Current.family.categories.find(attributes[:category_id]) if attributes[:category_id].present?
+    Current.family.available_merchants_for(Current.user).find(attributes[:merchant_id]) if attributes[:merchant_id].present?
+    Current.family.tags.find(attributes[:tag_ids].reject(&:blank?)) if attributes[:tag_ids].present?
+    attributes
+  end
+
+  def invalid_payment_operation
+    redirect_to agenda_return_path, alert: t("scheduled_payments.invalid_operation")
   end
 end

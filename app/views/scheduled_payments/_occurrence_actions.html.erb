@@ -1,0 +1,26 @@
+<%# locals: (occurrence:) %>
+<% payment = occurrence.scheduled_payment %>
+<% if @agenda.writable?(payment) %>
+  <% if occurrence.open? %>
+    <%= render DS::Link.new(icon: "circle-check", variant: "ghost", size: :sm,
+          aria: { label: t("scheduled_payments.confirm_action") }, title: t("scheduled_payments.confirm_action"),
+          href: agenda_confirm_path(occurrence), frame: :modal) %>
+    <%= render DS::Button.new(icon: "circle-x", variant: "ghost", size: :sm,
+          aria: { label: t("scheduled_payments.skip_action") }, title: t("scheduled_payments.skip_action"),
+          href: skip_scheduled_date_scheduled_payment_path(payment, scheduled_date: occurrence.scheduled_date.iso8601, **agenda_context_params), method: :post) %>
+  <% elsif occurrence.skipped? %>
+    <%= render DS::Button.new(icon: "rotate-ccw", variant: "ghost", size: :sm,
+          aria: { label: t("scheduled_payments.restore_action") }, title: t("scheduled_payments.restore_action"),
+          href: restore_entry_scheduled_payment_path(payment, entry_id: occurrence.entry_id, **agenda_context_params), method: :post) %>
+  <% elsif occurrence.confirmed? %>
+    <%= render DS::Button.new(icon: "undo-2", variant: "ghost", size: :sm,
+          aria: { label: t("scheduled_payments.agenda.retract") }, title: t("scheduled_payments.agenda.retract"),
+          href: retract_entry_scheduled_payment_path(payment, entry_id: occurrence.entry_id, **agenda_context_params),
+          method: :post, confirm: t("scheduled_payments.retract_confirm")) %>
+  <% end %>
+  <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm,
+        aria: { label: t("scheduled_payments.agenda.edit") }, title: t("scheduled_payments.agenda.edit"),
+        href: edit_scheduled_payment_path(payment, **agenda_context_params)) %>
+<% else %>
+  <span class="text-xs text-secondary"><%= t("scheduled_payments.agenda.read_only") %></span>
+<% end %>

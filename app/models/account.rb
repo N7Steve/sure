@@ -6,6 +6,12 @@ class Account < ApplicationRecord
   after_save :invalidate_family_caches, if: :saved_change_to_exclude_from_reports?
   before_validation :assign_default_owner, if: -> { owner_id.blank? }
 
+  # Unlink scheduled entries before cleanup_transfers/entries tries to delete
+  # them. Destination accounts must release their schedules' foreign keys too.
+  has_many :scheduled_payments, dependent: :destroy
+  has_many :inbound_scheduled_payments, class_name: "ScheduledPayment",
+           foreign_key: :target_account_id, dependent: :destroy
+
   before_destroy :capture_account_statement_ids_to_move
   before_destroy :cleanup_transfers
 
@@ -28,7 +34,6 @@ class Account < ApplicationRecord
   has_many :holdings, dependent: :destroy
   has_many :balances, dependent: :destroy
   has_many :recurring_transactions, dependent: :destroy
-  has_many :scheduled_payments, dependent: :destroy
   has_many :goal_accounts, dependent: :destroy
   has_many :goals, through: :goal_accounts
   has_many :goal_pledges, dependent: :destroy

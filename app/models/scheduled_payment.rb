@@ -13,7 +13,7 @@ class ScheduledPayment < ApplicationRecord
 
   monetize :amount
 
-  enum :status, { active: "active", paused: "paused", completed: "completed" }
+  enum :status, { active: "active", paused: "paused", completed: "completed" }, validate: true
   enum :frequency, {
     daily: "daily",
     weekly: "weekly",
@@ -21,10 +21,11 @@ class ScheduledPayment < ApplicationRecord
     monthly: "monthly",
     quarterly: "quarterly",
     yearly: "yearly"
-  }
-  enum :payment_type, { expense: "expense", income: "income", transfer: "transfer" }
+  }, validate: true
+  enum :payment_type, { expense: "expense", income: "income", transfer: "transfer" }, validate: true
 
   validates :title, :amount, :currency, :frequency, :start_date, :next_run_date, presence: true
+  validates :amount, numericality: { greater_than_or_equal_to: 0, less_than: Float::INFINITY }
   validates :frequency_day, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :set_frequency_day_from_start_date, if: -> { start_date.present? }
@@ -32,40 +33,84 @@ class ScheduledPayment < ApplicationRecord
   validates :target_account, presence: true, if: :transfer?
   validate :target_account_different_from_source, if: :transfer?
   validate :frequency_day_within_range
+  validate :associations_belong_to_family
+  validates :end_date, comparison: { greater_than_or_equal_to: :start_date }, allow_nil: true, if: -> { start_date.present? }
 
   scope :due_on_or_before, ->(date) { active.where("next_run_date <= ?", date) }
   scope :accessible_by, ->(user) {
-    where(account_id: Account.accessible_by(user).select(:id))
+    account_ids = Account.accessible_by(user).select(:id)
+    where(account_id: account_ids).where(target_account_id: account_ids).or(
+      where(account_id: account_ids, target_account_id: nil)
+    )
+  }
+  scope :writable_by, ->(user) {
+    account_ids = Account.writable_by(user).select(:id)
+    where(account_id: account_ids).where(target_account_id: account_ids).or(
+      where(account_id: account_ids, target_account_id: nil)
+    )
   }
 
-  def generate_pending_entry!
-    return if end_date.present? && next_run_date > end_date
+  def generate_pending_entry!(through: nil)
+    with_lock do
+      return unless active?
+      if end_date.present? && next_run_date > end_date
+        update!(status: "completed")
+        return
+      end
+      return if through.present? && next_run_date > through
 
-    existing = scheduled_payment_entries.find_by(scheduled_date: next_run_date)
+      entry_record = scheduled_payment_entries.find_or_initialize_by(scheduled_date: next_run_date)
+      new_occurrence = entry_record.new_record?
+      entry_record.save! if new_occurrence
+      entry_record.confirm! if auto_confirm && entry_record.pending?
 
-    if existing
-      existing.confirm! if auto_confirm && existing.pending?
-      return existing
+      # Recover an existing occurrence too: leaving the cursor behind it makes
+      # the catch-up job loop forever. Creation and advancement commit together.
+      advance_next_run_date!(count_occurrence: new_occurrence)
+      entry_record
     end
-
-    entry_record = scheduled_payment_entries.create!(
-      scheduled_date: next_run_date,
-      status: "pending"
-    )
-
-    entry_record.confirm! if auto_confirm
-
-    advance_next_run_date!
-    entry_record
   end
 
-  def advance_next_run_date!
+  def advance_next_run_date!(count_occurrence: true)
     new_date = calculate_next_date(next_run_date)
+    raise ArgumentError, "Schedule must advance" unless new_date > next_run_date
 
-    if end_date.present? && new_date > end_date
-      update!(status: "completed", next_run_date: new_date)
-    else
-      update!(next_run_date: new_date, occurrences_count: occurrences_count + 1)
+    update!(next_run_date: new_date,
+            occurrences_count: occurrences_count + (count_occurrence ? 1 : 0),
+            status: end_date.present? && new_date > end_date ? "completed" : status)
+  end
+
+  def confirm_on!(date, **overrides)
+    with_lock do
+      occurrence = occurrence_for_date!(date)
+      new_occurrence = occurrence.new_record?
+      occurrence.save! if new_occurrence
+      occurrence.confirm!(**overrides)
+      advance_next_run_date!(count_occurrence: new_occurrence) if next_run_date == date
+      occurrence
+    end
+  end
+
+  def skip_on!(date)
+    with_lock do
+      occurrence = occurrence_for_date!(date)
+      new_occurrence = occurrence.new_record?
+      occurrence.save! if new_occurrence
+      occurrence.skip!
+      advance_next_run_date!(count_occurrence: new_occurrence) if next_run_date == date
+      occurrence
+    end
+  end
+
+  def ensure_writable_by!(user)
+    self.class.where(family_id: user.family_id).writable_by(user).find(id)
+    # Editing a series can also annotate or retract historical entries on an
+    # account it used before the source/destination was changed.
+    linked_entries = Entry.where(id: scheduled_payment_entries.select(:entry_id)).or(
+      Entry.where(id: scheduled_payment_entries.select(:transfer_entry_id))
+    )
+    if linked_entries.where.not(account_id: Account.writable_by(user).select(:id)).exists?
+      raise ActiveRecord::RecordNotFound
     end
   end
 
@@ -102,6 +147,7 @@ class ScheduledPayment < ApplicationRecord
               category_id: category_id,
               updated_at: Time.current
             )
+            spe.transfer_entry.entryable.tags = tags
           end
         end
       end
@@ -125,7 +171,7 @@ class ScheduledPayment < ApplicationRecord
     return [] if start_date.blank?
 
     occurrences = []
-    current = start_date
+    current = first_occurrence_on_or_after(date_range.begin)
     iterations = 0
     max_iterations = 10_000
 
@@ -148,6 +194,15 @@ class ScheduledPayment < ApplicationRecord
   def link_matching_entries!(user)
     return unless persisted?
 
+    with_lock do
+      ensure_writable_by!(user)
+      link_historical_entries!
+    end
+  end
+
+  private
+
+  def link_historical_entries!
     # Build base query: same account, same name, similar amount, same currency
     amount_value = amount.abs
     tolerance = amount_value * 0.05  # 5% tolerance on amount
@@ -155,11 +210,12 @@ class ScheduledPayment < ApplicationRecord
     max_amount = amount_value + tolerance
 
     candidates = family.entries
-      .joins(:account)
-      .merge(Account.accessible_by(user))
+      .where(entryable_type: "Transaction")
       .where(account_id: account_id)
+      .where("entries.date <= ?", Date.current)
       .where(currency: currency)
       .where("ABS(entries.amount) BETWEEN ? AND ?", min_amount, max_amount)
+      .where(income? ? "entries.amount < 0" : "entries.amount >= 0")
       .where("LOWER(entries.name) = LOWER(?)", title)
 
     # If merchant is set, also filter by merchant
@@ -171,51 +227,74 @@ class ScheduledPayment < ApplicationRecord
 
     # For each candidate, check if its date is within ±5 days of any occurrence
     candidates.find_each do |entry|
-      # Skip if already linked to any SP
-      next if entry.from_scheduled_payment?
-
-      # Compute occurrences in a ±5 day window around the entry date
-      search_range = (entry.date - 5.days)..(entry.date + 5.days)
-      matching_occurrences = occurrences_in(search_range)
-
-      next if matching_occurrences.empty?
-
-      # Find the nearest occurrence
-      nearest_date = matching_occurrences.min_by { |d| (d - entry.date).abs }
-
-      # Create or find an SPE for that occurrence date, link it to this entry
-      spe = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
-      next if spe.persisted? && spe.confirmed?  # Don't overwrite existing confirmed SPE
-
-      if entry.entryable.is_a?(Transaction) && entry.entryable.transfer.present?
-        # For transfers, link both outflow and inflow entries
+      entry.with_lock do
+        # Skip if already linked to any SP.
+        next if entry.from_scheduled_payment?
         transfer = entry.entryable.transfer
-        outflow_entry = transfer.outflow_transaction.entry
-        inflow_entry = transfer.inflow_transaction.entry
-        spe.assign_attributes(
-          status: "confirmed",
-          entry: outflow_entry,
-          transfer_entry: inflow_entry
-        )
-      else
-        spe.assign_attributes(
-          status: "confirmed",
-          entry: entry
-        )
-      end
+        if transfer?
+          next unless transfer && transfer.from_account.id == account_id && transfer.to_account.id == target_account_id
+          next if transfer.inflow_transaction.entry.from_scheduled_payment?
+        else
+          next if transfer
+        end
 
-      spe.save!
+        search_range = (entry.date - 5.days)..(entry.date + 5.days)
+        matching_occurrences = occurrences_in(search_range)
+        next if matching_occurrences.empty?
+
+        nearest_date = matching_occurrences.min_by { |date| (date - entry.date).abs }
+        spe = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
+        next if spe.persisted? && !spe.pending?
+
+        spe.assign_attributes(status: "confirmed", entry: entry, rejection_reason: nil)
+        spe.transfer_entry = transfer.inflow_transaction.entry if transfer
+        spe.save!
+      end
     end
 
-    # Advance next_run_date past all linked occurrences
-    latest_linked = scheduled_payment_entries.confirmed.maximum(:scheduled_date)
-    if latest_linked.present?
-      next_date = calculate_next_date(latest_linked)
-      update!(next_run_date: next_date) if next_date > next_run_date
+    # Do not jump over an unpaid gap just because a later charge was linked.
+    while active? && scheduled_payment_entries.confirmed.exists?(scheduled_date: next_run_date)
+      advance_next_run_date!(count_occurrence: false)
     end
   end
 
-  private
+  def occurrence_for_date!(date)
+    existing = scheduled_payment_entries.find_by(scheduled_date: date)
+    return existing if existing
+    raise ArgumentError, "Date is outside the schedule" unless occurrences_in(date..date).include?(date)
+
+    scheduled_payment_entries.build(scheduled_date: date)
+  end
+
+  # Jump to the requested window, so an old daily schedule doesn't exhaust
+  # the iteration cap before reaching the month being displayed.
+  def first_occurrence_on_or_after(date)
+    return start_date if date <= start_date
+
+    current = if (days = { "daily" => 1, "weekly" => 7, "biweekly" => 14 }[frequency])
+      start_date + ((date - start_date).to_i / days) * days
+    elsif (months = { "monthly" => 1, "quarterly" => 3, "yearly" => 12 }[frequency])
+      elapsed_months = (date.year - start_date.year) * 12 + date.month - start_date.month
+      cycles = elapsed_months / months
+      cycles.zero? ? start_date : safe_advance_months(start_date, cycles * months, frequency_day)
+    else
+      return start_date
+    end
+
+    current < date ? calculate_next_date(current) : current
+  end
+
+  def associations_belong_to_family
+    return if family_id.blank?
+
+    { account: account, target_account: target_account, category: category }.each do |attribute, record|
+      errors.add(attribute, :invalid) if record && record.family_id != family_id
+    end
+    if merchant.is_a?(FamilyMerchant) && merchant.family_id != family_id
+      errors.add(:merchant, :invalid)
+    end
+    errors.add(:tags, :invalid) if tags.any? { |tag| tag.family_id != family_id }
+  end
 
   def frequency_day_within_range
     return unless frequency.present? && frequency_day.present?

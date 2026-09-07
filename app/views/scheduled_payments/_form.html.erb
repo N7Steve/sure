@@ -2,6 +2,9 @@
     url: scheduled_payment.persisted? ? scheduled_payment_path(scheduled_payment) : scheduled_payments_path,
     class: "space-y-4",
     data: { controller: "scheduled-payment-form" } do |f| %>
+  <% agenda_context_params.each do |name, value| %>
+    <%= hidden_field_tag name, value %>
+  <% end %>
 
   <% if scheduled_payment.errors.any? %>
     <%= render "shared/form_errors", model: scheduled_payment %>
@@ -11,7 +14,7 @@
     <%= f.hidden_field :from_entry_id, value: @from_entry_id %>
   <% end %>
 
-  <section class="bg-container rounded-xl shadow-border-xs p-4 space-y-4">
+  <%= render DS::Card.new(class: "space-y-4") do %>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <%# Title %>
       <div>
@@ -24,7 +27,7 @@
       <%# Account %>
       <div>
         <%= f.collection_select :account_id,
-            Current.user.accessible_accounts.alphabetically,
+            Current.family.accounts.writable_by(Current.user).alphabetically,
             :id, :name,
             { prompt: t("scheduled_payments.form.select_account", default: "Select account"),
               label: t("scheduled_payments.form.account_label", default: "Account"),
@@ -96,7 +99,7 @@
       <div data-scheduled-payment-form-target="transferFields"
            class="<%= 'hidden' unless scheduled_payment.transfer? %>">
         <%= f.collection_select :target_account_id,
-            Current.user.accessible_accounts.alphabetically,
+            Current.family.accounts.writable_by(Current.user).alphabetically,
             :id, :name,
             { prompt: t("scheduled_payments.form.select_target_account", default: "Select target account"),
               label: t("scheduled_payments.form.target_account_label", default: "Target account"),
@@ -139,8 +142,8 @@
     </div>
 
     <div class="flex items-center justify-end gap-2">
-      <%= render DS::Link.new(variant: "outline", href: scheduled_payments_path, text: t("shared.cancel"), icon: "x") %>
+      <%= render DS::Link.new(variant: "outline", href: agenda_back_path, text: t("shared.cancel"), icon: "x") %>
       <%= f.submit t("scheduled_payments.form.save", default: "Save") %>
     </div>
-  </section>
+  <% end %>
 <% end %>

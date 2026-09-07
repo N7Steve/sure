@@ -23,6 +23,11 @@ class TransactionsController < ApplicationController
   end
 
   def index
+    if params[:tab] == "scheduled"
+      redirect_to scheduled_payments_path(month: ScheduledPayment::Agenda.month_from(params[:scheduled_month]).iso8601)
+      return
+    end
+
     @q = search_params
     @accessible_account_ids = Current.user.accessible_accounts.pluck(:id)
     @search = Transaction::Search.new(Current.family, filters: @q, accessible_account_ids: @accessible_account_ids)
@@ -98,56 +103,6 @@ class TransactionsController < ApplicationController
                     .includes(:merchant)
                     .to_a
     end
-
-    # Determine selected month for scheduled tab
-    @scheduled_month = params[:scheduled_month].present? ? Date.parse(params[:scheduled_month]) : Date.current
-    @scheduled_month_start = @scheduled_month.beginning_of_month
-    @scheduled_month_end = @scheduled_month.end_of_month
-    month_range = @scheduled_month_start..@scheduled_month_end
-
-    # Load all accessible SPs (active + paused; we still show paused ones if they have SPEs in the month)
-    sps = Current.family.scheduled_payments
-                  .accessible_by(Current.user)
-                  .where(status: %w[active paused])
-                  .includes(:account, :merchant, :category, :target_account)
-
-    # Pre-load all SPEs for these SPs in the month range to avoid N+1
-    spe_map = ScheduledPaymentEntry
-      .where(scheduled_payment_id: sps.map(&:id))
-      .where(scheduled_date: month_range)
-      .index_by { |spe| [spe.scheduled_payment_id, spe.scheduled_date] }
-
-    # Build occurrence rows
-    @scheduled_occurrences = []
-    sps.each do |sp|
-      # For active SPs: enumerate expected occurrences in the month
-      if sp.active?
-        sp.occurrences_in(month_range).each do |date|
-          spe = spe_map[[sp.id, date]]
-          @scheduled_occurrences << ScheduledPaymentOccurrence.new(
-            scheduled_payment: sp,
-            scheduled_date: date,
-            entry: spe
-          )
-        end
-      end
-      # For any SP (active or paused): include any existing SPEs in the month
-      # that weren't covered above (e.g., SPEs whose date doesn't match the
-      # current frequency, or paused SPs with historical entries)
-      sp.scheduled_payment_entries
-        .where(scheduled_date: month_range)
-        .each do |spe|
-          next if @scheduled_occurrences.any? { |o| o.scheduled_payment.id == sp.id && o.scheduled_date == spe.scheduled_date }
-          @scheduled_occurrences << ScheduledPaymentOccurrence.new(
-            scheduled_payment: sp,
-            scheduled_date: spe.scheduled_date,
-            entry: spe
-          )
-        end
-    end
-
-    # Sort by date ascending, then by SP title for stability
-    @scheduled_occurrences.sort_by! { |o| [o.scheduled_date, o.scheduled_payment.title] }
   end
 
   def clear_filter
@@ -545,9 +500,8 @@ class TransactionsController < ApplicationController
       return
     end
 
-    account = @entry.account
+    spe.scheduled_payment.ensure_writable_by!(Current.user)
     spe.retract!
-    account.sync_later
 
     redirect_back_or_to transactions_path, notice: t("scheduled_payments.retracted")
   end

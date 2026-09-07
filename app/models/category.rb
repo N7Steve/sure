@@ -1,5 +1,6 @@
 class Category < ApplicationRecord
   has_many :transactions, dependent: :nullify, class_name: "Transaction"
+  has_many :scheduled_payments, dependent: :nullify
   has_many :import_mappings, as: :mappable, dependent: :destroy, class_name: "Import::Mapping"
 
   belongs_to :family
@@ -392,6 +393,7 @@ class Category < ApplicationRecord
   def replace_and_destroy!(replacement)
     transaction do
       transactions.update_all category_id: replacement&.id
+      scheduled_payments.update_all(category_id: replacement&.id, updated_at: Time.current)
       destroy!
     end
   end

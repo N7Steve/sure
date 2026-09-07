@@ -92,8 +92,9 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       sp.generate_pending_entry!
     end
 
-    # next_run_date should NOT have advanced again
-    assert_equal original_next, sp.reload.next_run_date
+    # Recover the cursor without creating/counting the occurrence twice.
+    assert_equal advanced_next, sp.reload.next_run_date
+    assert_equal 1, sp.occurrences_count
   end
 
   test "completed payment stops generating entries" do
@@ -107,6 +108,7 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
     sp.generate_pending_entry!
     sp.reload
     assert_equal "completed", sp.status
+    assert_equal 1, sp.occurrences_count
   end
 
   test "due_on_or_before scope returns only active payments due" do
@@ -194,7 +196,7 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       account: @account,
       date: Date.new(2026, 1, 14),
       name: "Netflix",
-      amount: -15,
+      amount: 15,
       currency: "USD",
       entryable: Transaction.new
     )
@@ -203,7 +205,7 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       account: @account,
       date: Date.new(2026, 2, 16),
       name: "Netflix",
-      amount: -15,
+      amount: 15,
       currency: "USD",
       entryable: Transaction.new
     )
@@ -216,13 +218,13 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       currency: "USD",
       frequency: "monthly",
       frequency_day: 15,
-      start_date: Date.new(2026, 1, 1),
-      next_run_date: Date.new(2026, 1, 1),
+      start_date: Date.new(2026, 1, 15),
+      next_run_date: Date.new(2026, 1, 15),
       payment_type: "expense"
     )
 
     assert_difference -> { sp.scheduled_payment_entries.confirmed.count }, 2 do
-      sp.link_matching_entries!(users(:dylan))
+      sp.link_matching_entries!(users(:family_admin))
     end
 
     assert_equal Date.new(2026, 3, 15), sp.reload.next_run_date
@@ -234,7 +236,7 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       account: @account,
       date: Date.new(2026, 1, 22),
       name: "Netflix",
-      amount: -15,
+      amount: 15,
       currency: "USD",
       entryable: Transaction.new
     )
@@ -246,13 +248,13 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       currency: "USD",
       frequency: "monthly",
       frequency_day: 15,
-      start_date: Date.new(2026, 1, 1),
-      next_run_date: Date.new(2026, 1, 1),
+      start_date: Date.new(2026, 1, 15),
+      next_run_date: Date.new(2026, 1, 15),
       payment_type: "expense"
     )
 
     assert_no_difference -> { sp.scheduled_payment_entries.confirmed.count } do
-      sp.link_matching_entries!(users(:dylan))
+      sp.link_matching_entries!(users(:family_admin))
     end
   end
 end

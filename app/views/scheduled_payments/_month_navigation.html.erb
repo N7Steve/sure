@@ -1,0 +1,12 @@
+<div class="flex flex-wrap items-center justify-between gap-2">
+  <h2 class="text-lg font-medium text-primary"><%= l(@agenda.month, format: "%B %Y").capitalize %></h2>
+  <div class="flex items-center gap-1">
+    <%= render DS::Link.new(icon: "chevron-left", variant: "ghost",
+          aria: { label: t("scheduled_payments.agenda.previous_month") },
+          href: scheduled_payments_path(view: @view, month: @agenda.month.prev_month.iso8601)) %>
+    <%= render DS::Link.new(text: t("scheduled_payments.today"), variant: "ghost", href: scheduled_payments_path(view: @view)) %>
+    <%= render DS::Link.new(icon: "chevron-right", variant: "ghost",
+          aria: { label: t("scheduled_payments.agenda.next_month") },
+          href: scheduled_payments_path(view: @view, month: @agenda.month.next_month.iso8601)) %>
+  </div>
+</div>

@@ -28,7 +28,7 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
 
     get scheduled_payments_url
     assert_response :success
-    assert_includes response.body, I18n.t("scheduled_payments.title")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.title")
     assert_includes response.body, sp.title
   end
 
@@ -184,7 +184,207 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
   test "new page does not include duplicate h1 header" do
     get new_scheduled_payment_path
     assert_response :success
-    # Should only have page title via content_for, not visible h1
-    assert_select "h1", count: 0
+    # The standalone editor has one visible page heading.
+    assert_select "h1", count: 1
   end
+
+  test "read-only account access cannot modify or confirm a schedule" do
+    payment = create_payment(account: accounts(:credit_card))
+    occurrence = payment.scheduled_payment_entries.create!(scheduled_date: Date.current)
+    sign_in users(:family_member)
+
+    patch scheduled_payment_url(payment), params: { scheduled_payment: { title: "Changed" } }
+    assert_response :not_found
+
+    assert_no_difference "Entry.count" do
+      post confirm_entry_scheduled_payment_url(payment), params: { entry_id: occurrence.id }
+      assert_response :not_found
+    end
+    assert_equal "Controller robustness payment", payment.reload.title
+  end
+
+  test "read-only transfer destination blocks confirmation and transaction retraction" do
+    payment = create_payment(payment_type: "transfer", target_account: accounts(:credit_card))
+    occurrence = payment.confirm_on!(Date.current)
+    sign_in users(:family_member)
+
+    assert_no_difference "Entry.count" do
+      post confirm_scheduled_date_scheduled_payment_url(payment), params: { scheduled_date: Date.current }
+      assert_response :not_found
+      post retract_scheduled_transaction_url(occurrence.entry)
+      assert_response :not_found
+    end
+    assert_predicate occurrence.reload, :confirmed?
+  end
+
+  test "create rejects a foreign account before writing the schedule" do
+    foreign_account = families(:empty).accounts.create!(name: "Foreign", balance: 0, currency: "USD", accountable: Depository.new)
+
+    assert_no_difference "ScheduledPayment.count" do
+      post scheduled_payments_url, params: { scheduled_payment: payment_attributes.merge(account_id: foreign_account.id) }
+      assert_response :not_found
+    end
+  end
+
+  test "update rejects foreign tags without changing existing associations" do
+    payment = create_payment(tags: [ tags(:one) ])
+    foreign_tag = families(:empty).tags.create!(name: "Foreign")
+
+    patch scheduled_payment_url(payment), params: { scheduled_payment: { title: "Changed", tag_ids: [ foreign_tag.id ] } }
+
+    assert_response :not_found
+    assert_equal [ tags(:one).id ], payment.reload.tag_ids
+    assert_equal "Controller robustness payment", payment.title
+  end
+
+  test "a validation failure rolls back tag changes" do
+    payment = create_payment(tags: [ tags(:one) ])
+
+    patch scheduled_payment_url(payment), params: { scheduled_payment: { title: "", tag_ids: [ tags(:two).id ] } }
+
+    assert_response :unprocessable_entity
+    assert_equal "Controller robustness payment", payment.reload.title
+    assert_equal [ tags(:one).id ], payment.tag_ids
+  end
+
+  test "malformed confirmation input produces an alert without a ledger write" do
+    payment = create_payment
+
+    assert_no_difference [ "Entry.count", "ScheduledPaymentEntry.count" ] do
+      post confirm_scheduled_date_scheduled_payment_url(payment), params: { scheduled_date: "invalid-date" }
+      assert_redirected_to scheduled_payments_url
+      assert_equal I18n.t("scheduled_payments.invalid_operation"), flash[:alert]
+    end
+  end
+
+  test "repeated date confirmation creates only one ledger entry" do
+    payment = create_payment
+
+    assert_difference "Entry.count", 1 do
+      2.times do
+        post confirm_scheduled_date_scheduled_payment_url(payment), params: { scheduled_date: Date.current }
+        assert_redirected_to scheduled_payments_url
+      end
+    end
+    assert_equal 1, payment.scheduled_payment_entries.confirmed.count
+  end
+
+  test "run now passes the family and user scope to the generator" do
+    GenerateScheduledPaymentsJob.expects(:perform_now).with(@family.id, @user.id).returns(0)
+
+    post run_now_scheduled_payments_url
+
+    assert_redirected_to scheduled_payments_url
+  end
+
+  test "run now reports partial failures" do
+    GenerateScheduledPaymentsJob.expects(:perform_now).with(@family.id, @user.id).returns(1)
+
+    post run_now_scheduled_payments_url
+
+    assert_redirected_to scheduled_payments_url
+    assert_equal I18n.t("scheduled_payments.generation_failed", count: 1), flash[:alert]
+    assert_nil flash[:notice]
+  end
+
+  test "new from the incoming transfer side uses the outgoing account and amount" do
+    payment = create_payment(payment_type: "transfer", target_account: accounts(:credit_card))
+    occurrence = payment.confirm_on!(Date.current)
+
+    get new_scheduled_payment_url, params: { from_entry_id: occurrence.transfer_entry_id }
+
+    assert_response :success
+    prefilled = @controller.view_assigns["scheduled_payment"]
+    assert_equal @account.id, prefilled.account_id
+    assert_equal accounts(:credit_card).id, prefilled.target_account_id
+    assert_equal occurrence.entry.amount.abs, prefilled.amount
+  end
+
+  test "completed schedules retain their pending occurrence in Agenda" do
+    payment = create_payment(end_date: Date.current)
+    payment.generate_pending_entry!
+    assert_predicate payment.reload, :completed?
+
+    get scheduled_payments_url, params: { month: Date.current.iso8601 }
+
+    assert_response :success
+    assert_includes response.body, payment.title
+  end
+
+  test "legacy transactions tab redirects to Agenda preserving the month" do
+    get transactions_url, params: { tab: "scheduled", scheduled_month: "2026-08-15" }
+
+    assert_redirected_to scheduled_payments_url(month: "2026-08-01")
+  end
+
+  test "overview and calendar do not generate payments on a visit" do
+    payment = create_payment
+
+    assert_no_difference [ "Entry.count", "ScheduledPaymentEntry.count" ] do
+      %w[overview calendar schedules].each do |view|
+        get scheduled_payments_url, params: { view: view }
+        assert_response :success
+        assert_select "h1", text: I18n.t("scheduled_payments.agenda.title")
+        assert_select "nav a[href=?]", scheduled_payments_path, minimum: 1
+        assert_includes response.body, payment.title
+        assert_select ".translation_missing", count: 0
+      end
+    end
+  end
+
+  test "calendar confirmation form and submission retain selected view and month" do
+    payment = create_payment
+    month = Date.current.beginning_of_month.iso8601
+    get confirm_entry_form_scheduled_payment_url(payment), params: {
+      scheduled_date: Date.current.iso8601, agenda_view: "calendar", agenda_month: month
+    }
+
+    assert_response :success
+    assert_select "input[name=confirm_amount]", count: 1
+    assert_select "input[name=agenda_view][value=calendar]", count: 1
+    assert_select "input[name=agenda_month][value=?]", month, count: 1
+
+    post confirm_scheduled_date_scheduled_payment_url(payment), params: {
+      scheduled_date: Date.current.iso8601, confirm_amount: "17.50",
+      agenda_view: "calendar", agenda_month: month
+    }
+
+    assert_redirected_to scheduled_payments_url(view: "calendar", month: month)
+    assert_equal BigDecimal("17.50"), payment.scheduled_payment_entries.sole.entry.amount
+  end
+
+  test "read only occurrences have no edit or confirmation links" do
+    payment = create_payment(account: accounts(:credit_card))
+    sign_in users(:family_member)
+
+    %w[overview calendar schedules].each do |view|
+      get scheduled_payments_url, params: { view: view }
+      assert_response :success
+      assert_includes response.body, payment.title
+      assert_select "a[href*=?]", confirm_entry_form_scheduled_payment_path(payment), count: 0
+      assert_select "a[href*=?]", edit_scheduled_payment_path(payment), count: 0
+      assert_select "form[action*=?]", scheduled_payment_path(payment), count: 0
+    end
+  end
+
+  test "malformed navigation context returns safely to overview" do
+    payment = create_payment
+    post skip_scheduled_date_scheduled_payment_url(payment), params: {
+      scheduled_date: Date.current.iso8601, agenda_view: "https://example.org", agenda_month: "invalid"
+    }
+
+    assert_redirected_to scheduled_payments_url(view: "overview", month: Date.current.beginning_of_month.iso8601)
+  end
+
+  private
+    def payment_attributes
+      {
+        account_id: @account.id, title: "Controller robustness payment", amount: 25,
+        currency: "USD", start_date: Date.current, frequency: "monthly", payment_type: "expense"
+      }
+    end
+
+    def create_payment(**attributes)
+      @family.scheduled_payments.create!(payment_attributes.merge(next_run_date: Date.current).merge(attributes))
+    end
 end

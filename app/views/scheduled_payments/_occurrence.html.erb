@@ -1,0 +1,27 @@
+<%# locals: (occurrence:) %>
+<% payment = occurrence.scheduled_payment %>
+<div id="<%= agenda_occurrence_id(occurrence) %>" class="grid grid-cols-2 lg:grid-cols-12 items-center gap-3 py-4 scroll-mt-4">
+  <div class="col-span-2 lg:col-span-4 flex items-center gap-3 min-w-0">
+    <%= icon agenda_payment_icon(payment), class: "shrink-0 text-secondary", size: "sm" %>
+    <div class="min-w-0">
+      <p class="font-medium text-sm text-primary truncate"><%= payment.title %></p>
+      <p class="text-xs text-secondary truncate">
+        <%= t("scheduled_payments.form.payment_types.#{payment.payment_type}") %> · <%= payment.account.name %>
+        <% if payment.transfer? %> → <%= payment.target_account.name %><% end %>
+      </p>
+    </div>
+  </div>
+  <div class="lg:col-span-2 text-xs text-secondary">
+    <time datetime="<%= occurrence.scheduled_date.iso8601 %>"><%= l(occurrence.scheduled_date, format: :long) %></time>
+  </div>
+  <div class="lg:col-span-2 justify-self-end lg:justify-self-start">
+    <%= render DS::Pill.new(label: t("scheduled_payments.status.#{agenda_status(occurrence)}"),
+          tone: agenda_status_tone(agenda_status(occurrence)), marker: false) %>
+  </div>
+  <p class="lg:col-span-2 lg:text-right text-sm font-medium privacy-sensitive <%= occurrence.skipped? ? 'line-through text-secondary' : (occurrence.display_amount_money.positive? ? 'text-success' : 'text-primary') %>">
+    <%= format_money(occurrence.display_amount_money) %>
+  </p>
+  <div class="lg:col-span-2 flex items-center justify-end gap-1">
+    <%= render "scheduled_payments/occurrence_actions", occurrence: occurrence %>
+  </div>
+</div>

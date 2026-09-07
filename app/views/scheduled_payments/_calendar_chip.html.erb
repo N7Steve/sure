@@ -1,0 +1,6 @@
+<%# locals: (occurrence:) %>
+<% label = t("scheduled_payments.agenda.calendar_payment", title: occurrence.scheduled_payment.title,
+     amount: format_money(occurrence.display_amount_money), status: t("scheduled_payments.status.#{agenda_status(occurrence)}")) %>
+<%= render DS::Link.new(**agenda_calendar_link(occurrence), text: tag.span(label, class: "truncate"), variant: "ghost", size: :sm,
+      class: "flex w-full min-w-0 privacy-sensitive #{agenda_calendar_classes(occurrence)}",
+      title: label, aria: { label: "#{l(occurrence.scheduled_date, format: :long)}: #{label}" }) %>

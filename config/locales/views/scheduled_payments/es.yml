@@ -1,6 +1,46 @@
 ---
 es:
   scheduled_payments:
+    agenda:
+      title: Agenda
+      subtitle: Tus pagos, ingresos y transferencias, en un solo lugar.
+      new: Nuevo pago
+      edit: Editar programación
+      views_label: Vistas de Agenda
+      views:
+        overview: Resumen
+        calendar: Calendario
+        schedules: Programaciones
+      metrics:
+        active: Programaciones activas
+        remaining: Por pagar este mes
+        pending: Movimientos pendientes
+      active_hint:
+        one: "de %{count} programación en total"
+        other: "de %{count} programaciones en total"
+      remaining_hint: Sólo gastos. Importes separados por moneda.
+      pending_hint: Gastos, ingresos y transferencias del mes.
+      older_pending:
+        one: "Tienes %{count} confirmación pendiente de meses anteriores."
+        other: "Tienes %{count} confirmaciones pendientes de meses anteriores."
+      review_older: Revisar pendientes
+      month_payments: Movimientos del mes
+      empty_month: No hay movimientos programados este mes
+      empty_schedules: Todavía no hay programaciones
+      previous_month: Mes anterior
+      next_month: Mes siguiente
+      read_only: Sólo lectura
+      retract: Deshacer confirmación
+      pause: Pausar
+      resume: Reanudar
+      delete: Eliminar programación
+      next_run: "Próxima ejecución: %{date}"
+      calendar_payment: "%{title} · %{amount} · %{status}"
+    run_now: Generar pendientes
+    invalid_operation: "No se pudo actualizar el pago. Revisa la fecha, el importe y el tipo de cambio e inténtalo de nuevo."
+    generation_failed:
+      one: "No se pudo generar un pago programado. Revisa su configuración y el registro de la aplicación."
+      other: "No se pudieron generar %{count} pagos programados. Revisa su configuración y el registro de la aplicación."
     title: Pagos Programados
     pending_section: Confirmaciones pendientes
     created: Pago programado creado
@@ -28,6 +68,10 @@ es:
       pending: Pendiente
       skipped: Omitido
       confirmed: Confirmado
+      overdue: Vencido
+      active: Activo
+      paused: Pausado
+      completed: Completado
     table:
       payment: Pago
       date: Fecha
@@ -43,10 +87,6 @@ es:
     entry_skipped: "Entrada omitida"
     entry_retracted: "Confirmación deshecha, transacción eliminada"
     empty_month: "No hay pagos programados este mes"
-    status:
-      active: Activo
-      paused: Pausado
-      completed: Completado
     new: Nuevo
     empty:
       title: No hay pagos programados

@@ -26,4 +26,30 @@ class ScheduledPaymentOccurrence
   def entry_id
     entry&.id
   end
+
+  def open?
+    scheduled? || pending?
+  end
+
+  def overdue?
+    open? && scheduled_date < Date.current
+  end
+
+  def amount
+    confirmed? && entry.entry ? entry.entry.amount.abs : scheduled_payment.amount.abs
+  end
+
+  def currency
+    confirmed? && entry.entry ? entry.entry.currency : scheduled_payment.currency
+  end
+
+  def amount_money
+    Money.new(amount, currency)
+  end
+
+  def display_amount_money
+    return Money.new(-entry.entry.amount, entry.entry.currency) if confirmed? && entry.entry
+
+    scheduled_payment.income? ? amount_money : -amount_money
+  end
 end

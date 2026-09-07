@@ -83,7 +83,7 @@ Es el bloque funcional propio más grande. No debe reducirse a una simple etique
 - Generación en segundo plano de ocurrencias pendientes y ejecución manual (`run_now`).
 - Confirmar, rechazar, restaurar, omitir, retraer o cambiar la fecha de una ocurrencia.
 - Creación de entradas reales al confirmar y enlace entre pago programado, ocurrencia, entrada y entrada de transferencia.
-- Integración de pendientes y próximas ocurrencias en la pantalla de transacciones.
+- Agenda independiente para pendientes y próximas ocurrencias, con redirección desde la antigua pestaña de transacciones.
 - Bloqueo contextual y enlace al pago de origen desde el detalle de una transacción generada.
 - Tarea Rake, programación Sidekiq y documentación operativa.
 - Reparación de importes de salida corruptos de transferencias recurrentes mediante migración irreversible.
@@ -92,10 +92,34 @@ Es el bloque funcional propio más grande. No debe reducirse a una simple etique
 
 - Modelos: `app/models/scheduled_payment.rb`, `scheduled_payment_entry.rb`, `scheduled_payment_occurrence.rb`.
 - Controlador y job: `app/controllers/scheduled_payments_controller.rb`, `app/jobs/generate_scheduled_payments_job.rb`.
-- UI: `app/views/scheduled_payments/`, parciales `_scheduled*` y `_pending_scheduled_entry` de transacciones, y `scheduled_payment_form_controller.js`.
+- UI: `app/views/scheduled_payments/`, `app/helpers/scheduled_payments_helper.rb` y `scheduled_payment_form_controller.js`. La consulta de resumen/calendario vive en `app/models/scheduled_payment/agenda.rb`.
 - Integración: `app/models/account.rb`, `app/models/entry.rb`, `app/models/family.rb`, `app/models/transaction.rb`, `app/controllers/transactions_controller.rb`, `config/routes.rb`, `config/schedule.yml`, `config/initializers/sidekiq.rb`.
 - Operación: `lib/tasks/scheduled_payments.rake`, `informe_scheduled_payments.md`.
 - Cobertura: pruebas de modelo, controlador y job, más fixtures `scheduled_payment*`.
+
+### Refuerzo de robustez de septiembre de 2026
+
+- La generación y las acciones sobre ocurrencias se serializan por pago programado. La creación de movimientos y el avance de fecha deben ser atómicos; los reintentos no pueden duplicar movimientos ni dejar el job en un bucle.
+- Una ocurrencia ya confirmada no puede pasar a omitida/rechazada mediante una solicitud obsoleta. La retracción conserva su comportamiento propio: elimina el movimiento y deja la ocurrencia omitida; restaurar una fecha pasada confirma inmediatamente, y restaurar una futura recupera su próxima ejecución.
+- El enlace de históricos conserva las tolerancias de importe y fecha, pero exige transacciones del signo y tipo correctos, comprueba los dos extremos de transferencias y respeta omisiones/rechazos y huecos pendientes.
+- Lectura y escritura se distinguen según los permisos de las cuentas. Las transferencias requieren acceso a ambos extremos; editar/retraer también comprueba las cuentas de los movimientos históricos. La ejecución manual desde la UI se limita a la familia y a los pagos que el usuario puede gestionar; el job periódico sigue siendo global.
+- Confirmar/retraer solicita la actualización de las cuentas después del commit. Las transferencias entre monedas usan el tipo de cambio de la fecha efectiva y revierten íntegramente si falta; sus etiquetas se conservan en ambos extremos.
+- Las ocurrencias persistidas de programaciones completadas siguen apareciendo en Agenda, incluidas las pendientes. Las proyecciones de pagos antiguos saltan al período solicitado sin agotar el límite al recorrer su antigüedad.
+- Borrar una cuenta libera antes las programaciones de origen y destino; borrar categoría/comercio opcionales conserva la programación, y reemplazar categoría actualiza su referencia.
+- Las tareas Rake de generación y reversión de futuros usan las mismas protecciones del modelo.
+
+Cobertura añadida en `test/models/scheduled_payment_robustness_test.rb` y ampliada en las pruebas de modelo, controlador y job existentes. Esta revisión se valida **sólo estáticamente por petición del usuario**: las pruebas quedan escritas, pendientes de ejecución en un entorno Rails compatible. No se han añadido migraciones ni modificado datos de la instalación.
+
+### Agenda: sección propia de pagos programados
+
+- **Agenda** es el nombre corto de producto. Se accede desde la navegación principal de escritorio y móvil, en `/scheduled_payments`, con el layout de aplicación. Sustituye la pestaña de Transacciones y la entrada de Ajustes.
+- **Resumen** muestra programaciones activas (y total), gastos pendientes de pagar en el mes seleccionado y número de movimientos pendientes. La tabla mensual conserva fechas, estados y acciones de confirmar, omitir, restaurar, deshacer y editar.
+- **Por pagar este mes** sólo suma gastos abiertos, tanto proyectados como pendientes persistidos. Excluye confirmados, omitidos, ingresos y transferencias. Cada moneda se muestra por separado; la consulta no obtiene tipos de cambio. Los importes confirmados muestran el movimiento real, incluyendo ajustes al confirmar.
+- **Calendario** adapta la cuadrícula mensual de Bills al dominio `ScheduledPayment*`, con semanas de lunes a domingo y listado por días en móvil. Permite abrir la confirmación de movimientos abiertos; los demás enlazan a su fila en el resumen. Los días de meses adyacentes no inflan el resumen mensual.
+- **Programaciones** conserva la gestión de definiciones, pausa/reanudación, eliminación y ejecución manual. No se incorpora Income Plan, detección automática ni modelos de Bills.
+- Consultar Agenda no genera ocurrencias ni movimientos. Se mantienen las reglas originales de recurrencia y confirmación, el aislamiento por familia y los permisos de origen, destino e históricos. Los controles de escritura sólo aparecen cuando el usuario puede gestionar la programación.
+- Las acciones y formularios conservan mes/vista mediante parámetros permitidos. Los marcadores antiguos `transactions?tab=scheduled&scheduled_month=...` redirigen al mes correspondiente de Agenda.
+- Cobertura específica en `test/models/scheduled_payment/agenda_test.rb` y en las pruebas del controlador. Validación local exclusivamente estática: no ejecutar Ruby por petición del usuario.
 
 ### Convivencia con Bills incorporado desde upstream
 

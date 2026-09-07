@@ -1,0 +1,18 @@
+<%# locals: (occurrences:) %>
+<%= render DS::Card.new(class: "overflow-hidden") do %>
+  <h2 class="mb-4 text-base font-medium text-primary"><%= t("scheduled_payments.agenda.month_payments") %></h2>
+  <% if occurrences.empty? %>
+    <%= render DS::EmptyState.new(icon: "calendar-check", title: t("scheduled_payments.empty_month")) %>
+  <% else %>
+    <div class="hidden lg:grid lg:grid-cols-12 gap-3 pb-3 text-xs font-medium text-secondary">
+      <span class="col-span-4"><%= t("scheduled_payments.table.payment") %></span>
+      <span class="col-span-2"><%= t("scheduled_payments.table.date") %></span>
+      <span class="col-span-2"><%= t("scheduled_payments.table.status") %></span>
+      <span class="col-span-2 text-right"><%= t("scheduled_payments.table.amount") %></span>
+      <span class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></span>
+    </div>
+    <div class="divide-y divide-primary">
+      <%= render partial: "scheduled_payments/occurrence", collection: occurrences, as: :occurrence %>
+    </div>
+  <% end %>
+<% end %>

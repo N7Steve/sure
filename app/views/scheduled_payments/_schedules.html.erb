@@ -1,0 +1,46 @@
+<%= render DS::Card.new do %>
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-base font-medium text-primary"><%= t("scheduled_payments.agenda.views.schedules") %></h2>
+    <% if @agenda.payments.any? { |payment| @agenda.writable?(payment) } %>
+      <%= render DS::Button.new(text: t("scheduled_payments.run_now"), icon: "refresh-cw", variant: "outline",
+            href: run_now_scheduled_payments_path(**agenda_context_params), method: :post) %>
+    <% end %>
+  </div>
+  <% if @agenda.payments.empty? %>
+    <%= render DS::EmptyState.new(icon: "calendar-days", title: t("scheduled_payments.agenda.empty_schedules")) %>
+  <% else %>
+    <div class="divide-y divide-primary">
+      <% @agenda.payments.each do |payment| %>
+        <div class="flex flex-wrap items-center gap-4 py-4" id="<%= dom_id(payment) %>">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium text-primary break-words"><%= payment.title %></p>
+            <p class="text-sm text-secondary"><%= payment.account.name %><% if payment.transfer? %> → <%= payment.target_account.name %><% end %> · <%= t("scheduled_payments.form.frequencies.#{payment.frequency}") %></p>
+            <% if payment.next_run_date && !payment.completed? %>
+              <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.next_run", date: l(payment.next_run_date, format: :long)) %></p>
+            <% end %>
+          </div>
+          <%= render DS::Pill.new(label: t("scheduled_payments.status.#{payment.status}"), tone: agenda_status_tone(payment.status), marker: false) %>
+          <p class="text-sm font-medium text-primary privacy-sensitive"><%= format_money(Money.new(payment.income? ? payment.amount.abs : -payment.amount.abs, payment.currency)) %></p>
+          <% if @agenda.writable?(payment) %>
+            <div class="flex items-center gap-1">
+              <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm, href: edit_scheduled_payment_path(payment, **agenda_context_params),
+                    title: t("scheduled_payments.agenda.edit"), aria: { label: t("scheduled_payments.agenda.edit") }) %>
+              <% unless payment.completed? %>
+                <%= render DS::Button.new(icon: payment.active? ? "pause" : "play", variant: "ghost", size: :sm,
+                      href: toggle_status_scheduled_payment_path(payment, **agenda_context_params), method: :post,
+                      title: t("scheduled_payments.agenda.#{payment.active? ? 'pause' : 'resume'}"),
+                      aria: { label: t("scheduled_payments.agenda.#{payment.active? ? 'pause' : 'resume'}") }) %>
+              <% end %>
+              <%= render DS::Button.new(icon: "trash-2", variant: "ghost", size: :sm,
+                    href: scheduled_payment_path(payment, **agenda_context_params), method: :delete,
+                    title: t("scheduled_payments.agenda.delete"), aria: { label: t("scheduled_payments.agenda.delete") },
+                    confirm: t("scheduled_payments.confirm_delete")) %>
+            </div>
+          <% else %>
+            <span class="text-xs text-secondary"><%= t("scheduled_payments.agenda.read_only") %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

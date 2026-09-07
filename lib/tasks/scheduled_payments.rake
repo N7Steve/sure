@@ -12,8 +12,7 @@ namespace :scheduled_payments do
     puts "Running scheduled payments generation as if today were #{target_date}..."
 
     ScheduledPayment.active.where("next_run_date <= ?", target_date).find_each do |sp|
-      while sp.reload.next_run_date <= target_date && sp.active?
-        entry = sp.generate_pending_entry!
+      while (entry = sp.generate_pending_entry!(through: target_date))
         puts "  Generated entry for '#{sp.title}' on #{entry.scheduled_date} (status: #{entry.status})"
       end
     rescue => e
@@ -54,10 +53,9 @@ namespace :scheduled_payments do
       entry_date = entry.scheduled_date
       puts "Reverting '#{sp.title}' entry for #{entry_date}..."
 
-      entry.destroy!
-      sp.update_columns(next_run_date: entry_date)
+      next unless entry.revert_future!
 
-      puts "  Deleted entry, reset next_run_date to #{entry_date}"
+      puts "  Deleted entry, next_run_date is #{sp.reload.next_run_date}"
       reverted += 1
     end
 
@@ -75,10 +73,13 @@ namespace :scheduled_payments do
       puts "No pending entries found."
     else
       print "About to delete #{count} pending entries. Are you sure? (y/N): "
-      confirm = $stdin.gets.chomp.downcase
+      confirm = $stdin.gets.to_s.strip.downcase
       if confirm == "y"
-        ScheduledPaymentEntry.pending.destroy_all
-        puts "Deleted #{count} pending entries."
+        deleted = 0
+        ScheduledPaymentEntry.pending.find_each do |entry|
+          deleted += 1 if entry.purge_pending!
+        end
+        puts "Deleted #{deleted} pending entries."
         puts "Note: next_run_date of parent ScheduledPayments was NOT reset."
         puts "You may need to edit them manually or run 'revert_future' instead."
       else
