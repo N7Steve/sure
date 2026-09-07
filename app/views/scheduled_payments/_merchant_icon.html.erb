@@ -1,0 +1,8 @@
+<%# locals: (payment:, size: "lg") %>
+<% if payment.merchant&.logo_url.present? %>
+  <%= image_tag Setting.transform_brand_fetch_url(payment.merchant.logo_url),
+        class: class_names("rounded-full shrink-0 object-cover", size.to_s == "sm" ? "w-6 h-6" : "w-9 h-9"),
+        loading: "lazy", alt: "" %>
+<% else %>
+  <%= render DS::FilledIcon.new(variant: :text, text: payment.merchant&.name || payment.title, size: size, rounded: true) %>
+<% end %>

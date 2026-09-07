@@ -2,7 +2,7 @@
 <% payment = occurrence.scheduled_payment %>
 <div id="<%= agenda_occurrence_id(occurrence) %>" class="grid grid-cols-2 lg:grid-cols-12 items-center gap-3 py-4 scroll-mt-4">
   <div class="col-span-2 lg:col-span-4 flex items-center gap-3 min-w-0">
-    <%= icon agenda_payment_icon(payment), class: "shrink-0 text-secondary", size: "sm" %>
+    <%= render "scheduled_payments/merchant_icon", payment: payment %>
     <div class="min-w-0">
       <p class="font-medium text-sm text-primary truncate"><%= payment.title %></p>
       <p class="text-xs text-secondary truncate">

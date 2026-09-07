@@ -181,11 +181,12 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Not needed", pending.rejection_reason
   end
 
-  test "new page does not include duplicate h1 header" do
-    get new_scheduled_payment_path
+  test "new payment opens as a modal without a page heading" do
+    get new_scheduled_payment_path, headers: { "Turbo-Frame" => "modal" }
     assert_response :success
-    # The standalone editor has one visible page heading.
-    assert_select "h1", count: 1
+    assert_select "h1", count: 0
+    assert_select "[role=dialog]", count: 1
+    assert_select "form[action=?]", scheduled_payments_path, count: 1
   end
 
   test "read-only account access cannot modify or confirm a schedule" do
@@ -330,6 +331,45 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
         assert_select ".translation_missing", count: 0
       end
     end
+  end
+
+  test "Agenda uses merchant identity in rows and compact calendar amounts" do
+    merchant = merchants(:netflix)
+    merchant.update!(logo_url: "https://example.com/stellantis.png")
+    payment = create_payment(title: "Stellantis finance", amount: 250, merchant: merchant)
+
+    get scheduled_payments_url
+    assert_response :success
+    assert_select "##{dom_id(payment, "occurrence_#{Date.current.iso8601}")} img[alt='']", count: 1
+
+    get scheduled_payments_url, params: { view: "calendar" }
+    assert_response :success
+    calendar_links = css_select("a[title='#{payment.title}']")
+    assert_not_empty calendar_links
+    calendar_links.each do |link|
+      assert link.at_css("img[alt='']")
+      assert_match(/250/, link.text)
+      assert_no_match(/#{Regexp.escape(payment.title)}/, link.text)
+      assert_includes link["class"].split, "bg-info/10"
+      assert_includes link["class"].split, "text-info"
+    end
+
+    get scheduled_payments_url, params: { view: "schedules" }
+    assert_response :success
+    assert_select "##{dom_id(payment)} img[alt='']", count: 1
+    assert_select ".lg\\:grid-cols-12", minimum: 2
+    assert_select ".justify-self-center", text: I18n.t("scheduled_payments.status.active"), count: 1
+    %w[payment status amount actions].each do |heading|
+      assert_select ".hidden.lg\\:grid", text: /#{Regexp.escape(I18n.t("scheduled_payments.table.#{heading}"))}/
+    end
+  end
+
+  test "new payment link targets the modal frame" do
+    get scheduled_payments_url
+
+    assert_response :success
+    new_link = css_select("a[data-turbo-frame=modal]").find { |node| node["href"].start_with?(new_scheduled_payment_path) }
+    assert new_link
   end
 
   test "calendar confirmation form and submission retain selected view and month" do

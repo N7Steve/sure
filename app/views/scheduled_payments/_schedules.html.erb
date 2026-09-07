@@ -9,20 +9,31 @@
   <% if @agenda.payments.empty? %>
     <%= render DS::EmptyState.new(icon: "calendar-days", title: t("scheduled_payments.agenda.empty_schedules")) %>
   <% else %>
+    <div class="hidden lg:grid lg:grid-cols-12 gap-3 pb-3 text-xs font-medium text-secondary">
+      <span class="col-span-5"><%= t("scheduled_payments.table.payment") %></span>
+      <span class="col-span-2 text-center"><%= t("scheduled_payments.table.status") %></span>
+      <span class="col-span-2 text-right"><%= t("scheduled_payments.table.amount") %></span>
+      <span class="col-span-3 text-right"><%= t("scheduled_payments.table.actions") %></span>
+    </div>
     <div class="divide-y divide-primary">
       <% @agenda.payments.each do |payment| %>
-        <div class="flex flex-wrap items-center gap-4 py-4" id="<%= dom_id(payment) %>">
-          <div class="min-w-0 flex-1">
-            <p class="font-medium text-primary break-words"><%= payment.title %></p>
-            <p class="text-sm text-secondary"><%= payment.account.name %><% if payment.transfer? %> → <%= payment.target_account.name %><% end %> · <%= t("scheduled_payments.form.frequencies.#{payment.frequency}") %></p>
-            <% if payment.next_run_date && !payment.completed? %>
-              <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.next_run", date: l(payment.next_run_date, format: :long)) %></p>
-            <% end %>
+        <div class="grid grid-cols-2 lg:grid-cols-12 items-center gap-3 py-4" id="<%= dom_id(payment) %>">
+          <div class="col-span-2 lg:col-span-5 flex items-center gap-3 min-w-0">
+            <%= render "scheduled_payments/merchant_icon", payment: payment %>
+            <div class="min-w-0">
+              <p class="font-medium text-primary break-words"><%= payment.title %></p>
+              <p class="text-sm text-secondary"><%= payment.account.name %><% if payment.transfer? %> → <%= payment.target_account.name %><% end %> · <%= t("scheduled_payments.form.frequencies.#{payment.frequency}") %></p>
+              <% if payment.next_run_date && !payment.completed? %>
+                <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.next_run", date: l(payment.next_run_date, format: :long)) %></p>
+              <% end %>
+            </div>
           </div>
-          <%= render DS::Pill.new(label: t("scheduled_payments.status.#{payment.status}"), tone: agenda_status_tone(payment.status), marker: false) %>
-          <p class="text-sm font-medium text-primary privacy-sensitive"><%= format_money(Money.new(payment.income? ? payment.amount.abs : -payment.amount.abs, payment.currency)) %></p>
+          <div class="lg:col-span-2 justify-self-center">
+            <%= render DS::Pill.new(label: t("scheduled_payments.status.#{payment.status}"), tone: agenda_status_tone(payment.status), marker: false) %>
+          </div>
+          <p class="lg:col-span-2 justify-self-end text-sm font-medium text-primary privacy-sensitive"><%= format_money(Money.new(payment.income? ? payment.amount.abs : -payment.amount.abs, payment.currency)) %></p>
           <% if @agenda.writable?(payment) %>
-            <div class="flex items-center gap-1">
+            <div class="col-span-2 lg:col-span-3 flex items-center justify-end gap-1">
               <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm, href: edit_scheduled_payment_path(payment, **agenda_context_params),
                     title: t("scheduled_payments.agenda.edit"), aria: { label: t("scheduled_payments.agenda.edit") }) %>
               <% unless payment.completed? %>
@@ -37,7 +48,7 @@
                     confirm: t("scheduled_payments.confirm_delete")) %>
             </div>
           <% else %>
-            <span class="text-xs text-secondary"><%= t("scheduled_payments.agenda.read_only") %></span>
+            <span class="col-span-2 lg:col-span-3 justify-self-end text-xs text-secondary"><%= t("scheduled_payments.agenda.read_only") %></span>
           <% end %>
         </div>
       <% end %>

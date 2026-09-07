@@ -35,7 +35,6 @@ es:
       resume: Reanudar
       delete: Eliminar programación
       next_run: "Próxima ejecución: %{date}"
-      calendar_payment: "%{title} · %{amount} · %{status}"
     run_now: Generar pendientes
     invalid_operation: "No se pudo actualizar el pago. Revisa la fecha, el importe y el tipo de cambio e inténtalo de nuevo."
     generation_failed:

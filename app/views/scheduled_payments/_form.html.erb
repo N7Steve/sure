@@ -142,7 +142,11 @@
     </div>
 
     <div class="flex items-center justify-end gap-2">
-      <%= render DS::Link.new(variant: "outline", href: agenda_back_path, text: t("shared.cancel"), icon: "x") %>
+      <% if local_assigns[:modal] %>
+        <%= render DS::Button.new(variant: "outline", text: t("shared.cancel"), icon: "x", type: "button", data: { action: "DS--dialog#close" }) %>
+      <% else %>
+        <%= render DS::Link.new(variant: "outline", href: agenda_back_path, text: t("shared.cancel"), icon: "x") %>
+      <% end %>
       <%= f.submit t("scheduled_payments.form.save", default: "Save") %>
     </div>
   <% end %>

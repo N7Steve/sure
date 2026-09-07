@@ -54,13 +54,8 @@ module ScheduledPaymentsHelper
     elsif occurrence.overdue?
       "bg-destructive/10 text-destructive"
     else
-      "bg-surface-inset text-primary"
+      "bg-info/10 text-info"
     end
   end
 
-  def agenda_payment_icon(payment)
-    return "arrow-right-left" if payment.transfer?
-
-    payment.income? ? "arrow-down-left" : "arrow-up-right"
-  end
 end

@@ -35,7 +35,6 @@ en:
       resume: Resume
       delete: Delete schedule
       next_run: "Next run: %{date}"
-      calendar_payment: "%{title} · %{amount} · %{status}"
     run_now: Generate pending payments
     title: Scheduled Payments
     pending_section: Pending confirmations

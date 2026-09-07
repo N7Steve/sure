@@ -69,9 +69,16 @@ class ScheduledPaymentsController < ApplicationController
       end
 
       flash[:notice] = t("scheduled_payments.created")
-      redirect_to agenda_return_path
+      target = agenda_return_path
+      respond_to do |format|
+        format.html { redirect_to target }
+        format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, target) }
+      end
     else
-      render :new, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :new, status: :unprocessable_entity }
+        format.turbo_stream { render :new, formats: [ :html ], status: :unprocessable_entity }
+      end
     end
   end
 
