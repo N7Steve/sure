@@ -18,9 +18,9 @@
 %>
 
 <tr data-category="category-<%= item[:category_id] %>"
-    class="text-secondary text-sm <%= show_border ? "table-divider" : "" %> <%= clickable ? "relative group/category-row" : "" %>">
+    class="text-secondary text-sm <%= show_border ? "table-divider" : "" %> <%= clickable ? "group/category-row" : "" %>">
   <td colspan="2" class="py-3 px-4 lg:px-6 <%= is_sub ? "pl-7 lg:pl-9" : "" %>">
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 <%= clickable ? "relative" : "" %>">
       <% if is_sub %>
         <div class="text-subdued">
           <%= icon "corner-down-right" %>

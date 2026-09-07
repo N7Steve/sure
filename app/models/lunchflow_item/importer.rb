@@ -99,7 +99,7 @@ class LunchflowItem::Importer
     transactions_failed = 0
     balances_failed = 0
 
-    lunchflow_item.lunchflow_accounts.joins(:account).includes(:account_provider).merge(Account.sync_enabled).each do |lunchflow_account|
+    lunchflow_item.lunchflow_accounts.joins(:account).includes(:account_provider).merge(Account.visible).each do |lunchflow_account|
       begin
         result = fetch_and_store_transactions(lunchflow_account)
         if result[:success]

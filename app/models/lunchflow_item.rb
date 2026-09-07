@@ -48,8 +48,8 @@ class LunchflowItem < ApplicationRecord
     return [] if lunchflow_accounts.empty?
 
     results = []
-    # Only process accounts that are linked and have sync enabled
-    lunchflow_accounts.joins(:account).merge(Account.sync_enabled).each do |lunchflow_account|
+    # Only process accounts that are linked and have active status
+    lunchflow_accounts.joins(:account).merge(Account.visible).each do |lunchflow_account|
       begin
         result = LunchflowAccount::Processor.new(lunchflow_account).process
         results << { lunchflow_account_id: lunchflow_account.id, success: true, result: result }
@@ -67,8 +67,8 @@ class LunchflowItem < ApplicationRecord
     return [] if accounts.empty?
 
     results = []
-    # Only schedule syncs for accounts with sync enabled
-    accounts.sync_enabled.each do |account|
+    # Only schedule syncs for active accounts
+    accounts.visible.each do |account|
       begin
         account.sync_later(
           parent_sync: parent_sync,
@@ -108,9 +108,14 @@ class LunchflowItem < ApplicationRecord
     if total_accounts == 0
       I18n.t("lunchflow_items.lunchflow_item.sync_status.no_accounts")
     elsif unlinked_count == 0
-      I18n.t("lunchflow_items.lunchflow_item.sync_status.all_synced", count: linked_count)
+      I18n.t("lunchflow_items.lunchflow_item.sync_status.synced", count: linked_count)
     else
-      I18n.t("lunchflow_items.lunchflow_item.sync_status.partial_sync", linked_count: linked_count, unlinked_count: unlinked_count)
+      I18n.t(
+        "lunchflow_items.lunchflow_item.sync_status.partial_setup",
+        count: unlinked_count,
+        linked: linked_count,
+        unlinked: unlinked_count
+      )
     end
   end
 
@@ -133,7 +138,8 @@ class LunchflowItem < ApplicationRecord
 
   def connected_institutions
     # Get unique institutions from all accounts
-    lunchflow_accounts.where.not(institution_metadata: nil)
+    lunchflow_accounts.includes(:account)
+                      .where.not(institution_metadata: nil)
                       .map { |acc| acc.institution_metadata }
                       .uniq { |inst| inst["name"] || inst["institution_name"] }
   end

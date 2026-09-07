@@ -1,4 +1,6 @@
 class IncomeStatement::Totals
+  include IncomeStatement::ScopedTransactionsQuery
+
   def initialize(family, transactions_scope:, date_range:, include_trades: true, included_account_ids: nil)
     @family = family
     @transactions_scope = transactions_scope
@@ -20,15 +22,13 @@ class IncomeStatement::Totals
         classification: row["classification"],
         total: row["total"],
         transactions_count: row["transactions_count"],
-        is_uncategorized_investment: row["is_uncategorized_investment"],
-        is_transfer_to_excluded: row["is_transfer_to_excluded"],
-        is_transfer_from_excluded: row["is_transfer_from_excluded"]
+        is_uncategorized_investment: row["is_uncategorized_investment"]
       )
     end
   end
 
   private
-    TotalsRow = Data.define(:parent_category_id, :category_id, :classification, :total, :transactions_count, :is_uncategorized_investment, :is_transfer_to_excluded, :is_transfer_from_excluded)
+    TotalsRow = Data.define(:parent_category_id, :category_id, :classification, :total, :transactions_count, :is_uncategorized_investment)
 
     def query_sql
       ActiveRecord::Base.sanitize_sql_array([
@@ -45,8 +45,6 @@ class IncomeStatement::Totals
           parent_category_id,
           classification,
           is_uncategorized_investment,
-          is_transfer_to_excluded,
-          is_transfer_from_excluded,
           SUM(total) as total,
           SUM(entry_count) as transactions_count
         FROM (
@@ -54,7 +52,7 @@ class IncomeStatement::Totals
           UNION ALL
           #{trades_subquery_sql}
         ) combined
-        GROUP BY category_id, parent_category_id, classification, is_uncategorized_investment, is_transfer_to_excluded, is_transfer_from_excluded;
+        GROUP BY category_id, parent_category_id, classification, is_uncategorized_investment;
       SQL
     end
 
@@ -64,21 +62,15 @@ class IncomeStatement::Totals
         SELECT
           c.id as category_id,
           c.parent_id as parent_category_id,
-          CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
-          ABS(SUM(CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
+          #{classification_sql("at")} as classification,
+          ABS(SUM(#{converted_amount_sql("at")})) as total,
           COUNT(ae.id) as transactions_count,
-          false as is_uncategorized_investment,
-          (at.kind = 'transfer_to_excluded') as is_transfer_to_excluded,
-          (at.kind = 'transfer_from_excluded') as is_transfer_from_excluded
+          false as is_uncategorized_investment
         FROM (#{@transactions_scope.to_sql}) at
-        JOIN entries ae ON ae.entryable_id = at.id AND ae.entryable_type = 'Transaction'
-        JOIN accounts a ON a.id = ae.account_id
+        #{entries_join_sql("at")}
+        #{accounts_join_sql}
         LEFT JOIN categories c ON c.id = at.category_id
-        LEFT JOIN exchange_rates er ON (
-          er.date = ae.date AND
-          er.from_currency = ae.currency AND
-          er.to_currency = :target_currency
-        )
+        #{exchange_rates_join_sql}
         WHERE at.kind NOT IN (#{budget_excluded_kinds_sql})
           AND ae.excluded = false
           AND a.family_id = :family_id
@@ -87,7 +79,7 @@ class IncomeStatement::Totals
           AND a.exclude_from_reports = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
-        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded'), (at.kind = 'transfer_from_excluded')
+        GROUP BY c.id, c.parent_id, #{classification_sql("at")};
       SQL
     end
 
@@ -96,26 +88,17 @@ class IncomeStatement::Totals
         SELECT
           c.id as category_id,
           c.parent_id as parent_category_id,
-          CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END as classification,
-          ABS(SUM(CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN ABS(ae.amount * COALESCE(er.rate, 1)) ELSE ae.amount * COALESCE(er.rate, 1) END)) as total,
+          #{classification_sql("at")} as classification,
+          ABS(SUM(#{converted_amount_sql("at")})) as total,
           COUNT(ae.id) as entry_count,
-          false as is_uncategorized_investment,
-          (at.kind = 'transfer_to_excluded') as is_transfer_to_excluded,
-          (at.kind = 'transfer_from_excluded') as is_transfer_from_excluded
+          false as is_uncategorized_investment
         FROM (#{@transactions_scope.to_sql}) at
-        JOIN entries ae ON ae.entryable_id = at.id AND ae.entryable_type = 'Transaction'
-        JOIN accounts a ON a.id = ae.account_id
+        #{entries_join_sql("at")}
+        #{accounts_join_sql}
         LEFT JOIN categories c ON c.id = at.category_id
-        LEFT JOIN exchange_rates er ON (
-          er.date = ae.date AND
-          er.from_currency = ae.currency AND
-          er.to_currency = :target_currency
-        )
+        #{exchange_rates_join_sql}
         WHERE at.kind NOT IN (#{budget_excluded_kinds_sql})
-          AND (
-            at.investment_activity_label IS NULL
-            OR at.investment_activity_label NOT IN ('Transfer', 'Sweep In', 'Sweep Out', 'Exchange')
-          )
+          #{investment_activity_label_sql("at")}
           AND ae.excluded = false
           AND a.family_id = :family_id
           AND a.status IN ('draft', 'active')
@@ -123,7 +106,7 @@ class IncomeStatement::Totals
           AND a.exclude_from_reports = false
           #{exclude_tax_advantaged_sql}
           #{include_finance_accounts_sql}
-        GROUP BY c.id, c.parent_id, CASE WHEN at.kind IN ('transfer_to_excluded', 'loan_payment') THEN 'expense' WHEN ae.amount < 0 THEN 'income' ELSE 'expense' END, (at.kind = 'transfer_to_excluded'), (at.kind = 'transfer_from_excluded')
+        GROUP BY c.id, c.parent_id, #{classification_sql("at")}
       SQL
     end
 
@@ -134,54 +117,17 @@ class IncomeStatement::Totals
       # Contributions/withdrawals are tracked separately as Transactions with activity labels
       <<~SQL
         SELECT NULL as category_id, NULL as parent_category_id, NULL as classification,
-               NULL as total, NULL as entry_count, NULL as is_uncategorized_investment, NULL as is_transfer_to_excluded, NULL as is_transfer_from_excluded
+               NULL as total, NULL as entry_count, NULL as is_uncategorized_investment
         WHERE false
       SQL
     end
 
     def sql_params
-      params = {
-        target_currency: @family.currency,
-        family_id: @family.id,
-        start_date: @date_range.begin,
-        end_date: @date_range.end
-      }
-
-      # Add tax-advantaged account IDs if any exist
-      ids = @family.tax_advantaged_account_ids
-      params[:tax_advantaged_account_ids] = ids if ids.present?
+      params = base_sql_params(start_date: @date_range.begin, end_date: @date_range.end)
 
       # Add included account IDs for per-user finance scoping
       params[:included_account_ids] = @included_account_ids if @included_account_ids
 
       params
-    end
-
-    # Returns SQL clause to exclude tax-advantaged accounts from budget calculations.
-    # Tax-advantaged accounts (401k, IRA, HSA, etc.) are retirement savings, not daily expenses.
-    def exclude_tax_advantaged_sql
-      ids = @family.tax_advantaged_account_ids
-      return "" if ids.empty?
-      "AND a.id NOT IN (:tax_advantaged_account_ids)"
-    end
-
-    # Returns SQL clause to filter to only accounts included in the user's finances.
-    def include_finance_accounts_sql
-      return "" if @included_account_ids.nil?
-      "AND a.id IN (:included_account_ids)"
-    end
-
-    def budget_excluded_kinds_sql
-      @budget_excluded_kinds_sql ||= Transaction::BUDGET_EXCLUDED_KINDS.map { |k| "'#{k}'" }.join(", ")
-    end
-
-    def validate_date_range!
-      unless @date_range.is_a?(Range)
-        raise ArgumentError, "date_range must be a Range, got #{@date_range.class}"
-      end
-
-      unless @date_range.begin.respond_to?(:to_date) && @date_range.end.respond_to?(:to_date)
-        raise ArgumentError, "date_range must contain date-like objects"
-      end
     end
 end
