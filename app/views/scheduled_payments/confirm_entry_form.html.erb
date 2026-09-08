@@ -14,6 +14,9 @@
             label: t("scheduled_payments.confirm_modal.date_label") %>
       <%= f.number_field :confirm_amount, value: @default_amount, required: true, min: 0, step: "0.01",
             label: t("scheduled_payments.confirm_modal.amount_label") %>
+      <% if @scheduled_payment.amount_estimated? %>
+        <p class="text-xs text-secondary"><%= t("scheduled_payments.confirm_modal.estimated_hint") %></p>
+      <% end %>
       <p class="text-sm text-secondary"><%= @scheduled_payment.currency %></p>
       <div class="flex items-center justify-end gap-2 pt-2">
         <%= render DS::Button.new(text: t("shared.cancel"), variant: "ghost", size: :sm, type: "button", data: { action: "DS--dialog#close" }) %>

@@ -19,6 +19,37 @@ module ScheduledPaymentsHelper
     ]
   end
 
+  def agenda_planning_metrics
+    [
+      { key: "monthly_cost", values: @agenda.recurring_monthly_expenses.map { |money| format_money(money) },
+        hint: t("scheduled_payments.agenda.monthly_cost_hint") },
+      { key: "annual_cost", values: @agenda.recurring_annual_expenses.map { |money| format_money(money) },
+        hint: t("scheduled_payments.agenda.annual_cost_hint") },
+      { key: "monthly_provision", values: @agenda.monthly_provisions.map { |money| format_money(money) },
+        hint: t("scheduled_payments.agenda.monthly_provision_hint") }
+    ]
+  end
+
+  def agenda_display_amount(occurrence)
+    amount = format_money(occurrence.display_amount_money)
+    occurrence.amount_estimated? ? "≈#{amount}" : amount
+  end
+
+  def scheduled_payment_display_amount(payment, money = nil)
+    money ||= Money.new(payment.income? ? payment.amount.abs : -payment.amount.abs, payment.currency)
+    amount = format_money(money)
+    payment.amount_estimated? ? "≈#{amount}" : amount
+  end
+
+  def scheduled_payment_category_name(payment_or_row)
+    payment_or_row.category&.name || t("scheduled_payments.agenda.uncategorized")
+  end
+
+  def agenda_planning_row_amount(row, attribute)
+    amount = format_money(Money.new(row.public_send(attribute), row.currency))
+    row.amount_estimated ? "≈#{amount}" : amount
+  end
+
   def agenda_status(occurrence)
     occurrence.overdue? ? :overdue : occurrence.status
   end

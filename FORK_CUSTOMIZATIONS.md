@@ -6,7 +6,7 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** y actualizado tras la integración de `upstream` del **7 de septiembre de 2026**:
+Inventario generado el **23 de agosto de 2026** y actualizado el **8 de septiembre de 2026** tras la integración de `upstream` y la consolidación de Agenda como producto principal:
 
 | Concepto | Valor |
 | --- | --- |
@@ -17,7 +17,7 @@ Inventario generado el **23 de agosto de 2026** y actualizado tras la integraci�
 | HEAD del fork con la integración y la corrección de `IncomeStatement` | `06f247d6b08a1a690fe3085c3a41ebcb4332e9b2` |
 | Merge-base | `79c826c0e3391063834887936bbe44dc1d90d0cf` |
 | Forma de integración | Contenido de `upstream` integrado mediante commits squash; el SHA de `upstream/main` no es ancestro de `HEAD` |
-| Cambios actuales sin commit | Ajustes de UI/Bills/período personalizado en 7 archivos de aplicación/pruebas, además de este inventario |
+| Cambios actuales sin commit | Consultar `git status --short`; el árbol incluye la frontera Agenda/Bills y otros ajustes del fork todavía no consolidados |
 
 El alcance histórico inicial de este documento era `upstream/main...a01ed5290`. Después de la integración squash, el triple-dot contra `upstream/main` ya no representa únicamente las personalizaciones del fork: al no compartir el nuevo commit upstream como ancestro, Git muestra también gran parte del código oficial como diferencia. Para futuras auditorías se debe conservar explícitamente el SHA upstream integrado y comparar contra él por contenido o usar una rama temporal con historia real antes de resolver el siguiente merge.
 
@@ -115,13 +115,17 @@ Cobertura añadida en `test/models/scheduled_payment_robustness_test.rb` y ampli
 - **Agenda** es el nombre corto de producto. Se accede desde la navegación principal de escritorio y móvil, en `/scheduled_payments`, con el layout de aplicación. Sustituye la pestaña de Transacciones y la entrada de Ajustes.
 - **Resumen** muestra programaciones activas (y total), gastos pendientes de pagar en el mes seleccionado y número de movimientos pendientes. La tabla mensual conserva fechas, estados y acciones de confirmar, omitir, restaurar, deshacer y editar.
 - **Por pagar este mes** sólo suma gastos abiertos, tanto proyectados como pendientes persistidos. Excluye confirmados, omitidos, ingresos y transferencias. Cada moneda se muestra por separado; la consulta no obtiene tipos de cambio. Los importes confirmados muestran el movimiento real, incluyendo ajustes al confirmar.
+- **Una sola vez** permite preparar un movimiento futuro puntual. Proyecta una única fecha y la programación queda completada después de generarla, confirmarla u omitirla; restaurar una ocurrencia futura vuelve a activarla.
+- Un importe puede marcarse como **estimado**. Agenda lo identifica con `≈` en resumen, calendario y programaciones; el diálogo de confirmación conserva la edición del importe para sustituirlo por el valor real, que deja de mostrarse como estimación una vez confirmado.
+- **Planificación** normaliza todos los gastos recurrentes activos a coste mensual y anual, sin incluir movimientos puntuales, ingresos ni transferencias. Los totales mantienen cada moneda separada y ofrecen un desglose por la categoría financiera existente; no se crea una taxonomía paralela para Agenda.
+- La **provisión mensual recomendada** divide entre tres los gastos trimestrales y entre doce los anuales. Es una referencia informativa: no crea saldos virtuales, presupuestos, transferencias ni movimientos contables.
 - **Calendario** adapta la cuadrícula mensual de Bills al dominio `ScheduledPayment*`, con semanas de lunes a domingo y listado por días en móvil. Cada movimiento se reduce a icono de comercio e importe, con el nombre completo al pasar el puntero. Permite abrir la confirmación de movimientos abiertos; los demás enlazan a su fila en el resumen. Los días de meses adyacentes no inflan el resumen mensual.
 - Las tablas de resumen y programaciones reutilizan la identidad visual del comercio, con inicial como alternativa cuando no hay logotipo. Programaciones mantiene columnas estables y centra el estado independientemente de la longitud del importe.
 - **Nuevo pago** y **Editar programación** se abren en una modal sobre Agenda (también desde el detalle de movimientos y transferencias) y conservan la vista y el mes de Agenda al guardar. Las respuestas de Turbo Frame se renderizan sin el layout completo para evitar duplicar el frame `modal` vacío.
 - **Programaciones** conserva la gestión de definiciones, pausa/reanudación, eliminación y ejecución manual. No se incorpora Income Plan, detección automática ni modelos de Bills.
 - Consultar Agenda no genera ocurrencias ni movimientos. Se mantienen las reglas originales de recurrencia y confirmación, el aislamiento por familia y los permisos de origen, destino e históricos. Los controles de escritura sólo aparecen cuando el usuario puede gestionar la programación.
 - Las acciones y formularios conservan mes/vista mediante parámetros permitidos. Los marcadores antiguos `transactions?tab=scheduled&scheduled_month=...` redirigen al mes correspondiente de Agenda.
-- Cobertura específica en `test/models/scheduled_payment/agenda_test.rb` y en las pruebas del controlador. Validación local exclusivamente estática: no ejecutar Ruby por petición del usuario.
+- Cobertura específica en `test/models/scheduled_payment/agenda_test.rb`, en las pruebas del controlador y en `test/controllers/agenda_primary_frontend_test.rb`. El diff y el JavaScript se han validado localmente; la ejecución de Ruby/Rails queda pendiente porque el runtime Ruby no está disponible actualmente en el entorno.
 
 ### Convivencia con Bills incorporado desde upstream
 
@@ -129,13 +133,25 @@ La integración de septiembre de 2026 añadió el subsistema upstream **Bills**,
 
 - **Pagos programados** es la función primaria del fork: el usuario define pagos futuros explícitos, se generan ocurrencias pendientes y puede confirmarlas, rechazarlas, omitirlas o ejecutarlas automáticamente.
 - **Bills** es una implementación upstream que se conserva oculta: detecta patrones recurrentes en movimientos existentes, permite confirmar series, proyectar vencimientos, registrar pagos y presentar planificación por nóminas.
-- Bills no debe tener ninguna superficie de acceso visible en el fork, incluso para usuarios con `Preview Features`: sin entrada en la navegación global, sin tarjeta en **Transacciones recurrentes** y sin enlaces promocionales o de descubrimiento desde otras pantallas.
-- Sus modelos, controladores, rutas y pruebas pueden mantenerse internamente para facilitar futuras actualizaciones upstream y servir como fuente de funcionalidades, pero la ruta directa `/bills` no se considera parte de la interfaz soportada del fork.
+- Bills no debe tener ninguna superficie de acceso visible en el fork, incluso para usuarios con `Preview Features`: sin entrada en la navegación global, sin pestaña **Upcoming** en Transacciones, sin entrada de **Transacciones recurrentes** en Ajustes y sin enlaces, asignaciones o acciones heredadas de Bills desde transacciones, transferencias, presupuestos o insights.
+- Sus modelos, controladores, rutas, jobs, detectores, API, feed de calendario y pruebas se mantienen internamente para facilitar futuras actualizaciones upstream y servir como fuente de funcionalidades. No forman parte del frontend soportado del fork.
+- Las rutas HTML directas de Bills y Transacciones recurrentes se conservan para reducir el diff con upstream, pero redirigen a Agenda cuando el frontend de Bills está desactivado. Las acciones directas `mark_as_recurring` de transacciones y transferencias están protegidas de la misma forma; ocultar solamente sus botones no es suficiente.
+- Los insights que dependen de Bills (`cash_flow_warning` y `subscription_audit`) pueden seguir generándose y almacenándose como parte del subsistema, pero se excluyen del dashboard, listado, contador, actualizaciones Turbo y notificaciones del producto mientras Bills permanezca oculto.
 - No migrar, fusionar ni eliminar modelos de `ScheduledPayment*` en favor de `RecurringTransaction*` sin una decisión funcional y una migración de datos explícitas.
+- No sincronizar automáticamente una misma regla entre `ScheduledPayment*` y `RecurringTransaction*`: son dominios independientes y una doble escritura produciría proyecciones y estados contradictorios.
 - Las funciones útiles de Bills podrán trasladarse selectivamente a Pagos programados en el futuro. Cada traslado debe adaptarse al dominio `ScheduledPayment*`, conservar su flujo de ocurrencias/confirmación y añadir pruebas propias; no se debe hacer visible Bills como atajo para ofrecer esa función.
 - Cuando upstream cambie Bills, revisar especialmente `transactions_controller`, `transaction.rb`, presupuestos, categorías y las vistas de transacciones, porque son los puntos donde ambos subsistemas se solapan.
 
-Archivos upstream que forman esta frontera: `app/controllers/bills_controller.rb`, `app/views/bills/`, `app/models/recurring_transaction.rb`, `app/models/recurring_occurrence.rb`, `app/views/recurring_transactions/`, rutas de Bills y sus pruebas. La ocultación afecta como mínimo a `app/views/layouts/application.html.erb`, la tarjeta Bills de `app/views/recurring_transactions/index.html.erb` y cualquier enlace nuevo que upstream añada. No reintroducir `bills_nav_item` ni accesos equivalentes automáticamente durante un merge.
+#### Contrato técnico de la frontera Agenda/Bills
+
+- `config/initializers/fork_features.rb` define `Rails.configuration.x.bills_frontend_enabled`. Vale `false` en desarrollo y producción, y `true` en test para conservar ejecutable la cobertura upstream de Bills sin reescribirla ni borrarla.
+- `app/controllers/concerns/bills_frontend_guardable.rb` concentra la protección de rutas. `RecurringFeatureGuardable` la aplica a las pantallas HTML upstream y los controladores de transacciones y transferencias la aplican a sus acciones Bills aisladas.
+- `bills_frontend_enabled?`, en `ApplicationHelper`, es la única condición que deben usar las vistas para mostrar una superficie Bills. No repartir comprobaciones de entorno o del fork por las plantillas.
+- `Insight.for_product_frontend` es la frontera de lectura para cualquier feed, badge o emisión de insights dirigida al usuario. Añadir un nuevo insight respaldado por Bills exige incluirlo en `Insight::BILLS_BACKED_TYPES`.
+- `test/controllers/agenda_primary_frontend_test.rb` fuerza el valor de producción (`false`) y cubre redirecciones, ausencia de accesos y bloqueo de mutaciones. El resto de la suite conserva el valor `true` para verificar el código upstream en aislamiento.
+- Esta configuración es una decisión de distribución del fork, no una preferencia de usuario ni una preview feature. No exponerla en Ajustes sin revisar antes esta política de producto.
+
+Archivos upstream que forman esta frontera: `app/controllers/bills_controller.rb`, `app/views/bills/`, `app/models/recurring_transaction.rb`, `app/models/recurring_occurrence.rb`, `app/views/recurring_transactions/`, rutas de Bills y sus pruebas. La capa de ocultación del fork incluye además `config/initializers/fork_features.rb`, `app/controllers/concerns/bills_frontend_guardable.rb`, `app/controllers/concerns/recurring_feature_guardable.rb`, los puntos de integración en transacciones, transferencias, presupuestos, ajustes e insights, y `test/controllers/agenda_primary_frontend_test.rb`. No reintroducir `bills_nav_item` ni accesos equivalentes automáticamente durante un merge.
 
 ## 3. Visibilidad, exclusión y archivo de cuentas
 
@@ -345,6 +361,7 @@ El orden y el efecto sobre datos deben preservarse:
 | `20260503160100_create_scheduled_payment_entries.rb` | Crea ocurrencias/enlaces con entradas generadas |
 | `20260508160000_fix_corrupted_transfer_outflow_amounts.rb` | Corrige importes de salida de transferencias programadas; irreversible |
 | `20260817000000_add_custom_options_to_family_exports.rb` | Añade tipo, solicitante, rango, filtros y conteo a exportaciones |
+| `20260908120000_add_amount_estimated_to_scheduled_payments.rb` | Identifica importes variables usados como estimación en Agenda |
 
 `db/schema.rb` debe reflejar el resultado acumulado; no resolver sus conflictos de forma aislada sin comprobar estas migraciones.
 
@@ -363,7 +380,7 @@ Las 230 rutas del inventario original se agrupaban así. Tras la integración sq
 - `app/views/`: cuentas, informes, inversiones, transacciones, transferencias, pagos programados, exportaciones y ajustes generales de UI.
 - `config/locales/`: traducciones de todas las áreas anteriores.
 - `config/routes.rb`, `config/schedule.yml`, `config/initializers/sidekiq.rb`: rutas y ejecución periódica.
-- `db/migrate/` y `db/schema.rb`: las nueve migraciones enumeradas y su esquema resultante.
+- `db/migrate/` y `db/schema.rb`: las diez migraciones enumeradas y su esquema resultante.
 - `test/`: cobertura de pagos programados, cuentas, transferencias, transacciones, exportaciones, Syncable y componentes DS.
 - Raíz/scripts/docs: `Gemfile`, `README.md`, `informe_scheduled_payments.md`, `rollback-instructions.md`, `conflicts.txt`, `script.rb` y `script/debug_subtypes.rb`.
 
@@ -390,9 +407,9 @@ git diff
 2. Revisar este inventario por área funcional, no sólo por archivo: upstream puede mover o renombrar el código.
 3. En conflictos de cuentas, preservar la separación entre `excluded`, `archived` y `exclude_from_reports`.
 4. En conflictos de transacciones/transferencias, comprobar también pagos programados, informes y exportaciones; comparten modelos y controladores.
-5. No aceptar automáticamente el `db/schema.rb`: validar primero las nueve migraciones propias.
+5. No aceptar automáticamente el `db/schema.rb`: validar primero las diez migraciones propias.
 6. Si upstream incorpora una función equivalente, decidir expresamente si migrar a ella y añadir pruebas de regresión antes de retirar la implementación del fork.
-7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada.
+7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada. Al resolver conflictos, integrar primero la evolución upstream del subsistema y reaplicar después la frontera pequeña formada por `bills_frontend_enabled?`, los guards de controlador y `Insight.for_product_frontend`; no resolverlos eliminando código Bills ni conectando ambos modelos.
 8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores de transferencias con cuentas excluidas y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
 9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
 10. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.

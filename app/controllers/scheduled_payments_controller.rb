@@ -250,7 +250,7 @@ class ScheduledPaymentsController < ApplicationController
     attributes = params.require(:scheduled_payment).permit(
       :title, :amount, :currency, :frequency,
       :start_date, :end_date, :account_id, :category_id,
-      :merchant_id, :target_account_id, :payment_type, :auto_confirm,
+      :merchant_id, :target_account_id, :payment_type, :auto_confirm, :amount_estimated,
       tag_ids: []
     )
     %i[account_id target_account_id].each do |key|

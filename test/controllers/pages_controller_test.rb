@@ -456,9 +456,12 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   test "dashboard spending trend widget uses the family's custom monthly period" do
     travel_to Date.new(2026, 9, 7) do
       @family.update!(month_start_day: 25)
+      # The shared fixture transactions use dates relative to Date.current and
+      # can otherwise fall inside this fixed historical period as time passes.
+      @family.accounts.each { |existing_account| existing_account.entries.delete_all }
       account = @family.accounts.create!(name: "Custom Spending Period", currency: @family.currency, balance: 0, accountable: Depository.new)
 
-      create_transaction(account: account, name: "Before period", amount: 900, date: Date.new(2026, 8, 24))
+      create_transaction(account: account, name: "Before compared periods", amount: 900, date: Date.new(2026, 7, 24))
       create_transaction(account: account, name: "Period start", amount: 50, date: Date.new(2026, 8, 25))
       create_transaction(account: account, name: "Current period", amount: 25, date: Date.new(2026, 9, 7))
       create_transaction(account: account, name: "Previous period", amount: 200, date: Date.new(2026, 7, 25))

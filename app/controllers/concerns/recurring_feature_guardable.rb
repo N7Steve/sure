@@ -5,6 +5,11 @@
 # shared modal frame stays unique in the response.
 module RecurringFeatureGuardable
   extend ActiveSupport::Concern
+  include BillsFrontendGuardable
+
+  included do
+    before_action :ensure_bills_frontend_enabled
+  end
 
   private
     # Bills ships as a preview feature, so the per-user gate runs first and

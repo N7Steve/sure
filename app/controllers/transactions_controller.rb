@@ -1,5 +1,6 @@
 class TransactionsController < ApplicationController
   include EntryableResource
+  include BillsFrontendGuardable
 
   DEFAULT_PER_PAGE = 20
 
@@ -7,6 +8,7 @@ class TransactionsController < ApplicationController
   before_action :set_entry, only: %i[show update destroy retract_scheduled]
   before_action :set_entry_for_tags, only: :update_tags
   before_action :store_per_page!, only: :index
+  before_action :ensure_bills_frontend_enabled, only: :mark_as_recurring
 
   helper_method :new_transaction_idempotency_key
 
@@ -92,16 +94,21 @@ class TransactionsController < ApplicationController
       Current.accessible_entries.uncategorized_transactions.count
     end
 
-    # Load projected recurring transactions for next 10 days
-    @projected_recurring = Rails.cache.fetch(projected_recurring_cache_key, expires_in: 1.day) do
-      Current.family.recurring_transactions
-                    .accessible_by(Current.user)
-                    .active
-                    .where("next_expected_date <= ? AND next_expected_date >= ?",
-                           10.days.from_now.to_date,
-                           Date.current)
-                    .includes(:merchant)
-                    .to_a
+    # The upstream Bills projection stays available to its reference tests, but
+    # Agenda owns upcoming movements in the fork UI.
+    @projected_recurring = if helpers.bills_frontend_enabled?
+      Rails.cache.fetch(projected_recurring_cache_key, expires_in: 1.day) do
+        Current.family.recurring_transactions
+                      .accessible_by(Current.user)
+                      .active
+                      .where("next_expected_date <= ? AND next_expected_date >= ?",
+                             10.days.from_now.to_date,
+                             Date.current)
+                      .includes(:merchant)
+                      .to_a
+      end
+    else
+      []
     end
   end
 
@@ -229,7 +236,7 @@ class TransactionsController < ApplicationController
               dom_id(@entry, :mark_recurring),
               partial: "transactions/mark_recurring",
               locals: { entry: @entry }
-            ) if can_edit_entry? && !@entry.split_child?),
+            ) if helpers.bills_frontend_enabled? && can_edit_entry? && !@entry.split_child?),
             turbo_stream.replace(
               dom_id(@entry),
               partial: "entries/entry",
@@ -538,6 +545,7 @@ class TransactionsController < ApplicationController
     # entirely when it won't be used — this runs on every show/failed-update
     # render, including read-only viewers and split-child transactions.
     def assign_mark_recurring_state
+      return unless helpers.bills_frontend_enabled?
       return unless can_edit_entry? && !@entry.split_child?
 
       existing = @entry.transaction.existing_manual_recurring_transaction

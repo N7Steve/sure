@@ -47,6 +47,10 @@ class ScheduledPaymentOccurrence
     Money.new(amount, currency)
   end
 
+  def amount_estimated?
+    !confirmed? && scheduled_payment.amount_estimated?
+  end
+
   def display_amount_money
     return Money.new(-entry.entry.amount, entry.entry.currency) if confirmed? && entry.entry
 

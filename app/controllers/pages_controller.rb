@@ -54,7 +54,7 @@ class PagesController < ApplicationController
     @outflows_data = build_outflows_donut_data(net_totals)
     # Preview-gated: skip the query outright rather than loading rows the
     # section won't be built from.
-    @feed_insights = preview_features_enabled? ? Current.family.insights.visible.ordered.limit(Insight::FEED_LIMIT) : Insight.none
+    @feed_insights = preview_features_enabled? ? Current.family.insights.for_product_frontend.visible.ordered.limit(Insight::FEED_LIMIT) : Insight.none
 
     @money_flow_accounts = income_statement.eligible_accounts
     # TransactionsController's default (account_ids absent) scopes to this

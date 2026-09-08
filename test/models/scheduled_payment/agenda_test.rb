@@ -27,6 +27,31 @@ class ScheduledPayment::AgendaTest < ActiveSupport::TestCase
     assert_equal 7, agenda.month_occurrences.size
   end
 
+  test "planning totals normalize recurring expenses and keep currencies separate" do
+    housing = categories(:housing)
+    create_payment(amount: 120, frequency: "monthly", category: housing)
+    create_payment(amount: 300, frequency: "quarterly", category: housing, amount_estimated: true)
+    create_payment(amount: 1200, frequency: "yearly", currency: "EUR")
+    create_payment(amount: 900, frequency: "once")
+    create_payment(amount: 500, frequency: "monthly", payment_type: "income")
+    create_payment(amount: 50, frequency: "monthly", status: "paused")
+
+    agenda = build_agenda
+
+    assert_equal [ Money.new(220, "USD"), Money.new(100, "EUR") ].sort_by(&:currency),
+      agenda.recurring_monthly_expenses.sort_by(&:currency)
+    assert_equal [ Money.new(2640, "USD"), Money.new(1200, "EUR") ].sort_by(&:currency),
+      agenda.recurring_annual_expenses.sort_by(&:currency)
+    assert_equal [ Money.new(100, "USD"), Money.new(100, "EUR") ].sort_by(&:currency),
+      agenda.monthly_provisions.sort_by(&:currency)
+    assert_predicate agenda, :planning_has_estimates?
+
+    housing_row = agenda.planning_breakdown.find { |row| row.category == housing }
+    assert_equal BigDecimal("220"), housing_row.monthly_amount
+    assert_equal BigDecimal("100"), housing_row.provision_amount
+    assert housing_row.amount_estimated
+  end
+
   test "calendar projects whole weeks without adding adjacent months to totals or writing occurrences" do
     payment = create_payment(frequency: "daily", start_date: @month - 1.day, next_run_date: @month - 1.day)
 

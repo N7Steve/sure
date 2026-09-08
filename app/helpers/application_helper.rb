@@ -9,6 +9,10 @@ module ApplicationHelper
     Rails.configuration.x.brand_name
   end
 
+  def bills_frontend_enabled?
+    Rails.configuration.x.bills_frontend_enabled
+  end
+
   def styled_form_with(**options, &block)
     options[:builder] = StyledFormBuilder
     form_with(**options, &block)

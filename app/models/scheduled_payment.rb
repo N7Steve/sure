@@ -15,6 +15,7 @@ class ScheduledPayment < ApplicationRecord
 
   enum :status, { active: "active", paused: "paused", completed: "completed" }, validate: true
   enum :frequency, {
+    once: "once",
     daily: "daily",
     weekly: "weekly",
     biweekly: "biweekly",
@@ -29,11 +30,13 @@ class ScheduledPayment < ApplicationRecord
   validates :frequency_day, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :set_frequency_day_from_start_date, if: -> { start_date.present? }
-  before_validation :sync_next_run_date_with_start_date, if: -> { start_date_changed? && !next_run_date_changed? }
+  before_validation :sync_next_run_date_with_start_date, if: :reset_next_run_date?
+  before_validation :clear_end_date_for_once, if: :once?
   validates :target_account, presence: true, if: :transfer?
   validate :target_account_different_from_source, if: :transfer?
   validate :frequency_day_within_range
   validate :associations_belong_to_family
+  validate :estimated_amount_requires_manual_confirmation
   validates :end_date, comparison: { greater_than_or_equal_to: :start_date }, allow_nil: true, if: -> { start_date.present? }
 
   scope :due_on_or_before, ->(date) { active.where("next_run_date <= ?", date) }
@@ -72,6 +75,11 @@ class ScheduledPayment < ApplicationRecord
   end
 
   def advance_next_run_date!(count_occurrence: true)
+    if once?
+      update!(occurrences_count: occurrences_count + (count_occurrence ? 1 : 0), status: "completed")
+      return
+    end
+
     new_date = calculate_next_date(next_run_date)
     raise ArgumentError, "Schedule must advance" unless new_date > next_run_date
 
@@ -165,6 +173,30 @@ class ScheduledPayment < ApplicationRecord
     else
       from_date
     end
+  end
+
+  def recurring?
+    !once?
+  end
+
+  def annualized_amount
+    amount.abs * occurrences_per_year
+  end
+
+  def monthly_equivalent_amount
+    annualized_amount / BigDecimal("12")
+  end
+
+  def monthly_provision_amount
+    case frequency
+    when "quarterly" then amount.abs / BigDecimal("3")
+    when "yearly" then amount.abs / BigDecimal("12")
+    else BigDecimal("0")
+    end
+  end
+
+  def provisionable?
+    expense? && frequency.in?(%w[quarterly yearly])
   end
 
   def occurrences_in(date_range)
@@ -284,6 +316,18 @@ class ScheduledPayment < ApplicationRecord
     current < date ? calculate_next_date(current) : current
   end
 
+  def occurrences_per_year
+    case frequency
+    when "daily" then BigDecimal("365.25")
+    when "weekly" then BigDecimal("365.25") / BigDecimal("7")
+    when "biweekly" then BigDecimal("365.25") / BigDecimal("14")
+    when "monthly" then BigDecimal("12")
+    when "quarterly" then BigDecimal("4")
+    when "yearly" then BigDecimal("1")
+    else BigDecimal("0")
+    end
+  end
+
   def associations_belong_to_family
     return if family_id.blank?
 
@@ -335,6 +379,10 @@ class ScheduledPayment < ApplicationRecord
     errors.add(:target_account, "must be different from source account") if target_account_id == account_id
   end
 
+  def estimated_amount_requires_manual_confirmation
+    errors.add(:auto_confirm, :invalid) if amount_estimated? && auto_confirm?
+  end
+
   def monetizable_currency
     currency
   end
@@ -352,5 +400,13 @@ class ScheduledPayment < ApplicationRecord
     # Reset next_run_date to match the new start_date
     # If start_date is in the past, the job will catch up and generate entries
     self.next_run_date = start_date
+  end
+
+  def reset_next_run_date?
+    !next_run_date_changed? && (start_date_changed? || (frequency_changed? && once?))
+  end
+
+  def clear_end_date_for_once
+    self.end_date = nil
   end
 end

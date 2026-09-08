@@ -52,6 +52,18 @@
             { label: t("scheduled_payments.form.currency_label", default: "Currency") } %>
       </div>
 
+      <%# Estimated amount toggle %>
+      <div class="md:col-span-2">
+        <div class="flex items-center justify-between gap-3 rounded-lg bg-container-inset p-3">
+          <div>
+            <p class="form-field__label"><%= t("scheduled_payments.form.amount_estimated_label") %></p>
+            <p class="text-xs text-secondary"><%= t("scheduled_payments.form.amount_estimated_hint") %></p>
+          </div>
+          <%= f.toggle :amount_estimated, { data: { scheduled_payment_form_target: "amountEstimated",
+                                                    action: "change->scheduled-payment-form#toggleEstimatedAmountFields" } } %>
+        </div>
+      </div>
+
       <%# Category %>
       <div>
         <%= f.collection_select :category_id,
@@ -111,7 +123,8 @@
         <%= f.select :frequency,
             ScheduledPayment.frequencies.keys.map { |k| [t("scheduled_payments.form.frequencies.#{k}", default: k.humanize), k] },
             { label: t("scheduled_payments.form.frequency_label", default: "Frequency") },
-            { required: true } %>
+            { required: true, data: { scheduled_payment_form_target: "frequency",
+                                     action: "change->scheduled-payment-form#toggleFrequencyFields" } } %>
       </div>
 
       <%# Start date %>
@@ -122,13 +135,13 @@
       </div>
 
       <%# End date %>
-      <div>
+      <div data-scheduled-payment-form-target="endDateFields" class="<%= 'hidden' if scheduled_payment.once? %>">
         <%= f.date_field :end_date,
             label: t("scheduled_payments.form.end_date_label", default: "End date (optional)") %>
       </div>
 
       <%# Auto confirm toggle %>
-      <div class="md:col-span-2">
+      <div data-scheduled-payment-form-target="autoConfirmFields" class="md:col-span-2 <%= 'hidden' if scheduled_payment.amount_estimated? %>">
         <div class="flex items-center justify-between gap-3 p-3 bg-container-inset rounded-lg">
           <div>
             <p class="form-field__label"><%= t("scheduled_payments.form.auto_confirm_label", default: "Auto confirm") %></p>

@@ -107,7 +107,8 @@ class ScheduledPaymentEntry < ApplicationRecord
     ensure_unlinked!
     sp = scheduled_payment
     destroy!
-    if scheduled_date < sp.next_run_date && sp.occurrences_in(scheduled_date..scheduled_date).include?(scheduled_date)
+    restores_cursor = sp.once? ? scheduled_date == sp.next_run_date : scheduled_date < sp.next_run_date
+    if restores_cursor && sp.occurrences_in(scheduled_date..scheduled_date).include?(scheduled_date)
       sp.update!(next_run_date: scheduled_date, status: sp.completed? ? "active" : sp.status)
     end
   end

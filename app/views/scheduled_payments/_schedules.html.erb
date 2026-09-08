@@ -22,16 +22,19 @@
             <%= render "scheduled_payments/merchant_icon", payment: payment %>
             <div class="min-w-0">
               <p class="font-medium text-primary break-words"><%= payment.title %></p>
-              <p class="text-sm text-secondary"><%= payment.account.name %><% if payment.transfer? %> → <%= payment.target_account.name %><% end %> · <%= t("scheduled_payments.form.frequencies.#{payment.frequency}") %></p>
+              <p class="text-sm text-secondary"><%= payment.account.name %><% if payment.transfer? %> → <%= payment.target_account.name %><% end %> · <%= t("scheduled_payments.form.frequencies.#{payment.frequency}") %><% if payment.amount_estimated? %> · <%= t("scheduled_payments.estimated") %><% end %></p>
               <% if payment.next_run_date && !payment.completed? %>
                 <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.next_run", date: l(payment.next_run_date, format: :long)) %></p>
+              <% end %>
+              <% if payment.provisionable? %>
+                <p class="text-xs text-secondary privacy-sensitive"><%= t("scheduled_payments.agenda.payment_provision", amount: scheduled_payment_display_amount(payment, Money.new(payment.monthly_provision_amount, payment.currency))) %></p>
               <% end %>
             </div>
           </div>
           <div class="lg:col-span-2 justify-self-center">
             <%= render DS::Pill.new(label: t("scheduled_payments.status.#{payment.status}"), tone: agenda_status_tone(payment.status), marker: false) %>
           </div>
-          <p class="lg:col-span-2 justify-self-end text-sm font-medium text-primary privacy-sensitive"><%= format_money(Money.new(payment.income? ? payment.amount.abs : -payment.amount.abs, payment.currency)) %></p>
+          <p class="lg:col-span-2 justify-self-end text-sm font-medium text-primary privacy-sensitive"><%= scheduled_payment_display_amount(payment) %></p>
           <% if @agenda.writable?(payment) %>
             <div class="col-span-2 lg:col-span-3 flex items-center justify-end gap-1">
               <%= render DS::Link.new(icon: "pencil", variant: "ghost", size: :sm, href: edit_scheduled_payment_path(payment, **agenda_context_params),

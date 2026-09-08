@@ -50,11 +50,12 @@ class GenerateInsightsJob < ApplicationJob
       # current state, so a subscribed /insights page (waiting on its manual
       # refresh) always gets its list and button restored.
       broadcast_feed(family)
-      Array(notifiable_insights).each { |insight| DeliverInsightNotificationJob.enqueue_for(insight) }
+      Array(notifiable_insights).select(&:product_frontend_visible?)
+                                .each { |insight| DeliverInsightNotificationJob.enqueue_for(insight) }
     end
 
     def broadcast_feed(family)
-      insights = family.insights.visible.ordered.to_a
+      insights = family.insights.for_product_frontend.visible.ordered.to_a
       unread_ids = insights.select(&:active?).map(&:id).to_set
 
       Turbo::StreamsChannel.broadcast_replace_to(

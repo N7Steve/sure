@@ -11,7 +11,8 @@ class InsightsController < ApplicationController
     # hits this GET before the user actually navigates, so skip the write
     # for prefetch requests or badges would clear on hover.
     unless prefetch_request?
-      Current.family.insights.active.update_all(status: "read", read_at: Time.current, updated_at: Time.current)
+      Current.family.insights.for_product_frontend.active
+             .update_all(status: "read", read_at: Time.current, updated_at: Time.current)
     end
   end
 
@@ -54,11 +55,11 @@ class InsightsController < ApplicationController
 
   private
     def set_insight
-      @insight = Current.family.insights.find(params[:id])
+      @insight = Current.family.insights.for_product_frontend.find(params[:id])
     end
 
     def load_feed
-      @insights = Current.family.insights.visible.ordered.to_a
+      @insights = Current.family.insights.for_product_frontend.visible.ordered.to_a
       @unread_ids = @insights.select(&:active?).map(&:id).to_set
     end
 
@@ -66,7 +67,7 @@ class InsightsController < ApplicationController
     # so the response re-renders the widget's top three. Removing a row there
     # should promote the next insight into the freed slot, not leave a gap.
     def load_widget_feed
-      @feed_insights = Current.family.insights.visible.ordered.limit(Insight::FEED_LIMIT).to_a
+      @feed_insights = Current.family.insights.for_product_frontend.visible.ordered.limit(Insight::FEED_LIMIT).to_a
     end
 
     # Turbo sends X-Sec-Purpose (the fetch spec forbids setting Sec-Purpose

@@ -15,11 +15,23 @@ es:
         active: Programaciones activas
         remaining: Por pagar este mes
         pending: Movimientos pendientes
+        monthly_cost: Coste recurrente mensual
+        annual_cost: Coste recurrente anual
+        monthly_provision: Provisión mensual recomendada
       active_hint:
         one: "de %{count} programación en total"
         other: "de %{count} programaciones en total"
       remaining_hint: Sólo gastos. Importes separados por moneda.
       pending_hint: Gastos, ingresos y transferencias del mes.
+      planning_title: Planificación
+      planning_hint: Gastos recurrentes activos, normalizados sin mezclar monedas.
+      includes_estimates: "≈ Los totales incluyen importes marcados como estimados."
+      monthly_cost_hint: Coste mensual medio de todos los gastos recurrentes activos.
+      annual_cost_hint: Coste anual previsto de todos los gastos recurrentes activos.
+      monthly_provision_hint: Importe mensual que conviene reservar para gastos trimestrales y anuales.
+      category_breakdown: Desglose por categoría del movimiento
+      uncategorized: Sin categoría
+      payment_provision: "Provisión: %{amount} al mes"
       older_pending:
         one: "Tienes %{count} confirmación pendiente de meses anteriores."
         other: "Tienes %{count} confirmaciones pendientes de meses anteriores."
@@ -56,6 +68,8 @@ es:
       date_label: "Fecha de transacción"
       amount_label: "Importe"
       confirm_button: "Confirmar"
+      estimated_hint: Es una estimación. Sustitúyela por el importe real antes de confirmar.
+    estimated: Estimado
     badge_pending: Pendiente
     badge_skipped: Omitido
     entries_section: Entradas programadas
@@ -89,7 +103,7 @@ es:
     new: Nuevo
     empty:
       title: No hay pagos programados
-      description: Crea un pago programado para generar automáticamente transacciones recurrentes en una programación definida.
+      description: Crea un movimiento futuro o recurrente y mantenlo preparado hasta su fecha.
     form:
       save: Guardar
       title_label: Título
@@ -98,7 +112,7 @@ es:
       select_account: Seleccionar cuenta
       amount_label: Importe
       currency_label: Moneda
-      category_label: Categoría
+      category_label: Categoría del movimiento
       select_category: Seleccionar categoría (opcional)
       merchant_label: Comerciante
       no_merchant: Ninguno
@@ -113,6 +127,7 @@ es:
       select_target_account: Seleccionar cuenta destino
       frequency_label: Frecuencia
       frequencies:
+        once: Una sola vez
         daily: Diario
         weekly: Semanal
         biweekly: Quincenal
@@ -122,6 +137,8 @@ es:
       frequency_day_label: Día del ciclo
       start_date_label: Fecha de inicio
       end_date_label: Fecha de fin (opcional)
+      amount_estimated_label: Importe variable estimado
+      amount_estimated_hint: Usa este importe para planificar y sustitúyelo por el real al confirmar.
       auto_confirm_label: Confirmación automática
       auto_confirm_hint: Crear automáticamente la transacción sin confirmación manual
     retracted: Transacción programada omitida

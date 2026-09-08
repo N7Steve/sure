@@ -13,7 +13,7 @@ module SettingsHelper
     { name: -> { t("settings.settings_nav.tags_label") }, path: :tags_path },
     { name: -> { t("settings.settings_nav.rules_label") }, path: :rules_path },
     { name: -> { t("settings.settings_nav.merchants_label") }, path: :family_merchants_path },
-    { name: -> { t("settings.settings_nav.recurring_transactions_label") }, path: :recurring_transactions_path },
+    { name: -> { t("settings.settings_nav.recurring_transactions_label") }, path: :recurring_transactions_path, condition: :bills_frontend_enabled? },
     { name: -> { t("settings.settings_nav.statement_vault_label") }, path: :account_statements_path, condition: :admin_user? },
     { name: -> { t("settings.settings_nav.exports_label") }, path: :family_exports_path },
     # Advanced section

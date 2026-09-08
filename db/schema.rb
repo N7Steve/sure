@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_201444) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -2005,6 +2005,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_201444) do
     t.integer "occurrences_count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "amount_estimated", default: false, null: false
     t.index ["account_id"], name: "index_scheduled_payments_on_account_id"
     t.index ["category_id"], name: "index_scheduled_payments_on_category_id"
     t.index ["family_id", "next_run_date"], name: "index_scheduled_payments_on_family_id_and_next_run_date", where: "((status)::text = 'active'::text)"

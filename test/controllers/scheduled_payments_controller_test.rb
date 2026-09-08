@@ -57,6 +57,26 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @family.id, sp.family_id
   end
 
+  test "create supports one-time movements and estimated amounts" do
+    future_date = 2.months.from_now.to_date
+
+    assert_difference -> { ScheduledPayment.count }, 1 do
+      post scheduled_payments_url, params: {
+        scheduled_payment: payment_attributes.merge(
+          title: "Estimated tax", amount: 325, frequency: "once",
+          start_date: future_date, end_date: future_date + 1.month, amount_estimated: true
+        )
+      }
+    end
+
+    payment = ScheduledPayment.order(:created_at).last
+    assert_redirected_to scheduled_payments_url
+    assert_predicate payment, :once?
+    assert_predicate payment, :amount_estimated?
+    assert_equal future_date, payment.next_run_date
+    assert_nil payment.end_date
+  end
+
   test "update scheduled payment" do
     sp = ScheduledPayment.create!(
       family: @family,
@@ -364,6 +384,7 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
       assert_no_match(/[–-]/, link.text)
       assert_no_match(/#{Regexp.escape(payment.title)}/, link.text)
       assert_includes link["class"].split, "justify-center"
+      assert_includes link["class"].split, "gap-2"
       assert_includes link["class"].split, "bg-info/10"
       assert_includes link["class"].split, "text-info"
     end
@@ -376,6 +397,27 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     %w[payment status amount actions].each do |heading|
       assert_select ".hidden.lg\\:grid", text: /#{Regexp.escape(I18n.t("scheduled_payments.table.#{heading}"))}/
     end
+  end
+
+  test "Agenda shows planning metrics provisions and estimated amount markers" do
+    payment = create_payment(amount: 1200, frequency: "yearly", amount_estimated: true, category: @category)
+
+    get scheduled_payments_url
+
+    assert_response :success
+    %w[monthly_cost annual_cost monthly_provision].each do |metric|
+      assert_select "[data-agenda-metric=#{metric}]", count: 1
+    end
+    assert_select "##{dom_id(payment, "occurrence_#{Date.current.iso8601}")}", text: /≈/
+    assert_select "details", text: /#{Regexp.escape(I18n.t("scheduled_payments.agenda.category_breakdown"))}/
+
+    get scheduled_payments_url, params: { view: "calendar" }
+    assert_response :success
+    assert_select "a[title=?]", payment.title, text: /≈/
+
+    get confirm_entry_form_scheduled_payment_url(payment), params: { scheduled_date: Date.current.iso8601 }
+    assert_response :success
+    assert_select "p", text: I18n.t("scheduled_payments.confirm_modal.estimated_hint")
   end
 
   test "transfer schedules use the transaction table transfer icon" do

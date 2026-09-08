@@ -72,6 +72,94 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
     assert sp.reload.next_run_date > Date.current
   end
 
+  test "one-time payment generates exactly one occurrence and completes" do
+    payment = @family.scheduled_payments.create!(
+      account: @account, title: "Tax payment", amount: 450, currency: "USD",
+      frequency: "once", start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense"
+    )
+
+    assert_difference -> { payment.scheduled_payment_entries.count }, 1 do
+      payment.generate_pending_entry!
+    end
+
+    assert_predicate payment.reload, :completed?
+    assert_equal Date.current, payment.next_run_date
+    assert_equal 1, payment.occurrences_count
+    assert_nil payment.generate_pending_entry!
+    assert_equal 1, payment.scheduled_payment_entries.count
+  end
+
+  test "one-time payment ignores an end date and projects only its start date" do
+    start_date = Date.new(2026, 10, 20)
+    payment = @family.scheduled_payments.create!(
+      account: @account, title: "Future purchase", amount: 80, currency: "USD",
+      frequency: "once", start_date: start_date, end_date: start_date + 1.month,
+      next_run_date: start_date, payment_type: "expense"
+    )
+
+    assert_nil payment.end_date
+    assert_equal [ start_date ], payment.occurrences_in((start_date - 1.day)..(start_date + 1.year))
+  end
+
+  test "changing an existing schedule to one-time resets its date cursor" do
+    start_date = Date.new(2026, 10, 20)
+    payment = @family.scheduled_payments.create!(
+      account: @account, title: "Future purchase", amount: 80, currency: "USD",
+      frequency: "monthly", start_date: start_date, next_run_date: start_date + 1.month,
+      payment_type: "expense"
+    )
+
+    payment.update!(frequency: "once")
+
+    assert_equal start_date, payment.next_run_date
+    assert_equal 0, payment.frequency_day
+  end
+
+  test "restoring a future skipped one-time payment reactivates it" do
+    start_date = 1.month.from_now.to_date
+    payment = @family.scheduled_payments.create!(
+      account: @account, title: "Future purchase", amount: 80, currency: "USD",
+      frequency: "once", start_date: start_date, next_run_date: start_date,
+      payment_type: "expense"
+    )
+
+    occurrence = payment.skip_on!(start_date)
+    assert_predicate payment.reload, :completed?
+
+    occurrence.restore!
+
+    assert_predicate payment.reload, :active?
+    assert_empty payment.scheduled_payment_entries
+  end
+
+  test "normalizes recurring costs and provisions without including one-time payments" do
+    monthly = @family.scheduled_payments.build(amount: 120, frequency: "monthly", payment_type: "expense")
+    quarterly = @family.scheduled_payments.build(amount: 300, frequency: "quarterly", payment_type: "expense")
+    yearly = @family.scheduled_payments.build(amount: 1200, frequency: "yearly", payment_type: "expense")
+    once = @family.scheduled_payments.build(amount: 900, frequency: "once", payment_type: "expense")
+
+    assert_equal BigDecimal("120"), monthly.monthly_equivalent_amount
+    assert_equal BigDecimal("1440"), monthly.annualized_amount
+    assert_equal BigDecimal("100"), quarterly.monthly_equivalent_amount
+    assert_equal BigDecimal("100"), quarterly.monthly_provision_amount
+    assert_equal BigDecimal("100"), yearly.monthly_equivalent_amount
+    assert_equal BigDecimal("100"), yearly.monthly_provision_amount
+    assert_equal BigDecimal("0"), once.annualized_amount
+    assert_not_predicate once, :provisionable?
+  end
+
+  test "estimated amounts require manual confirmation" do
+    payment = @family.scheduled_payments.build(
+      account: @account, title: "Variable utility", amount: 90, currency: "USD",
+      frequency: "monthly", start_date: Date.current, next_run_date: Date.current,
+      payment_type: "expense", amount_estimated: true, auto_confirm: true
+    )
+
+    assert_not payment.valid?
+    assert_predicate payment.errors[:auto_confirm], :any?
+  end
+
   test "generate_pending_entry is idempotent for same date" do
     sp = @family.scheduled_payments.create!(
       account: @account, title: "Test", amount: 10, currency: "USD",

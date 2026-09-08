@@ -1,9 +1,11 @@
 class TransfersController < ApplicationController
   include StreamExtensions
+  include BillsFrontendGuardable
 
   before_action :set_transfer, only: %i[show destroy update update_tags mark_as_recurring]
   before_action :set_accounts, only: %i[new create]
   before_action :set_new_transfer_form_options, only: %i[new create]
+  before_action :ensure_bills_frontend_enabled, only: :mark_as_recurring
 
   helper_method :new_transfer_idempotency_key
 
@@ -23,6 +25,7 @@ class TransfersController < ApplicationController
     endpoint_ids = [ @transfer.from_account&.id, @transfer.to_account&.id ].compact
     writable_endpoint_count = Account.writable_by(Current.user).where(id: endpoint_ids).distinct.count
     @can_mark_as_recurring_transfer =
+      helpers.bills_frontend_enabled? &&
       !Current.family.recurring_transactions_disabled? &&
       endpoint_ids.size == 2 &&
       writable_endpoint_count == 2

@@ -17,6 +17,8 @@
 class Insight < ApplicationRecord
   belongs_to :family
 
+  BILLS_BACKED_TYPES = %w[cash_flow_warning subscription_audit].freeze
+
   TYPES = %w[
     spending_anomaly
     cash_flow_warning
@@ -44,6 +46,11 @@ class Insight < ApplicationRecord
 
   # Everything the user hasn't acknowledged; what the feed renders.
   scope :visible, -> { where(status: [ :active, :read ]) }
+  # These generators remain part of the upstream Bills subsystem, but their
+  # output must not leak into the Agenda-first fork shell.
+  scope :for_product_frontend, -> {
+    Rails.configuration.x.bills_frontend_enabled ? all : where.not(insight_type: BILLS_BACKED_TYPES)
+  }
   scope :ordered, -> {
     order(Arel.sql("CASE insights.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END"))
       .order(generated_at: :desc)
@@ -53,6 +60,10 @@ class Insight < ApplicationRecord
     return unless active?
 
     update!(status: :read, read_at: Time.current)
+  end
+
+  def product_frontend_visible?
+    Rails.configuration.x.bills_frontend_enabled || !BILLS_BACKED_TYPES.include?(insight_type)
   end
 
   def acknowledge!

@@ -13,7 +13,9 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type='hidden'][name='transfer[to_account_id]']", count: 1
     assert_select "[data-controller='category-select']" do
       assert_select "input[type='hidden'][name='transfer[category_id]']", count: 1
-      assert_select "[role='option'][data-category-id='#{categories(:subcategory).id}'].pl-8", count: 1
+      assert_select "[role='option'][data-category-id='#{categories(:subcategory).id}']" do
+        assert_select "[data-testid='category-select-subcategory-indicator']", count: 1
+      end
     end
   end
 

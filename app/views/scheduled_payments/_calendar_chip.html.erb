@@ -1,11 +1,11 @@
 <%# locals: (occurrence:) %>
 <% payment = occurrence.scheduled_payment %>
-<% amount = format_money(occurrence.amount_money) %>
-<% label = "#{payment.title} · #{amount}" %>
+<% amount = "#{'≈' if occurrence.amount_estimated?}#{format_money(occurrence.amount_money)}" %>
+<% label = [payment.title, amount, (t("scheduled_payments.estimated") if occurrence.amount_estimated?)].compact.join(" · ") %>
 <% chip_content = capture do %>
   <%= render "scheduled_payments/merchant_icon", payment: payment, size: "sm" %>
   <span class="truncate"><%= amount %></span>
 <% end %>
 <%= render DS::Link.new(**agenda_calendar_link(occurrence), text: chip_content, variant: "ghost", size: :sm,
-      class: "flex w-full min-w-0 justify-center privacy-sensitive #{agenda_calendar_classes(occurrence)}",
+      class: "flex w-full min-w-0 items-center justify-center gap-2 privacy-sensitive #{agenda_calendar_classes(occurrence)}",
       title: payment.title, aria: { label: "#{l(occurrence.scheduled_date, format: :long)}: #{label}" }) %>

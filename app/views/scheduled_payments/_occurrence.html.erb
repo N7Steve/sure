@@ -8,6 +8,7 @@
       <p class="text-xs text-secondary truncate">
         <%= t("scheduled_payments.form.payment_types.#{payment.payment_type}") %> · <%= payment.account.name %>
         <% if payment.transfer? %> → <%= payment.target_account.name %><% end %>
+        <% if occurrence.amount_estimated? %> · <%= t("scheduled_payments.estimated") %><% end %>
       </p>
     </div>
   </div>
@@ -19,7 +20,7 @@
           tone: agenda_status_tone(agenda_status(occurrence)), marker: false) %>
   </div>
   <p class="lg:col-span-2 lg:text-right text-sm font-medium privacy-sensitive <%= occurrence.skipped? ? 'line-through text-secondary' : (occurrence.display_amount_money.positive? ? 'text-success' : 'text-primary') %>">
-    <%= format_money(occurrence.display_amount_money) %>
+    <%= agenda_display_amount(occurrence) %>
   </p>
   <div class="lg:col-span-2 flex items-center justify-end gap-1">
     <%= render "scheduled_payments/occurrence_actions", occurrence: occurrence %>

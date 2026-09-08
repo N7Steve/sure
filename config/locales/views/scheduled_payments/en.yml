@@ -15,11 +15,23 @@ en:
         active: Active schedules
         remaining: Left to pay this month
         pending: Pending movements
+        monthly_cost: Recurring monthly cost
+        annual_cost: Recurring annual cost
+        monthly_provision: Recommended monthly provision
       active_hint:
         one: "of %{count} schedule in total"
         other: "of %{count} schedules in total"
       remaining_hint: Expenses only. Amounts shown separately by currency.
       pending_hint: Expenses, income and transfers for the month.
+      planning_title: Planning
+      planning_hint: Active recurring expenses, normalized without mixing currencies.
+      includes_estimates: "≈ Totals include amounts marked as estimates."
+      monthly_cost_hint: Average monthly cost of all active recurring expenses.
+      annual_cost_hint: Projected annual cost of all active recurring expenses.
+      monthly_provision_hint: Monthly amount to set aside for quarterly and annual expenses.
+      category_breakdown: Breakdown by transaction category
+      uncategorized: Uncategorized
+      payment_provision: "Provision: %{amount} per month"
       older_pending:
         one: "You have %{count} pending confirmation from earlier months."
         other: "You have %{count} pending confirmations from earlier months."
@@ -52,6 +64,8 @@ en:
       date_label: "Transaction date"
       amount_label: "Amount"
       confirm_button: "Confirm"
+      estimated_hint: This is an estimate. Replace it with the actual amount before confirming.
+    estimated: Estimated
     badge_pending: Pending
     badge_skipped: Skipped
     entries_section: Scheduled entries
@@ -85,7 +99,7 @@ en:
     new: New
     empty:
       title: No scheduled payments
-      description: Create a scheduled payment to automatically generate recurring transactions on a set schedule.
+      description: Create a future or recurring movement and keep it ready until its date.
     form:
       save: Save
       title_label: Title
@@ -94,7 +108,7 @@ en:
       select_account: Select account
       amount_label: Amount
       currency_label: Currency
-      category_label: Category
+      category_label: Transaction category
       select_category: Select category (optional)
       merchant_label: Merchant
       no_merchant: None
@@ -109,6 +123,7 @@ en:
       select_target_account: Select target account
       frequency_label: Frequency
       frequencies:
+        once: Once
         daily: Daily
         weekly: Weekly
         biweekly: Every two weeks
@@ -118,6 +133,8 @@ en:
       frequency_day_label: Day of cycle
       start_date_label: Start date
       end_date_label: End date (optional)
+      amount_estimated_label: Estimated variable amount
+      amount_estimated_hint: Use this amount for planning and replace it with the actual amount when confirming.
       auto_confirm_label: Auto confirm
       auto_confirm_hint: Automatically create the transaction without manual confirmation
     retracted: Scheduled transaction omitted

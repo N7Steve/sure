@@ -102,9 +102,9 @@ module InsightsHelper
       account = insight.family.accounts.visible.find_by(id: metadata["account_id"])
       account && { text: t("insights.actions.idle_cash"), href: account_path(account) }
     when "subscription_audit"
-      { text: t("insights.actions.subscription_audit"), href: recurring_transactions_path }
+      { text: t("insights.actions.subscription_audit"), href: bills_frontend_enabled? ? recurring_transactions_path : scheduled_payments_path }
     when "cash_flow_warning"
-      { text: t("insights.actions.cash_flow_warning"), href: recurring_transactions_path }
+      { text: t("insights.actions.cash_flow_warning"), href: bills_frontend_enabled? ? recurring_transactions_path : scheduled_payments_path }
     when "savings_rate_change"
       return nil unless insight.period_start && insight.period_end
       { text: t("insights.actions.savings_rate_change"),

@@ -1,6 +1,7 @@
 class ScheduledPayment::Agenda
   VIEWS = %w[overview calendar schedules].freeze
   Day = Data.define(:date, :in_month, :occurrences)
+  PlanningRow = Data.define(:category, :currency, :monthly_amount, :annual_amount, :provision_amount, :amount_estimated)
 
   attr_reader :family, :user, :month
 
@@ -46,6 +47,35 @@ class ScheduledPayment::Agenda
     end.presence || [ Money.new(0, family.primary_currency_code) ]
   end
 
+  def recurring_monthly_expenses
+    totals_by_currency(planning_expenses, &:monthly_equivalent_amount)
+  end
+
+  def recurring_annual_expenses
+    totals_by_currency(planning_expenses, &:annualized_amount)
+  end
+
+  def monthly_provisions
+    totals_by_currency(provision_expenses, &:monthly_provision_amount)
+  end
+
+  def planning_breakdown
+    @planning_breakdown ||= planning_expenses.group_by { |payment| [ payment.category, payment.currency ] }.map do |(category, currency), rows|
+      PlanningRow.new(
+        category: category,
+        currency: currency,
+        monthly_amount: rows.sum(&:monthly_equivalent_amount),
+        annual_amount: rows.sum(&:annualized_amount),
+        provision_amount: rows.select(&:provisionable?).sum(&:monthly_provision_amount),
+        amount_estimated: rows.any?(&:amount_estimated?)
+      )
+    end.sort_by { |row| [ row.category&.name.to_s, row.currency ] }
+  end
+
+  def planning_has_estimates?
+    planning_expenses.any?(&:amount_estimated?)
+  end
+
   def older_pending
     @older_pending ||= ScheduledPaymentEntry.where(scheduled_payment_id: payments.map(&:id)).pending
       .where("scheduled_date < ?", [ month, Date.current ].min).order(:scheduled_date).to_a
@@ -88,6 +118,20 @@ class ScheduledPayment::Agenda
           .or(linked.where(transfer_entry_id: restricted_entries)).distinct.pluck(:scheduled_payment_id)
         (writable - restricted_payments).to_set
       end
+    end
+
+    def planning_expenses
+      @planning_expenses ||= payments.select { |payment| payment.active? && payment.expense? && payment.recurring? }
+    end
+
+    def provision_expenses
+      planning_expenses.select(&:provisionable?)
+    end
+
+    def totals_by_currency(rows)
+      rows.group_by(&:currency).sort.map do |currency, currency_rows|
+        Money.new(currency_rows.sum { |row| yield(row) }, currency)
+      end.presence || [ Money.new(0, family.primary_currency_code) ]
     end
 
     def occurrences

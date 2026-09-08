@@ -27,17 +27,47 @@
     <% if @view == "calendar" %>
       <%= render "scheduled_payments/calendar" %>
     <% else %>
-      <div class="grid gap-3 md:grid-cols-3">
-        <% agenda_metrics.each do |metric| %>
+      <%= render "scheduled_payments/metric_cards", metrics: agenda_metrics %>
+
+      <section class="space-y-3" aria-labelledby="agenda-planning-title">
+        <div>
+          <h2 id="agenda-planning-title" class="text-base font-medium text-primary"><%= t("scheduled_payments.agenda.planning_title") %></h2>
+          <p class="mt-1 text-sm text-secondary"><%= t("scheduled_payments.agenda.planning_hint") %></p>
+          <% if @agenda.planning_has_estimates? %>
+            <p class="mt-1 text-xs text-secondary"><%= t("scheduled_payments.agenda.includes_estimates") %></p>
+          <% end %>
+        </div>
+        <%= render "scheduled_payments/metric_cards", metrics: agenda_planning_metrics %>
+
+        <% if @agenda.planning_breakdown.any? %>
           <%= render DS::Card.new do %>
-            <h2 class="text-sm font-medium text-secondary"><%= t("scheduled_payments.agenda.metrics.#{metric[:key]}") %></h2>
-            <div class="my-2 space-y-1 text-2xl font-semibold text-primary privacy-sensitive" data-agenda-metric="<%= metric[:key] %>">
-              <% metric[:values].each do |value| %><p><%= value %></p><% end %>
-            </div>
-            <p class="text-xs text-secondary"><%= metric[:hint] %></p>
+            <%= render DS::Disclosure.new(title: t("scheduled_payments.agenda.category_breakdown"), align: "left") do %>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs text-secondary">
+                    <tr>
+                      <th class="py-2 font-medium"><%= t("scheduled_payments.form.category_label") %></th>
+                      <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.monthly_cost") %></th>
+                      <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.annual_cost") %></th>
+                      <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.monthly_provision") %></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-primary">
+                    <% @agenda.planning_breakdown.each do |row| %>
+                      <tr>
+                        <td class="py-2 text-primary"><%= scheduled_payment_category_name(row) %></td>
+                        <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :monthly_amount) %></td>
+                        <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :annual_amount) %></td>
+                        <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :provision_amount) %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% end %>
           <% end %>
         <% end %>
-      </div>
+      </section>
 
       <% if @agenda.older_pending.any? %>
         <%= render DS::Alert.new(variant: :warning) do %>
