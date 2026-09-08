@@ -10,7 +10,55 @@ en:
       views:
         overview: Overview
         calendar: Calendar
+        forecast: Forecasts
         schedules: Schedules
+      forecast:
+        title: Balance forecast
+        subtitle: Explore how the cash balance of one account could evolve.
+        account: Cash account
+        empty_title: No cash accounts available
+        empty_description: Add or share an active cash account to generate a balance forecast.
+        horizon_label: Forecast horizon
+        horizons:
+          "1": Next month
+          "3": 3 months
+          "6": 6 months
+          "12": 1 year
+          "36": 3 years
+        projected_balance: Normal projected balance
+        ending_on: "At %{date}"
+        scenarios_label: Forecast scenarios
+        scenarios:
+          pessimistic: Pessimistic
+          normal: Normal
+          optimistic: Optimistic
+        chart_label: "Projected balance for %{account}: pessimistic, normal and optimistic scenarios"
+        current_balance: Current balance
+        projected_savings: Projected monthly savings
+        projected_savings_hint: Normal scenario average for this period.
+        historical_savings: Unscheduled monthly trend
+        scheduled_average: Scheduled monthly change
+        confidence: "%{level} confidence · %{count} completed months"
+        confidence_levels:
+          low: Low
+          medium: Medium
+          high: High
+        scheduled_count:
+          one: "%{count} Agenda movement in this period"
+          other: "%{count} Agenda movements in this period"
+        limited_history:
+          one: Only one complete month of usable history is available. The forecast will rely mainly on Agenda.
+          other: Only %{count} complete months of usable history are available. The forecast will rely mainly on Agenda.
+        conversion_warning:
+          one: One scheduled transfer was omitted because no exchange rate was available.
+          other: "%{count} scheduled transfers were omitted because no exchange rate was available."
+        method_title: How this forecast is calculated
+        method_agenda: Agenda movements are the source of truth and are applied on their exact future dates. They are not estimated again from history.
+        method_history: The remaining historical cash flow uses up to 12 complete months, gives more weight to recent months and limits the effect of outliers. Transfers, pending transactions, split parents and one-time movements are excluded.
+        method_scenarios: The normal scenario uses the robust historical trend. Optimistic and pessimistic scenarios use its variability; estimated Agenda amounts also vary by 15%.
+        one_time_ignored:
+          one: One historical one-time movement was ignored.
+          other: "%{count} historical one-time movements were ignored."
       metrics:
         active: Active schedules
         remaining: Left to pay this month

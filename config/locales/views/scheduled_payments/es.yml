@@ -10,7 +10,55 @@ es:
       views:
         overview: Resumen
         calendar: Calendario
+        forecast: Previsiones
         schedules: Programaciones
+      forecast:
+        title: Previsión de saldo
+        subtitle: Explora cómo podría evolucionar el saldo de efectivo de una cuenta.
+        account: Cuenta de efectivo
+        empty_title: No hay cuentas de efectivo disponibles
+        empty_description: Añade o comparte una cuenta de efectivo activa para generar una previsión de saldo.
+        horizon_label: Horizonte de la previsión
+        horizons:
+          "1": Mes siguiente
+          "3": 3 meses
+          "6": 6 meses
+          "12": 1 año
+          "36": 3 años
+        projected_balance: Saldo previsto normal
+        ending_on: "A %{date}"
+        scenarios_label: Escenarios de previsión
+        scenarios:
+          pessimistic: Pesimista
+          normal: Normal
+          optimistic: Optimista
+        chart_label: "Previsión de saldo de %{account}: escenarios pesimista, normal y optimista"
+        current_balance: Saldo actual
+        projected_savings: Ahorro mensual previsto
+        projected_savings_hint: Media del escenario normal para este periodo.
+        historical_savings: Tendencia mensual no programada
+        scheduled_average: Variación mensual programada
+        confidence: "Confianza %{level} · %{count} meses completos"
+        confidence_levels:
+          low: baja
+          medium: media
+          high: alta
+        scheduled_count:
+          one: "%{count} movimiento de Agenda en este periodo"
+          other: "%{count} movimientos de Agenda en este periodo"
+        limited_history:
+          one: Sólo hay un mes completo de historial aprovechable. La previsión se apoyará principalmente en Agenda.
+          other: Sólo hay %{count} meses completos de historial aprovechable. La previsión se apoyará principalmente en Agenda.
+        conversion_warning:
+          one: Se ha omitido una transferencia programada porque no había tipo de cambio disponible.
+          other: "Se han omitido %{count} transferencias programadas porque no había tipo de cambio disponible."
+        method_title: Cómo se calcula esta previsión
+        method_agenda: Los movimientos de Agenda son la fuente de verdad y se aplican en sus fechas futuras exactas. No se vuelven a estimar a partir del historial.
+        method_history: El flujo restante usa hasta 12 meses completos, pondera más los recientes y limita el efecto de valores atípicos. Excluye transferencias, pendientes, padres de divisiones y movimientos puntuales.
+        method_scenarios: El escenario normal usa la tendencia histórica robusta. El optimista y el pesimista usan su variabilidad; los importes estimados de Agenda varían además un 15 %.
+        one_time_ignored:
+          one: Se ha ignorado un movimiento puntual histórico.
+          other: "Se han ignorado %{count} movimientos puntuales históricos."
       metrics:
         active: Programaciones activas
         remaining: Por pagar este mes

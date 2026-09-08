@@ -14,12 +14,15 @@
     <%= render DS::SegmentedControl.new(aria_label: t("scheduled_payments.agenda.views_label"), class: "w-max") do |control| %>
       <% ScheduledPayment::Agenda::VIEWS.each do |view| %>
         <% control.with_segment(t("scheduled_payments.agenda.views.#{view}"), active: @view == view,
-             href: scheduled_payments_path(view: view, month: @agenda.month.iso8601)) %>
+             href: scheduled_payments_path(view: view, month: @agenda.month.iso8601,
+               account_id: (params[:account_id] if view == "forecast"), horizon: (params[:horizon] if view == "forecast"))) %>
       <% end %>
     <% end %>
   </div>
 
-  <% if @view == "schedules" %>
+  <% if @view == "forecast" %>
+    <%= render "scheduled_payments/forecast" %>
+  <% elsif @view == "schedules" %>
     <%= render "scheduled_payments/schedules" %>
   <% else %>
     <%= render "scheduled_payments/month_navigation" %>

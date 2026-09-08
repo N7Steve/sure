@@ -5,6 +5,7 @@ class ScheduledPaymentsController < ApplicationController
   def index
     @view = ScheduledPayment::Agenda::VIEWS.include?(params[:view]) ? params[:view] : "overview"
     @agenda = ScheduledPayment::Agenda.new(family: Current.family, user: Current.user, month: params[:month])
+    prepare_forecast if @view == "forecast"
   end
 
   def new
@@ -228,11 +229,33 @@ class ScheduledPaymentsController < ApplicationController
 
   private
 
+  def prepare_forecast
+    @forecast_accounts = Current.family.accounts.accessible_by(Current.user).visible
+      .where(accountable_type: "Depository").alphabetically.to_a
+    requested_account = @forecast_accounts.find do |account|
+      account.id.to_s == params[:account_id].to_s
+    end
+    @forecast_account = requested_account || @forecast_accounts.first
+    return unless @forecast_account
+
+    @forecast = ScheduledPayment::Forecast.new(
+      family: Current.family,
+      user: Current.user,
+      account: @forecast_account,
+      horizon_months: params[:horizon]
+    )
+  end
+
   def agenda_return_path
     return scheduled_payments_path unless params[:agenda_view].present? || params[:agenda_month].present?
 
     view = ScheduledPayment::Agenda::VIEWS.include?(params[:agenda_view]) ? params[:agenda_view] : "overview"
-    scheduled_payments_path(view: view, month: ScheduledPayment::Agenda.month_from(params[:agenda_month]).iso8601)
+    scheduled_payments_path(
+      view: view,
+      month: ScheduledPayment::Agenda.month_from(params[:agenda_month]).iso8601,
+      account_id: (params[:agenda_account_id] if view == "forecast"),
+      horizon: (params[:agenda_horizon] if view == "forecast")
+    )
   end
 
   def find_scheduled_payment

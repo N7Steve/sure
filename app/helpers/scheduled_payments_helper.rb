@@ -1,14 +1,23 @@
 module ScheduledPaymentsHelper
   def agenda_context_params
-    {
-      agenda_view: @view || (ScheduledPayment::Agenda::VIEWS.include?(params[:agenda_view]) ? params[:agenda_view] : "overview"),
+    context = {
+      agenda_view: @view ||
+        (ScheduledPayment::Agenda::VIEWS.include?(params[:agenda_view]) ? params[:agenda_view] : "overview"),
       agenda_month: (@agenda&.month || ScheduledPayment::Agenda.month_from(params[:agenda_month])).iso8601
     }
+    if context[:agenda_view] == "forecast"
+      context[:agenda_account_id] = @forecast_account&.id || params[:agenda_account_id] || params[:account_id]
+      context[:agenda_horizon] = @forecast&.horizon_months || params[:agenda_horizon] || params[:horizon]
+    end
+    context.compact
   end
 
   def agenda_back_path
     context = agenda_context_params
-    scheduled_payments_path(view: context[:agenda_view], month: context[:agenda_month])
+    scheduled_payments_path(
+      view: context[:agenda_view], month: context[:agenda_month],
+      account_id: context[:agenda_account_id], horizon: context[:agenda_horizon]
+    )
   end
 
   def agenda_metrics

@@ -1,5 +1,5 @@
 class ScheduledPayment::Agenda
-  VIEWS = %w[overview calendar schedules].freeze
+  VIEWS = %w[overview calendar forecast schedules].freeze
   Day = Data.define(:date, :in_month, :occurrences)
   PlanningRow = Data.define(:category, :currency, :monthly_amount, :annual_amount, :amount_estimated)
 

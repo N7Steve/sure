@@ -32,6 +32,30 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, sp.title
   end
 
+  test "forecast shows cash account scenarios and supported horizons" do
+    get scheduled_payments_url(view: "forecast", account_id: @account.id, horizon: 6)
+
+    assert_response :success
+    assert_select "h2", text: I18n.t("scheduled_payments.agenda.forecast.title")
+    assert_select "select[name=account_id] option[value=?]", @account.id.to_s
+    assert_select "select[name=account_id] option[value=?]", accounts(:credit_card).id.to_s, count: 0
+    assert_select "[data-controller=forecast-chart]", count: 1
+    assert_select "[data-forecast-chart-data-value]", count: 1
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.horizons.6")
+  end
+
+  test "forecast falls back from an inaccessible account and invalid horizon" do
+    foreign_account = families(:empty).accounts.create!(
+      name: "Foreign cash", balance: 0, currency: "USD", accountable: Depository.new
+    )
+
+    get scheduled_payments_url(view: "forecast", account_id: foreign_account.id, horizon: 99)
+
+    assert_response :success
+    assert_select "select[name=account_id] option[selected][value=?]", @account.id.to_s
+    assert_select "a[aria-current=true]", text: I18n.t("scheduled_payments.agenda.forecast.horizons.3")
+  end
+
   test "create scheduled payment" do
     assert_difference -> { ScheduledPayment.count }, +1 do
       post scheduled_payments_url, params: {
