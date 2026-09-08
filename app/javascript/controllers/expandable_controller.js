@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { openDialog } from "utils/dialog";
 
 // Connects to data-controller="expandable"
 //
@@ -19,6 +20,6 @@ export default class extends Controller {
 
     if (!dialog || dialog.open) return;
 
-    dialog.showModal();
+    openDialog(this.application, dialog);
   }
 }

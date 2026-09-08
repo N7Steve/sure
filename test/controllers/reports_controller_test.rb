@@ -445,6 +445,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     row = css_select("tr[data-category='category-#{subcategory.id}']").first
     assert_not_nil row
     assert_equal 1, row.css("details").size
+    assert_equal "DS--disclosure", row.at_css("details")["data-controller"]
     assert_equal 10, row.css("[data-testid='subcategory-entries'] [data-entry-id]").size
 
     entry_names = row.css("[data-testid='report-entry-name']").map { |node| node.text.strip }

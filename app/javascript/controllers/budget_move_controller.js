@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { closeDialog, openDialog } from "utils/dialog"
 
 // Drives the single move dialog shared by every category row on the budget
 // allocation page. One dialog for the page rather than one per row: the list
@@ -32,12 +33,12 @@ export default class extends Controller {
     this.amountTarget.value = ""
 
     this.#refreshOptions(String(params.fromId), String(params.categoryId), String(params.parentId || ""))
-    this.dialogTarget.showModal()
+    openDialog(this.application, this.dialogTarget)
     this.amountTarget.focus()
   }
 
   close() {
-    this.#dialogController()?.close() ?? this.dialogTarget.close()
+    closeDialog(this.application, this.dialogTarget)
   }
 
   // Closing on submit alone would hide the reason a move was refused. Only a
@@ -73,7 +74,4 @@ export default class extends Controller {
     this.noDestinationTarget.classList.toggle("hidden", hasDestination)
   }
 
-  #dialogController() {
-    return this.application.getControllerForElementAndIdentifier(this.dialogTarget, "DS--dialog")
-  }
 }

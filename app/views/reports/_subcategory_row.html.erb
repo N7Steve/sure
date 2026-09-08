@@ -15,7 +15,8 @@
           class: "w-full",
           summary_class: "list-none cursor-pointer focus-ring",
           summary_aria_label: item[:category_name],
-          body_class: nil
+          body_class: nil,
+          animated: true
         ) do |disclosure| %>
       <% disclosure.with_summary_content do %>
         <div class="grid grid-cols-12 items-center hover:bg-surface-hover transition-colors">

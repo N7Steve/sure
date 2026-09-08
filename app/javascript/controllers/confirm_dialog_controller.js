@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { openDialog } from "utils/dialog";
 
 // Connects to data-controller="confirm-dialog"
 // See javascript/controllers/application.js for how this is wired up
@@ -10,7 +11,7 @@ export default class extends Controller {
 
     this.#prepareDialog(data);
 
-    this.element.showModal();
+    openDialog(this.application, this.element);
 
     return new Promise((resolve) => {
       this.element.addEventListener(

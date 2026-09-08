@@ -107,7 +107,7 @@ class DS::Dialog < DesignSystemComponent
     end
 
     class_names(
-      "flex h-full w-full",
+      "relative z-10 flex h-full w-full",
       variant_classes
     )
   end

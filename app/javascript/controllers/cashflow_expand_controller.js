@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { openDialog } from "utils/dialog";
 
 export default class extends Controller {
   open() {
@@ -10,7 +11,7 @@ export default class extends Controller {
     }
     this.element.setAttribute("draggable", "false");
 
-    dialog.showModal();
+    openDialog(this.application, dialog);
   }
 
   restore() {

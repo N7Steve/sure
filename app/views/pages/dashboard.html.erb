@@ -42,7 +42,7 @@
     <% @dashboard_sections.each do |section| %>
       <% next unless section[:visible] %>
       <section
-        class="bg-container rounded-xl shadow-border-xs transition-all group focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2<%= " 2xl:col-span-2" if two_column && section[:layout][:col_span] == "full" %>"
+        class="bg-container rounded-xl shadow-border-xs motion-safe:transition-shadow motion-safe:duration-200 group focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2<%= " 2xl:col-span-2" if two_column && section[:layout][:col_span] == "full" %>"
         style="<%= "--dash-widget-h: #{section[:layout][:height_px]}px;" if section[:layout][:grow] %>"
         data-dashboard-sortable-target="section"
         data-section-key="<%= section[:key] %>"
@@ -71,7 +71,7 @@
               data-dashboard-section-target="button"
               aria-label="<%= t("pages.dashboard.toggle_section") %>"
               aria-expanded="<%= !Current.user.dashboard_section_collapsed?(section[:key]) %>">
-              <%= icon("chevron-down", size: "sm", class: "transition-transform", data: { dashboard_section_target: "chevron" }) %>
+              <%= icon("chevron-down", size: "sm", class: "motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out", data: { dashboard_section_target: "chevron" }) %>
             </button>
             <h2 class="text-base font-medium">
               <%= t(section[:title]) %>

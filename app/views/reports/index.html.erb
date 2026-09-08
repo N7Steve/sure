@@ -139,7 +139,7 @@
       <% @reports_sections.each do |section| %>
         <% next unless section[:visible] %>
         <section
-          class="bg-container rounded-xl shadow-border-xs transition-all mb-6 group focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+          class="bg-container rounded-xl shadow-border-xs motion-safe:transition-shadow motion-safe:duration-200 mb-6 group focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
           data-reports-sortable-target="section"
           data-section-key="<%= section[:key] %>"
           data-controller="reports-section"
@@ -166,7 +166,7 @@
                 data-reports-section-target="button"
                 aria-label="<%= t("reports.index.toggle_section") %>"
                 aria-expanded="<%= !Current.user.reports_section_collapsed?(section[:key]) %>">
-                <%= icon("chevron-down", size: "sm", class: "transition-transform", data: { reports_section_target: "chevron" }) %>
+                <%= icon("chevron-down", size: "sm", class: "motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out", data: { reports_section_target: "chevron" }) %>
               </button>
               <h2 class="text-base font-medium">
                 <%= t(section[:title]) %>

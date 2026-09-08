@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { setCollapsibleState } from "utils/collapsible_animation";
 
 export default class extends Controller {
   static targets = ["content", "chevron", "button"];
@@ -9,7 +10,7 @@ export default class extends Controller {
 
   connect() {
     if (this.collapsedValue) {
-      this.collapse(false);
+      this.collapse(false, false);
     }
   }
 
@@ -31,9 +32,14 @@ export default class extends Controller {
     }
   }
 
-  collapse(persist = true) {
-    this.contentTarget.classList.add("hidden");
-    this.chevronTarget.classList.add("-rotate-90");
+  collapse(persist = true, animate = true) {
+    setCollapsibleState({
+      container: this.element,
+      content: this.contentTarget,
+      chevron: this.chevronTarget,
+      expanded: false,
+      animate,
+    });
     this.collapsedValue = true;
     if (this.hasButtonTarget) {
       this.buttonTarget.setAttribute("aria-expanded", "false");
@@ -44,8 +50,12 @@ export default class extends Controller {
   }
 
   expand() {
-    this.contentTarget.classList.remove("hidden");
-    this.chevronTarget.classList.remove("-rotate-90");
+    setCollapsibleState({
+      container: this.element,
+      content: this.contentTarget,
+      chevron: this.chevronTarget,
+      expanded: true,
+    });
     this.collapsedValue = false;
     if (this.hasButtonTarget) {
       this.buttonTarget.setAttribute("aria-expanded", "true");
