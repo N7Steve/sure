@@ -255,7 +255,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 ### Transacciones
 
 - Índice y controlador ampliados para CRUD, filtros, preferencias de vista y conversión a operaciones de inversión.
-- Vista compacta persistente y alternador compacta/detallada.
+- Vista compacta persistente y alternador compacta/detallada. El estado pertenece al usuario y se guarda como el booleano `preferences["transactions_compact_view"]`; `User#transactions_compact_view?` lo lee y `User#update_transactions_preferences` debe conservar las demás claves del JSON al actualizarlo. El alternador usa `PATCH /transactions/toggle_compact_view`. Estos puntos forman parte de la feature y no deben eliminarse como preferencias de secciones obsoletas durante una integración con upstream.
 - Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría; no deben moverse al disclosure de detalles.
 - En creación y edición, **importe y fecha comparten una única fila de dos columnas** para reducir la altura del formulario. En el detalle editable, naturaleza permanece en su propia fila; las transferencias conservan la fecha en una fila independiente porque no muestran el campo de importe ordinario.
 - Autocompletado de descripciones por cuenta mediante `Transactions::DescriptionsController` y Stimulus.
@@ -265,7 +265,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 - Actualización rápida de categoría, etiquetas y actividad de inversión.
 - Borrado masivo y vistas Turbo actualizadas.
 
-Archivos principales: `transactions_controller.rb`, `transactions/bulk_deletions_controller.rb`, `transactions/categorizes_controller.rb`, `transactions/descriptions_controller.rb`, `transaction.rb`, `transaction/search.rb`, `entry_search.rb`, vistas `transactions/`, helpers y controladores Stimulus relacionados.
+Archivos principales: `transactions_controller.rb`, `transactions/bulk_deletions_controller.rb`, `transactions/categorizes_controller.rb`, `transactions/descriptions_controller.rb`, `user.rb`, `transaction.rb`, `transaction/search.rb`, `entry_search.rb`, `config/routes.rb`, vistas `transactions/` —en especial `_compact_view_toggle.html.erb` y `_list.html.erb`—, helpers, controladores Stimulus relacionados y `test/controllers/transactions_controller_test.rb`.
 
 ## 7. Transferencias, matching y división de transacciones
 

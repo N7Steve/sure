@@ -8,6 +8,22 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     @entry = entries(:transaction)
   end
 
+  test "toggle compact view persists the preference without replacing other preferences" do
+    @user.update!(preferences: @user.preferences.merge("unrelated_preference" => true))
+
+    patch toggle_compact_view_transactions_url, headers: { "HTTP_REFERER" => transactions_url }
+
+    assert_redirected_to transactions_url
+    assert @user.reload.transactions_compact_view?
+    assert_equal true, @user.preferences["unrelated_preference"]
+
+    patch toggle_compact_view_transactions_url, headers: { "HTTP_REFERER" => transactions_url }
+
+    assert_redirected_to transactions_url
+    assert_not @user.reload.transactions_compact_view?
+    assert_equal true, @user.preferences["unrelated_preference"]
+  end
+
   # Bills has always linked out to transactions. Until now nothing linked back,
   # so a transaction that settled a bill was a dead end. The link-back is part
   # of the preview-gated bills surface, so the viewer needs the flag.

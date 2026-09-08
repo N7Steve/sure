@@ -566,6 +566,26 @@ class User < ApplicationRecord
     preferences&.dig("transactions_compact_view") == true
   end
 
+  def update_transactions_preferences(prefs)
+    transaction do
+      lock!
+
+      updated_prefs = preferences.deep_dup
+      prefs.each do |key, value|
+        preference_key = "transactions_#{key}"
+
+        if value.is_a?(Hash)
+          updated_prefs[preference_key] ||= {}
+          updated_prefs[preference_key] = updated_prefs[preference_key].merge(value)
+        else
+          updated_prefs[preference_key] = value
+        end
+      end
+
+      update!(preferences: updated_prefs)
+    end
+  end
+
   def disable_modal_click_outside?
     preferences&.dig("disable_modal_click_outside") == true
   end
