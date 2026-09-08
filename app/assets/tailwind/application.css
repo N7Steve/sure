@@ -14,6 +14,38 @@
 @import "./print-report.css";
 @import "./privacy-mode.css";
 
+/* Turbo page visits use the browser's View Transition API for a short,
+   transform-free crossfade. Keeping movement out of the root transition avoids
+   making the fixed navigation and resizable sidebars appear to bounce. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes page-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  ::view-transition-old(root) {
+    animation: 100ms ease-in both page-fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation: 180ms ease-out 30ms both page-fade-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 @layer components {
   .pcr-app{
     position: static !important;

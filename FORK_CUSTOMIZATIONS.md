@@ -6,7 +6,7 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** y actualizado el **8 de septiembre de 2026** tras la integración de `upstream` y la consolidación de Agenda como producto principal:
+Inventario generado el **23 de agosto de 2026** y actualizado el **9 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal y la mejora de las transiciones de navegación:
 
 | Concepto | Valor |
 | --- | --- |
@@ -302,13 +302,14 @@ Estos cambios son propios aunque muchos estén entrelazados con las funciones an
 - Selectores buscables, multiselect con chips, selector de tags, tooltips, menús, diálogos y popovers posicionados con Floating UI.
 - Controlador de select accesible con teclado.
 - Mejoras responsive de sidebar, navegación, menú de usuario y formularios.
+- Las navegaciones Turbo entre páginas usan un fundido nativo breve, sin desplazamientos ni escalado, y lo desactivan cuando el sistema solicita movimiento reducido. Las barras laterales limitan su transición a anchura, opacidad y borde para que la restauración de su tamaño no anime otras propiedades ni provoque el antiguo efecto de rebote.
 - Toast para deshacer el descarte de insights.
 - Ajustes visuales en presupuestos, operaciones, cuentas, informes y dashboard.
 - El widget **Money In / Out** respeta el `month_start_day` configurado por la familia: cada barra y el resumen usan periodos mensuales personalizados (por ejemplo, del día 25 al 24 del mes siguiente), el periodo activo se limita a la fecha actual y los enlaces de desglose conservan exactamente ese rango. Los periodos que empiezan entre los días 1 y 15 conservan el nombre de ese mes; los que empiezan después del 15 se muestran como el mes siguiente (25 de agosto–24 de septiembre se presenta como “septiembre”). El selector mensual utiliza la misma regla para mantener coherentes la etiqueta, la barra resaltada y los totales.
 - El widget upstream de **gasto acumulado / Spending Trend** sigue exactamente la misma semántica de mes configurado que Money In / Out. Su curva actual, curva comparativa, selector, etiquetas del eje y totales se construyen con períodos personalizados; por ejemplo, septiembre comienza el 25 de agosto cuando `month_start_day = 25`. El período activo se limita a hoy, mientras que la comparación usa el período personalizado anterior completo.
 - Traducciones propias, principalmente en `en` y `es`; el diff contiene además arreglos puntuales en otros idiomas.
 
-Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker}.js`, layout principal y vistas de cuentas/transacciones.
+Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker}.js`, `app/views/layouts/shared/_head.html.erb`, `app/views/layouts/application.html.erb`, `app/assets/tailwind/application.css`, layout principal y vistas de cuentas/transacciones.
 
 Los ajustes de **Money In / Out** y **Spending Trend** comparten `dashboard_display_month` y `dashboard_period_start_for` en `app/controllers/pages_controller.rb`. Sus vistas son `app/views/pages/dashboard/_money_flow.html.erb` y `_spending_trend.html.erb`; la regresión está cubierta en `test/controllers/pages_controller_test.rb`, incluido el caso 25 de agosto–24 de septiembre.
 
