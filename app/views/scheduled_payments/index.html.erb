@@ -27,7 +27,7 @@
     <% if @view == "calendar" %>
       <%= render "scheduled_payments/calendar" %>
     <% else %>
-      <%= render "scheduled_payments/metric_cards", metrics: agenda_metrics %>
+      <%= render "scheduled_payments/monthly_summary" %>
 
       <section class="space-y-3" aria-labelledby="agenda-planning-title">
         <div>
@@ -49,7 +49,6 @@
                       <th class="py-2 font-medium"><%= t("scheduled_payments.form.category_label") %></th>
                       <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.monthly_cost") %></th>
                       <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.annual_cost") %></th>
-                      <th class="py-2 text-right font-medium"><%= t("scheduled_payments.agenda.metrics.monthly_provision") %></th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-primary">
@@ -58,7 +57,6 @@
                         <td class="py-2 text-primary"><%= scheduled_payment_category_name(row) %></td>
                         <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :monthly_amount) %></td>
                         <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :annual_amount) %></td>
-                        <td class="py-2 text-right text-primary privacy-sensitive"><%= agenda_planning_row_amount(row, :provision_amount) %></td>
                       </tr>
                     <% end %>
                   </tbody>

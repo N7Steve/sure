@@ -1,7 +1,7 @@
 class ScheduledPayment::Agenda
   VIEWS = %w[overview calendar schedules].freeze
   Day = Data.define(:date, :in_month, :occurrences)
-  PlanningRow = Data.define(:category, :currency, :monthly_amount, :annual_amount, :provision_amount, :amount_estimated)
+  PlanningRow = Data.define(:category, :currency, :monthly_amount, :annual_amount, :amount_estimated)
 
   attr_reader :family, :user, :month
 
@@ -55,10 +55,6 @@ class ScheduledPayment::Agenda
     totals_by_currency(planning_expenses, &:annualized_amount)
   end
 
-  def monthly_provisions
-    totals_by_currency(provision_expenses, &:monthly_provision_amount)
-  end
-
   def planning_breakdown
     @planning_breakdown ||= planning_expenses.group_by { |payment| [ payment.category, payment.currency ] }.map do |(category, currency), rows|
       PlanningRow.new(
@@ -66,7 +62,6 @@ class ScheduledPayment::Agenda
         currency: currency,
         monthly_amount: rows.sum(&:monthly_equivalent_amount),
         annual_amount: rows.sum(&:annualized_amount),
-        provision_amount: rows.select(&:provisionable?).sum(&:monthly_provision_amount),
         amount_estimated: rows.any?(&:amount_estimated?)
       )
     end.sort_by { |row| [ row.category&.name.to_s, row.currency ] }
@@ -122,10 +117,6 @@ class ScheduledPayment::Agenda
 
     def planning_expenses
       @planning_expenses ||= payments.select { |payment| payment.active? && payment.expense? && payment.recurring? }
-    end
-
-    def provision_expenses
-      planning_expenses.select(&:provisionable?)
     end
 
     def totals_by_currency(rows)

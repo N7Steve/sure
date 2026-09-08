@@ -17,7 +17,6 @@ en:
         pending: Pending movements
         monthly_cost: Recurring monthly cost
         annual_cost: Recurring annual cost
-        monthly_provision: Recommended monthly provision
       active_hint:
         one: "of %{count} schedule in total"
         other: "of %{count} schedules in total"
@@ -28,10 +27,13 @@ en:
       includes_estimates: "≈ Totals include amounts marked as estimates."
       monthly_cost_hint: Average monthly cost of all active recurring expenses.
       annual_cost_hint: Projected annual cost of all active recurring expenses.
-      monthly_provision_hint: Monthly amount to set aside for quarterly and annual expenses.
       category_breakdown: Breakdown by transaction category
       uncategorized: Uncategorized
       payment_provision: "Provision: %{amount} per month"
+      movement_groups:
+        expense: Expenses
+        income: Income
+        transfer: Transfers
       older_pending:
         one: "You have %{count} pending confirmation from earlier months."
         other: "You have %{count} pending confirmations from earlier months."

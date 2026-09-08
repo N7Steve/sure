@@ -17,7 +17,6 @@ es:
         pending: Movimientos pendientes
         monthly_cost: Coste recurrente mensual
         annual_cost: Coste recurrente anual
-        monthly_provision: Provisión mensual recomendada
       active_hint:
         one: "de %{count} programación en total"
         other: "de %{count} programaciones en total"
@@ -28,10 +27,13 @@ es:
       includes_estimates: "≈ Los totales incluyen importes marcados como estimados."
       monthly_cost_hint: Coste mensual medio de todos los gastos recurrentes activos.
       annual_cost_hint: Coste anual previsto de todos los gastos recurrentes activos.
-      monthly_provision_hint: Importe mensual que conviene reservar para gastos trimestrales y anuales.
       category_breakdown: Desglose por categoría del movimiento
       uncategorized: Sin categoría
       payment_provision: "Provisión: %{amount} al mes"
+      movement_groups:
+        expense: Gastos
+        income: Ingresos
+        transfer: Transferencias
       older_pending:
         one: "Tienes %{count} confirmación pendiente de meses anteriores."
         other: "Tienes %{count} confirmaciones pendientes de meses anteriores."

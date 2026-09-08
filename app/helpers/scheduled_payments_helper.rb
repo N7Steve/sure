@@ -13,9 +13,12 @@ module ScheduledPaymentsHelper
 
   def agenda_metrics
     [
-      { key: "active", values: [ @agenda.active_count ], hint: t("scheduled_payments.agenda.active_hint", count: @agenda.payments.size) },
-      { key: "remaining", values: @agenda.remaining_expenses.map { |money| format_money(money) }, hint: t("scheduled_payments.agenda.remaining_hint") },
-      { key: "pending", values: [ @agenda.pending_count ], hint: t("scheduled_payments.agenda.pending_hint") }
+      { key: "active", icon: "calendar-clock", values: [ @agenda.active_count ],
+        hint: t("scheduled_payments.agenda.active_hint", count: @agenda.payments.size) },
+      { key: "remaining", icon: "receipt", values: @agenda.remaining_expenses.map { |money| format_money(money) },
+        hint: t("scheduled_payments.agenda.remaining_hint") },
+      { key: "pending", icon: "list-checks", values: [ @agenda.pending_count ],
+        hint: t("scheduled_payments.agenda.pending_hint") }
     ]
   end
 
@@ -24,9 +27,7 @@ module ScheduledPaymentsHelper
       { key: "monthly_cost", values: @agenda.recurring_monthly_expenses.map { |money| format_money(money) },
         hint: t("scheduled_payments.agenda.monthly_cost_hint") },
       { key: "annual_cost", values: @agenda.recurring_annual_expenses.map { |money| format_money(money) },
-        hint: t("scheduled_payments.agenda.annual_cost_hint") },
-      { key: "monthly_provision", values: @agenda.monthly_provisions.map { |money| format_money(money) },
-        hint: t("scheduled_payments.agenda.monthly_provision_hint") }
+        hint: t("scheduled_payments.agenda.annual_cost_hint") }
     ]
   end
 

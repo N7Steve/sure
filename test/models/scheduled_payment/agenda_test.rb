@@ -42,13 +42,10 @@ class ScheduledPayment::AgendaTest < ActiveSupport::TestCase
       agenda.recurring_monthly_expenses.sort_by(&:currency)
     assert_equal [ Money.new(2640, "USD"), Money.new(1200, "EUR") ].sort_by(&:currency),
       agenda.recurring_annual_expenses.sort_by(&:currency)
-    assert_equal [ Money.new(100, "USD"), Money.new(100, "EUR") ].sort_by(&:currency),
-      agenda.monthly_provisions.sort_by(&:currency)
     assert_predicate agenda, :planning_has_estimates?
 
     housing_row = agenda.planning_breakdown.find { |row| row.category == housing }
     assert_equal BigDecimal("220"), housing_row.monthly_amount
-    assert_equal BigDecimal("100"), housing_row.provision_amount
     assert housing_row.amount_estimated
   end
 

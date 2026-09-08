@@ -1,5 +1,5 @@
 <%# locals: (metrics:) %>
-<div class="grid gap-3 md:grid-cols-3">
+<div class="grid gap-3 md:grid-cols-2">
   <% metrics.each do |metric| %>
     <%= render DS::Card.new do %>
       <h2 class="text-sm font-medium text-secondary"><%= t("scheduled_payments.agenda.metrics.#{metric[:key]}") %></h2>

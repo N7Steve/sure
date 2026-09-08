@@ -399,15 +399,19 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "Agenda shows planning metrics provisions and estimated amount markers" do
+  test "Agenda shows compact monthly and planning metrics with estimated amount markers" do
     payment = create_payment(amount: 1200, frequency: "yearly", amount_estimated: true, category: @category)
 
     get scheduled_payments_url
 
     assert_response :success
-    %w[monthly_cost annual_cost monthly_provision].each do |metric|
+    %w[active remaining pending monthly_cost annual_cost].each do |metric|
       assert_select "[data-agenda-metric=#{metric}]", count: 1
     end
+    assert_select "section[data-agenda-month-summary=true]", count: 1 do
+      assert_select "[data-agenda-metric]", count: 3
+    end
+    assert_select "[data-agenda-metric=monthly_provision]", count: 0
     assert_select "##{dom_id(payment, "occurrence_#{Date.current.iso8601}")}", text: /≈/
     assert_select "details", text: /#{Regexp.escape(I18n.t("scheduled_payments.agenda.category_breakdown"))}/
 
@@ -418,6 +422,21 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     get confirm_entry_form_scheduled_payment_url(payment), params: { scheduled_date: Date.current.iso8601 }
     assert_response :success
     assert_select "p", text: I18n.t("scheduled_payments.confirm_modal.estimated_hint")
+  end
+
+  test "Agenda separates expenses income and transfers in that order" do
+    create_payment(title: "Transfer row", payment_type: "transfer", target_account: accounts(:credit_card))
+    create_payment(title: "Income row", payment_type: "income")
+    create_payment(title: "Expense row", payment_type: "expense")
+
+    get scheduled_payments_url
+
+    assert_response :success
+    groups = css_select("[data-agenda-payment-type]")
+    assert_equal %w[expense income transfer], groups.map { |group| group["data-agenda-payment-type"] }
+    assert_includes groups[0].text, "Expense row"
+    assert_includes groups[1].text, "Income row"
+    assert_includes groups[2].text, "Transfer row"
   end
 
   test "transfer schedules use the transaction table transfer icon" do

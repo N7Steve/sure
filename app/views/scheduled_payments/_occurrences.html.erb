@@ -1,18 +1,28 @@
 <%# locals: (occurrences:) %>
-<%= render DS::Card.new(class: "overflow-hidden") do %>
-  <h2 class="mb-4 text-base font-medium text-primary"><%= t("scheduled_payments.agenda.month_payments") %></h2>
+<section class="space-y-3" aria-labelledby="agenda-month-payments-title">
+  <h2 id="agenda-month-payments-title" class="text-base font-medium text-primary"><%= t("scheduled_payments.agenda.month_payments") %></h2>
   <% if occurrences.empty? %>
-    <%= render DS::EmptyState.new(icon: "calendar-check", title: t("scheduled_payments.empty_month")) %>
+    <%= render DS::Card.new do %>
+      <%= render DS::EmptyState.new(icon: "calendar-check", title: t("scheduled_payments.empty_month")) %>
+    <% end %>
   <% else %>
-    <div class="hidden lg:grid lg:grid-cols-12 gap-3 pb-3 text-xs font-medium text-secondary">
-      <span class="col-span-4"><%= t("scheduled_payments.table.payment") %></span>
-      <span class="col-span-2"><%= t("scheduled_payments.table.date") %></span>
-      <span class="col-span-2"><%= t("scheduled_payments.table.status") %></span>
-      <span class="col-span-2 text-right"><%= t("scheduled_payments.table.amount") %></span>
-      <span class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></span>
-    </div>
-    <div class="divide-y divide-primary">
-      <%= render partial: "scheduled_payments/occurrence", collection: occurrences, as: :occurrence %>
-    </div>
+    <% %w[expense income transfer].each do |payment_type| %>
+      <% grouped_occurrences = occurrences.select { |occurrence| occurrence.scheduled_payment.payment_type == payment_type } %>
+      <% next if grouped_occurrences.empty? %>
+
+      <%= render DS::Card.new(class: "overflow-hidden", data: { agenda_payment_type: payment_type }) do %>
+        <h3 class="mb-4 text-sm font-medium text-primary"><%= t("scheduled_payments.agenda.movement_groups.#{payment_type}") %></h3>
+        <div class="hidden gap-3 pb-3 text-xs font-medium text-secondary lg:grid lg:grid-cols-12">
+          <span class="col-span-4"><%= t("scheduled_payments.table.payment") %></span>
+          <span class="col-span-2"><%= t("scheduled_payments.table.date") %></span>
+          <span class="col-span-2"><%= t("scheduled_payments.table.status") %></span>
+          <span class="col-span-2 text-right"><%= t("scheduled_payments.table.amount") %></span>
+          <span class="col-span-2 text-right"><%= t("scheduled_payments.table.actions") %></span>
+        </div>
+        <div class="divide-y divide-primary">
+          <%= render partial: "scheduled_payments/occurrence", collection: grouped_occurrences, as: :occurrence %>
+        </div>
+      <% end %>
+    <% end %>
   <% end %>
-<% end %>
+</section>
