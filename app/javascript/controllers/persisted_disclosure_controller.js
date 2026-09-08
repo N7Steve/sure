@@ -11,12 +11,14 @@ export default class extends Controller {
   static values = { key: String };
 
   connect() {
-    const stored = localStorage.getItem(this.storageKey);
-    if (stored !== null) this.element.open = stored === "true";
+    const stored = this.storedState;
+    if (stored !== null) {
+      this.element.open = stored === "true";
+    } else {
+      this.persistState();
+    }
 
-    this.toggleHandler = () => {
-      localStorage.setItem(this.storageKey, String(this.element.open));
-    };
+    this.toggleHandler = () => this.persistState();
     this.element.addEventListener("toggle", this.toggleHandler);
   }
 
@@ -26,5 +28,21 @@ export default class extends Controller {
 
   get storageKey() {
     return `disclosure:${this.keyValue}`;
+  }
+
+  get storedState() {
+    try {
+      return localStorage.getItem(this.storageKey);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  persistState() {
+    try {
+      localStorage.setItem(this.storageKey, String(this.element.open));
+    } catch (_error) {
+      // Storage can be unavailable in private or locked-down browsing.
+    }
   }
 }

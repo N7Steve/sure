@@ -43,4 +43,14 @@ class DS::DisclosureTest < ViewComponent::TestCase
     assert_selector "details[data-controller='DS--disclosure']"
     assert_selector "details > div[data-DS--disclosure-target='content']", text: "Animated body"
   end
+
+  test "animated disclosure preserves an additional controller" do
+    render_inline(DS::Disclosure.new(
+      title: "Accounts",
+      animated: true,
+      data: { controller: "persisted-disclosure", persisted_disclosure_key_value: "accounts" }
+    )) { "Account list" }
+
+    assert_selector "details[data-controller='persisted-disclosure DS--disclosure'][data-persisted-disclosure-key-value='accounts']"
+  end
 end

@@ -2,10 +2,20 @@
 
 <div id="<%= account_group.dom_id(tab: all_tab ? :all : nil, mobile: mobile) %>">
   <% is_open = open.nil? ? account_group.accounts.any? { |account| page_active?(account_path(account)) } : open %>
-  <%= render DS::Disclosure.new(align: :left, open: is_open) do |disclosure| %>
+  <% disclosure_context = all_tab ? "all" : account_group.classification %>
+  <% disclosure_key = ["account-sidebar", Current.user.id, mobile ? "mobile" : "desktop", disclosure_context, account_group.key].join("-") %>
+  <%= render DS::Disclosure.new(
+        align: :left,
+        open: is_open,
+        animated: true,
+        data: {
+          controller: "persisted-disclosure",
+          persisted_disclosure_key_value: disclosure_key
+        }
+      ) do |disclosure| %>
     <% disclosure.with_summary_content do %>
       <div class="flex items-center gap-2">
-        <%= icon "chevron-right", class: "group-open:transform group-open:rotate-90" %>
+        <%= icon "chevron-right", class: "group-open:rotate-90 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out" %>
         <%= icon account_group.icon, class: "w-4 h-4 text-secondary" %>
         <%= tag.span class: class_names("text-sm text-primary font-medium", "animate-pulse" => account_group.syncing?) do %>
           <%= account_group.name %>
