@@ -35,17 +35,12 @@ en:
         chart_label: "Projected balance for %{account}: pessimistic, normal and optimistic scenarios"
         current_balance: Current balance
         projected_savings: Projected monthly savings
-        projected_savings_hint: Normal scenario average for this period.
         historical_savings: Unscheduled monthly trend
         scheduled_average: Scheduled monthly change
-        confidence: "%{level} confidence · %{count} completed months"
-        confidence_levels:
-          low: Low
-          medium: Medium
-          high: High
-        scheduled_count:
-          one: "%{count} Agenda movement in this period"
-          other: "%{count} Agenda movements in this period"
+        metrics_method_title: How these figures are calculated
+        projected_savings_explanation: The average monthly balance growth in the normal scenario. It is calculated by subtracting the current balance from the final projected balance and dividing the result by the selected number of months. It therefore combines Agenda with the unscheduled trend.
+        historical_savings_explanation: The average monthly effect of transactions not explained by Agenda. It uses up to 12 complete months, weights recent months more heavily and limits outliers. One-time movements, internal transfers, pending transactions and split parents are excluded.
+        scheduled_average_explanation: The net monthly effect of Agenda on this account. All scheduled income is added and expenses are subtracted; transfers subtract from the source and add to the destination. The resulting total is divided by the selected number of months.
         limited_history:
           one: Only one complete month of usable history is available. The forecast will rely mainly on Agenda.
           other: Only %{count} complete months of usable history are available. The forecast will rely mainly on Agenda.

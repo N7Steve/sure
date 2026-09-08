@@ -2,10 +2,7 @@
 
 <div class="space-y-6 pb-6 lg:pb-12">
   <header class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-medium text-primary"><%= t("scheduled_payments.agenda.title") %></h1>
-      <p class="mt-1 text-sm text-secondary"><%= t("scheduled_payments.agenda.subtitle") %></p>
-    </div>
+    <h1 class="text-xl lg:text-3xl font-medium text-primary"><%= t("scheduled_payments.agenda.title") %></h1>
     <%= render DS::Link.new(text: t("scheduled_payments.agenda.new"), icon: "plus", variant: "primary",
           href: new_scheduled_payment_path(**agenda_context_params), frame: :modal) %>
   </header>

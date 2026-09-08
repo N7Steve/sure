@@ -84,19 +84,33 @@
       <%= render DS::Card.new(class: "gap-1") do %>
         <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_savings") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.projected_monthly_savings) %></p>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_savings_hint") %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
         <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.historical_savings") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.historical_monthly_savings) %></p>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.confidence", level: t("scheduled_payments.agenda.forecast.confidence_levels.#{@forecast.confidence}"), count: @forecast.history_months) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
         <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.scheduled_average") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.scheduled_monthly_change) %></p>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.scheduled_count", count: @forecast.scheduled_event_count) %></p>
       <% end %>
     </div>
+
+    <%= render DS::Disclosure.new(title: t("scheduled_payments.agenda.forecast.metrics_method_title"), align: "left") do %>
+      <dl class="space-y-3 text-sm">
+        <div>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.projected_savings") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_savings_explanation") %></dd>
+        </div>
+        <div>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.historical_savings") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.historical_savings_explanation") %></dd>
+        </div>
+        <div>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.scheduled_average") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.scheduled_average_explanation") %></dd>
+        </div>
+      </dl>
+    <% end %>
 
     <%= render DS::Disclosure.new(title: t("scheduled_payments.agenda.forecast.method_title"), align: "left") do %>
       <div class="space-y-2 text-sm text-secondary">

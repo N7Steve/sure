@@ -35,17 +35,12 @@ es:
         chart_label: "Previsión de saldo de %{account}: escenarios pesimista, normal y optimista"
         current_balance: Saldo actual
         projected_savings: Ahorro mensual previsto
-        projected_savings_hint: Media del escenario normal para este periodo.
         historical_savings: Tendencia mensual no programada
         scheduled_average: Variación mensual programada
-        confidence: "Confianza %{level} · %{count} meses completos"
-        confidence_levels:
-          low: baja
-          medium: media
-          high: alta
-        scheduled_count:
-          one: "%{count} movimiento de Agenda en este periodo"
-          other: "%{count} movimientos de Agenda en este periodo"
+        metrics_method_title: Cómo se calculan estos importes
+        projected_savings_explanation: Es el crecimiento mensual medio del saldo en el escenario normal. Se calcula restando el saldo actual al saldo final previsto y dividiendo el resultado entre los meses seleccionados. Por tanto, combina Agenda con la tendencia no programada.
+        historical_savings_explanation: Es el efecto mensual medio de las transacciones que no explica Agenda. Usa hasta 12 meses completos, da más peso a los recientes y limita los valores atípicos. Excluye movimientos puntuales, transferencias internas, pendientes y padres de divisiones.
+        scheduled_average_explanation: Es el efecto mensual neto de Agenda sobre esta cuenta. Suma los ingresos programados y resta los gastos; las transferencias restan en el origen y suman en el destino. El total resultante se divide entre los meses seleccionados.
         limited_history:
           one: Sólo hay un mes completo de historial aprovechable. La previsión se apoyará principalmente en Agenda.
           other: Sólo hay %{count} meses completos de historial aprovechable. La previsión se apoyará principalmente en Agenda.

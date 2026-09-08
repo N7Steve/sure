@@ -27,13 +27,6 @@ class ScheduledPayment::Forecast
     historical_monthly_changes.size
   end
 
-  def confidence
-    return :low if history_months < 3
-    return :medium if history_months < 6
-
-    :high
-  end
-
   def current_balance
     Money.new(account.balance, account.currency)
   end

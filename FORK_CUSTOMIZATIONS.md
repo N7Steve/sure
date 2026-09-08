@@ -112,7 +112,7 @@ Cobertura añadida en `test/models/scheduled_payment_robustness_test.rb` y ampli
 
 ### Agenda: sección propia de pagos programados
 
-- **Agenda** es el nombre corto de producto. Se accede desde la navegación principal de escritorio y móvil, en `/scheduled_payments`, con el layout de aplicación. Sustituye la pestaña de Transacciones y la entrada de Ajustes.
+- **Agenda** es el nombre corto de producto. Se accede desde la navegación principal de escritorio y móvil, en `/scheduled_payments`, con el layout de aplicación. El encabezado y el breadcrumb muestran únicamente `Agenda`; `scheduled_payments` se conserva como nombre técnico de rutas y subsistema para reducir conflictos con upstream. Sustituye la pestaña de Transacciones y la entrada de Ajustes.
 - **Resumen** reúne en una tarjeta compacta las programaciones activas (y total), los gastos pendientes de pagar en el mes seleccionado y el número de movimientos pendientes. Las tablas mensuales separan, en este orden, gastos, ingresos y transferencias, y conservan fechas, estados y acciones de confirmar, omitir, restaurar, deshacer y editar.
 - **Por pagar este mes** sólo suma gastos abiertos, tanto proyectados como pendientes persistidos. Excluye confirmados, omitidos, ingresos y transferencias. Cada moneda se muestra por separado; la consulta no obtiene tipos de cambio. Los importes confirmados muestran el movimiento real, incluyendo ajustes al confirmar.
 - **Una sola vez** permite preparar un movimiento futuro puntual. Proyecta una única fecha y la programación queda completada después de generarla, confirmarla u omitirla; restaurar una ocurrencia futura vuelve a activarla.

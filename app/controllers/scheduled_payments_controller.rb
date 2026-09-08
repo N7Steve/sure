@@ -1,6 +1,7 @@
 class ScheduledPaymentsController < ApplicationController
   layout -> { turbo_frame_request? ? false : "application" }
   rescue_from ArgumentError, ActiveRecord::RecordInvalid, Money::ConversionError, with: :invalid_payment_operation
+  before_action :set_agenda_breadcrumbs
 
   def index
     @view = ScheduledPayment::Agenda::VIEWS.include?(params[:view]) ? params[:view] : "overview"
@@ -228,6 +229,13 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   private
+
+  def set_agenda_breadcrumbs
+    @breadcrumbs = [
+      [ t("breadcrumbs.home"), root_path ],
+      [ t("scheduled_payments.agenda.title"), nil ]
+    ]
+  end
 
   def prepare_forecast
     @forecast_accounts = Current.family.accounts.accessible_by(Current.user).visible

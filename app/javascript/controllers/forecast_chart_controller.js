@@ -183,8 +183,8 @@ export default class extends Controller {
       .attr("fill", "none")
       .attr("pointer-events", "all")
       .on("mousemove", (event) => {
-        const [cursorX] = d3.pointer(event);
-        const index = bisect(points, x.invert(cursorX));
+        const [chartX] = d3.pointer(event);
+        const index = bisect(points, x.invert(chartX));
         const point = points[Math.max(0, Math.min(index, points.length - 1))];
         group.selectAll(".forecast-guideline,.forecast-dot").remove();
         group
@@ -221,13 +221,21 @@ export default class extends Controller {
             .attr("class", "font-medium tabular-nums")
             .text(point[key].formatted);
         }
+        const bounds = this.element.getBoundingClientRect();
+        const tooltipNode = tooltip.node();
+        const cursorX = event.clientX - bounds.left;
+        const cursorY = event.clientY - bounds.top;
         const tooltipX = Math.min(
-          event.pageX + 10,
-          document.body.clientWidth - 230,
+          cursorX + 12,
+          bounds.width - tooltipNode.offsetWidth - 8,
+        );
+        const tooltipY = Math.min(
+          cursorY + 12,
+          bounds.height - tooltipNode.offsetHeight - 8,
         );
         tooltip
           .style("left", `${Math.max(8, tooltipX)}px`)
-          .style("top", `${event.pageY - 20}px`)
+          .style("top", `${Math.max(8, tooltipY)}px`)
           .style("opacity", 1);
       })
       .on("mouseleave", () => {

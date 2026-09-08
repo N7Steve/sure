@@ -29,6 +29,12 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     get scheduled_payments_url
     assert_response :success
     assert_includes response.body, I18n.t("scheduled_payments.agenda.title")
+    assert_not_includes response.body, I18n.t("scheduled_payments.agenda.subtitle")
+    assert_select "[data-breadcrumbs]" do
+      assert_select "a", text: I18n.t("breadcrumbs.home")
+      assert_select "span", text: I18n.t("scheduled_payments.agenda.title")
+    end
+    assert_select "h1", text: I18n.t("scheduled_payments.agenda.title")
     assert_includes response.body, sp.title
   end
 
@@ -42,6 +48,8 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=forecast-chart]", count: 1
     assert_select "[data-forecast-chart-data-value]", count: 1
     assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.horizons.6")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.metrics_method_title")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.projected_savings_explanation")
   end
 
   test "forecast falls back from an inaccessible account and invalid horizon" do
