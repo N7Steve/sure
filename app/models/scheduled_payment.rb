@@ -267,24 +267,22 @@ class ScheduledPayment < ApplicationRecord
 
     source_result = :not_provided
     if source_entry
-      source_entry.with_lock do
-        source_result = link_historical_source_entry!(source_entry)
-        linked_count += 1 if source_result == :linked
-      end
+      # Entry#transaction is the delegated financial transaction reader, so
+      # Entry#with_lock never yields. Use the payment's enclosing transaction
+      # and acquire the row lock directly before reading or writing links.
+      source_entry.lock!
+      source_result = link_historical_source_entry!(source_entry)
+      linked_count += 1 if source_result == :linked
     end
 
     candidates = candidates.where.not(id: source_entry.id) if source_entry
     candidate_count = candidates.count
     candidate_results = Hash.new(0)
-    # This relation is already tightly scoped and preloaded. Iterating it as a
-    # normal collection also works reliably with the UUID primary keys used by
-    # entries; batch iteration was returning no rows despite COUNT finding them.
     candidates.each do |entry|
-      entry.with_lock do
-        result = link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
-        candidate_results[result] += 1
-        linked_count += 1 if result == :linked
-      end
+      entry.lock!
+      result = link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
+      candidate_results[result] += 1
+      linked_count += 1 if result == :linked
     end
 
     # Do not jump over an unpaid gap just because a later charge was linked.

@@ -161,6 +161,60 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name='scheduled_payment[from_entry_id]'][value=?]", entry.id.to_s, count: 1
   end
 
+  test "create from Suno links the source and seven historical EUR candidates" do
+    travel_to Date.new(2026, 9, 9) do
+      @account.update!(name: "Bankinter Nómina", currency: "EUR")
+      @category.update!(name: "Suscripciones y Digital")
+      merchant = @family.merchants.create!(name: "Suno")
+      entries = (2..9).map do |month|
+        @account.entries.create!(
+          id: month == 9 ? "adfc406c-8c75-4b3f-8240-7045d1af486f" : SecureRandom.uuid,
+          name: "Suno", date: Date.new(2026, month, 6),
+          amount: month == 9 ? "11.22" : "11.50", currency: "EUR",
+          entryable: Transaction.new(category: @category, merchant: merchant)
+        )
+      end
+      source = entries.last
+
+      get new_scheduled_payment_url(from_entry_id: source.id)
+      assert_response :success
+      assert_select "input[type=hidden][name='scheduled_payment[from_entry_id]'][value=?]", source.id, count: 1
+
+      assert_difference -> { ScheduledPaymentEntry.confirmed.count }, 8 do
+        post scheduled_payments_url, params: {
+          scheduled_payment: payment_attributes.merge(
+            from_entry_id: source.id, title: "Suno", amount: "11.22", currency: "EUR",
+            amount_estimated: "1", start_date: "2026-10-06",
+            category_id: @category.id, merchant_id: merchant.id,
+            tag_ids: [ "" ], auto_confirm: "0"
+          )
+        }
+        assert_redirected_to scheduled_payments_url
+      end
+
+      payment = ScheduledPayment.order(:created_at).last
+      assert_equal entries.map(&:id).sort, payment.scheduled_payment_entries.confirmed.pluck(:entry_id).sort
+      assert_equal Date.new(2026, 10, 6), payment.next_run_date
+      entries.each do |entry|
+        assert_predicate entry.reload, :from_scheduled_payment?
+        assert_equal payment, entry.source_scheduled_payment
+      end
+
+      get transactions_url, params: { q: { search: "Suno" } }
+      assert_response :success
+      entries.each do |entry|
+        assert_select "turbo-frame#entry_#{entry.id}" do
+          assert_select "span[title=?]", I18n.t("transactions.transaction.scheduled_payment_tooltip"),
+            text: I18n.t("transactions.transaction.scheduled_payment")
+        end
+      end
+
+      assert_no_difference -> { ScheduledPaymentEntry.count } do
+        assert_equal 0, payment.link_matching_entries!(@user, source_entry_id: source.id)
+      end
+    end
+  end
+
   test "create supports one-time movements and estimated amounts" do
     future_date = 2.months.from_now.to_date
 
