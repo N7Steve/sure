@@ -386,6 +386,38 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
     end
   end
 
+  test "link_matching_entries! always considers the transaction it was created from" do
+    travel_to Date.new(2026, 9, 9) do
+      source = create_historical_transaction(
+        name: "Provider-specific Suno description",
+        date: Date.new(2026, 9, 6),
+        amount: BigDecimal("11.22")
+      )
+      sp = @family.scheduled_payments.create!(
+        account: @account,
+        category: @category,
+        merchant: merchants(:netflix),
+        tags: [ tags(:one) ],
+        title: "Suno",
+        amount: BigDecimal("11.50"),
+        amount_estimated: true,
+        currency: "USD",
+        frequency: "monthly",
+        start_date: Date.new(2026, 10, 6),
+        next_run_date: Date.new(2026, 10, 6),
+        payment_type: "expense"
+      )
+
+      assert_equal 1, sp.link_matching_entries!(
+        users(:family_admin),
+        source_entry_id: source.id
+      )
+
+      assert_equal source.id, sp.scheduled_payment_entries.confirmed.sole.entry_id
+      assert_equal Date.new(2026, 10, 6), sp.reload.next_run_date
+    end
+  end
+
   test "link_matching_entries! uses five percent for fixed and forty percent for estimated amounts" do
     travel_to Date.new(2026, 9, 9) do
       fixed_inside = create_historical_transaction(

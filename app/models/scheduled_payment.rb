@@ -227,18 +227,19 @@ class ScheduledPayment < ApplicationRecord
   # Links existing entries that match this SP's pattern to create confirmed SPEs.
   # Searches by: same name, account, category, merchant, tags and currency;
   # compatible amount and date within the historical schedule tolerance.
-  def link_matching_entries!(user)
+  def link_matching_entries!(user, source_entry_id: nil)
     return unless persisted?
 
     with_lock do
       ensure_writable_by!(user)
-      link_historical_entries!
+      source_entry = find_historical_source_entry(user, source_entry_id)
+      link_historical_entries!(source_entry: source_entry)
     end
   end
 
   private
 
-  def link_historical_entries!
+  def link_historical_entries!(source_entry: nil)
     # A future start date controls generation, but must not prevent linking the
     # existing transaction from which the schedule was created or its history.
     amount_value = amount.abs
@@ -259,31 +260,22 @@ class ScheduledPayment < ApplicationRecord
       .where(transactions: { category_id: category_id, merchant_id: merchant_id })
       .preload(entryable: :tags)
 
+    linked_count = 0
+
+    if source_entry
+      source_entry.with_lock do
+        linked_count += 1 if link_historical_entry!(
+          source_entry,
+          expected_tag_ids: expected_tag_ids,
+          enforce_identity: false
+        )
+      end
+    end
+
+    candidates = candidates.where.not(id: source_entry.id) if source_entry
     candidates.find_each do |entry|
       entry.with_lock do
-        # Skip if already linked to any SP.
-        next if entry.from_scheduled_payment?
-        next unless entry.entryable.tags.map { |tag| tag.id.to_s }.sort == expected_tag_ids
-        transfer = entry.entryable.transfer
-        if transfer?
-          next unless transfer && transfer.from_account.id == account_id && transfer.to_account.id == target_account_id
-          next if transfer.inflow_transaction.entry.from_scheduled_payment?
-        else
-          next if transfer
-        end
-
-        search_range = (entry.date - HISTORICAL_DATE_TOLERANCE_DAYS.days)..
-          (entry.date + HISTORICAL_DATE_TOLERANCE_DAYS.days)
-        matching_occurrences = schedule_dates_in(search_range)
-        next if matching_occurrences.empty?
-
-        nearest_date = matching_occurrences.min_by { |date| (date - entry.date).abs }
-        spe = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
-        next if spe.persisted? && !spe.pending?
-
-        spe.assign_attributes(status: "confirmed", entry: entry, rejection_reason: nil)
-        spe.transfer_entry = transfer.inflow_transaction.entry if transfer
-        spe.save!
+        linked_count += 1 if link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
       end
     end
 
@@ -291,6 +283,52 @@ class ScheduledPayment < ApplicationRecord
     while active? && scheduled_payment_entries.confirmed.exists?(scheduled_date: next_run_date)
       advance_next_run_date!(count_occurrence: false)
     end
+
+    Rails.logger.info("Scheduled payment historical matching completed: payment=#{id} linked=#{linked_count}")
+    linked_count
+  end
+
+  def find_historical_source_entry(user, source_entry_id)
+    return if source_entry_id.blank?
+
+    family.entries
+      .joins(:account)
+      .merge(Account.writable_by(user))
+      .where(entryable_type: "Transaction")
+      .find(source_entry_id)
+  end
+
+  def link_historical_entry!(entry, expected_tag_ids:, enforce_identity: true)
+    return false if entry.from_scheduled_payment?
+    return false unless entry.account_id == account_id && entry.currency == currency
+    correct_direction = income? ? entry.amount.negative? : entry.amount >= 0
+    return false unless correct_direction
+    return false if enforce_identity && entry.entryable.tags.map { |tag| tag.id.to_s }.sort != expected_tag_ids
+
+    transfer = entry.entryable.transfer
+    if transfer?
+      correct_accounts = transfer &&
+        transfer.from_account.id == account_id &&
+        transfer.to_account.id == target_account_id
+      return false unless correct_accounts
+      return false if transfer.inflow_transaction.entry.from_scheduled_payment?
+    elsif transfer
+      return false
+    end
+
+    search_range = (entry.date - HISTORICAL_DATE_TOLERANCE_DAYS.days)..
+      (entry.date + HISTORICAL_DATE_TOLERANCE_DAYS.days)
+    matching_occurrences = schedule_dates_in(search_range)
+    return false if matching_occurrences.empty?
+
+    nearest_date = matching_occurrences.min_by { |date| (date - entry.date).abs }
+    scheduled_entry = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
+    return false if scheduled_entry.persisted? && !scheduled_entry.pending?
+
+    scheduled_entry.assign_attributes(status: "confirmed", entry: entry, rejection_reason: nil)
+    scheduled_entry.transfer_entry = transfer.inflow_transaction.entry if transfer
+    scheduled_entry.save!
+    true
   end
 
   def historical_amount_tolerance

@@ -65,7 +65,7 @@ class ScheduledPaymentsController < ApplicationController
       # Link matching historical entries (best-effort, non-blocking)
       if @from_entry_id.present?
         begin
-          @scheduled_payment.link_matching_entries!(Current.user)
+          @scheduled_payment.link_matching_entries!(Current.user, source_entry_id: @from_entry_id)
         rescue => e
           Rails.logger.error("Failed to link matching entries for SP #{@scheduled_payment.id}: #{e.class} - #{e.message}")
         end

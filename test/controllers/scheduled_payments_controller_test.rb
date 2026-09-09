@@ -113,11 +113,11 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     travel_to Date.new(2026, 9, 9) do
       tag = tags(:one)
       merchant = merchants(:netflix)
-      transaction = Transaction.create!(category: @category, merchant: merchant, tags: [ tag ])
+      transaction = Transaction.create!
       entry = @family.entries.create!(
         account: @account,
         date: Date.new(2026, 9, 6),
-        name: "Suno",
+        name: "Provider-specific Suno description",
         amount: BigDecimal("11.22"),
         currency: @account.currency,
         entryable: transaction
