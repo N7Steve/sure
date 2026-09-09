@@ -402,16 +402,14 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
         amount: BigDecimal("11.50"),
         amount_estimated: true,
         currency: "USD",
+        from_entry_id: source.id,
         frequency: "monthly",
         start_date: Date.new(2026, 10, 20),
         next_run_date: Date.new(2026, 10, 20),
         payment_type: "expense"
       )
 
-      assert_equal 1, sp.link_matching_entries!(
-        users(:family_admin),
-        source_entry_id: source.id
-      )
+      assert_equal 1, sp.link_matching_entries!(users(:family_admin))
 
       assert_equal source.id, sp.scheduled_payment_entries.confirmed.sole.entry_id
       assert_equal Date.new(2026, 10, 20), sp.reload.next_run_date

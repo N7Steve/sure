@@ -284,7 +284,7 @@ class ScheduledPaymentsController < ApplicationController
       :title, :amount, :currency, :frequency,
       :start_date, :end_date, :account_id, :category_id,
       :merchant_id, :target_account_id, :payment_type, :auto_confirm, :amount_estimated,
-      tag_ids: []
+      :from_entry_id, tag_ids: []
     )
     %i[account_id target_account_id].each do |key|
       Current.family.accounts.writable_by(Current.user).find(attributes[key]) if attributes[key].present?

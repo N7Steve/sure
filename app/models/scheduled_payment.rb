@@ -1,6 +1,8 @@
 class ScheduledPayment < ApplicationRecord
   include Monetizable
 
+  attr_accessor :from_entry_id
+
   HISTORICAL_DATE_TOLERANCE_DAYS = 5
   FIXED_AMOUNT_TOLERANCE = BigDecimal("0.05")
   ESTIMATED_AMOUNT_TOLERANCE = BigDecimal("0.40")
@@ -232,6 +234,7 @@ class ScheduledPayment < ApplicationRecord
 
     with_lock do
       ensure_writable_by!(user)
+      source_entry_id ||= from_entry_id
       source_entry = find_historical_source_entry(user, source_entry_id)
       link_historical_entries!(source_entry: source_entry)
     end
@@ -273,7 +276,10 @@ class ScheduledPayment < ApplicationRecord
     candidates = candidates.where.not(id: source_entry.id) if source_entry
     candidate_count = candidates.count
     candidate_results = Hash.new(0)
-    candidates.find_each do |entry|
+    # This relation is already tightly scoped and preloaded. Iterating it as a
+    # normal collection also works reliably with the UUID primary keys used by
+    # entries; batch iteration was returning no rows despite COUNT finding them.
+    candidates.each do |entry|
       entry.with_lock do
         result = link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
         candidate_results[result] += 1
