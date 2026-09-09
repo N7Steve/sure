@@ -57,15 +57,16 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def create
-    @from_entry_id = params.dig(:scheduled_payment, :from_entry_id).presence
+    source_entry_id = params.require(:scheduled_payment)[:from_entry_id].presence
+    @from_entry_id = source_entry_id
     @scheduled_payment = Current.family.scheduled_payments.build(scheduled_payment_params)
     @scheduled_payment.next_run_date ||= @scheduled_payment.start_date
 
     if @scheduled_payment.save
       # Link matching historical entries (best-effort, non-blocking)
-      if @from_entry_id.present?
+      if source_entry_id.present?
         begin
-          @scheduled_payment.link_matching_entries!(Current.user, source_entry_id: @from_entry_id)
+          @scheduled_payment.link_matching_entries!(Current.user, source_entry_id: source_entry_id)
         rescue => e
           Rails.logger.error("Failed to link matching entries for SP #{@scheduled_payment.id}: #{e.class} - #{e.message}")
         end

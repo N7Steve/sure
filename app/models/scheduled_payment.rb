@@ -272,9 +272,12 @@ class ScheduledPayment < ApplicationRecord
 
     candidates = candidates.where.not(id: source_entry.id) if source_entry
     candidate_count = candidates.count
+    candidate_results = Hash.new(0)
     candidates.find_each do |entry|
       entry.with_lock do
-        linked_count += 1 if link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
+        result = link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
+        candidate_results[result] += 1
+        linked_count += 1 if result == :linked
       end
     end
 
@@ -285,7 +288,8 @@ class ScheduledPayment < ApplicationRecord
 
     Rails.logger.info(
       "Scheduled payment historical matching completed: " \
-        "payment=#{id} source=#{source_result} candidates=#{candidate_count} linked=#{linked_count}"
+        "payment=#{id} source=#{source_result} candidates=#{candidate_count} " \
+        "candidate_results=#{candidate_results.sort.to_h} linked=#{linked_count}"
     )
     linked_count
   end
@@ -301,36 +305,36 @@ class ScheduledPayment < ApplicationRecord
   end
 
   def link_historical_entry!(entry, expected_tag_ids:)
-    return false if entry.from_scheduled_payment?
-    return false unless entry.account_id == account_id && entry.currency == currency
+    return :already_linked if entry.from_scheduled_payment?
+    return :account_or_currency unless entry.account_id == account_id && entry.currency == currency
     correct_direction = income? ? entry.amount.negative? : entry.amount >= 0
-    return false unless correct_direction
-    return false if entry.entryable.tags.map { |tag| tag.id.to_s }.sort != expected_tag_ids
+    return :direction unless correct_direction
+    return :tags if entry.entryable.tags.map { |tag| tag.id.to_s }.sort != expected_tag_ids
 
     transfer = entry.entryable.transfer
     if transfer?
       correct_accounts = transfer &&
         transfer.from_account.id == account_id &&
         transfer.to_account.id == target_account_id
-      return false unless correct_accounts
-      return false if transfer.inflow_transaction.entry.from_scheduled_payment?
+      return :transfer_accounts unless correct_accounts
+      return :already_linked if transfer.inflow_transaction.entry.from_scheduled_payment?
     elsif transfer
-      return false
+      return :unexpected_transfer
     end
 
     search_range = (entry.date - HISTORICAL_DATE_TOLERANCE_DAYS.days)..
       (entry.date + HISTORICAL_DATE_TOLERANCE_DAYS.days)
     matching_occurrences = schedule_dates_in(search_range)
-    return false if matching_occurrences.empty?
+    return :date if matching_occurrences.empty?
 
     nearest_date = matching_occurrences.min_by { |date| (date - entry.date).abs }
     scheduled_entry = scheduled_payment_entries.find_or_initialize_by(scheduled_date: nearest_date)
-    return false if scheduled_entry.persisted? && !scheduled_entry.pending?
+    return :occupied if scheduled_entry.persisted? && !scheduled_entry.pending?
 
     scheduled_entry.assign_attributes(status: "confirmed", entry: entry, rejection_reason: nil)
     scheduled_entry.transfer_entry = transfer.inflow_transaction.entry if transfer
     scheduled_entry.save!
-    true
+    :linked
   end
 
   # The user explicitly selected this transaction as the source of the
