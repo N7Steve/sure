@@ -403,8 +403,8 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
         amount_estimated: true,
         currency: "USD",
         frequency: "monthly",
-        start_date: Date.new(2026, 10, 6),
-        next_run_date: Date.new(2026, 10, 6),
+        start_date: Date.new(2026, 10, 20),
+        next_run_date: Date.new(2026, 10, 20),
         payment_type: "expense"
       )
 
@@ -414,7 +414,7 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       )
 
       assert_equal source.id, sp.scheduled_payment_entries.confirmed.sole.entry_id
-      assert_equal Date.new(2026, 10, 6), sp.reload.next_run_date
+      assert_equal Date.new(2026, 10, 20), sp.reload.next_run_date
     end
   end
 

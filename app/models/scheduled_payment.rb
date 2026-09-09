@@ -255,24 +255,23 @@ class ScheduledPayment < ApplicationRecord
       .where(currency: currency)
       .where("ABS(entries.amount) BETWEEN ? AND ?", min_amount, max_amount)
       .where(income? ? "entries.amount < 0" : "entries.amount >= 0")
-      .where("LOWER(entries.name) = LOWER(?)", title)
+      .where("TRIM(LOWER(entries.name)) = TRIM(LOWER(?))", title)
       .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
       .where(transactions: { category_id: category_id, merchant_id: merchant_id })
       .preload(entryable: :tags)
 
     linked_count = 0
 
+    source_result = :not_provided
     if source_entry
       source_entry.with_lock do
-        linked_count += 1 if link_historical_entry!(
-          source_entry,
-          expected_tag_ids: expected_tag_ids,
-          enforce_identity: false
-        )
+        source_result = link_historical_source_entry!(source_entry)
+        linked_count += 1 if source_result == :linked
       end
     end
 
     candidates = candidates.where.not(id: source_entry.id) if source_entry
+    candidate_count = candidates.count
     candidates.find_each do |entry|
       entry.with_lock do
         linked_count += 1 if link_historical_entry!(entry, expected_tag_ids: expected_tag_ids)
@@ -284,7 +283,10 @@ class ScheduledPayment < ApplicationRecord
       advance_next_run_date!(count_occurrence: false)
     end
 
-    Rails.logger.info("Scheduled payment historical matching completed: payment=#{id} linked=#{linked_count}")
+    Rails.logger.info(
+      "Scheduled payment historical matching completed: " \
+        "payment=#{id} source=#{source_result} candidates=#{candidate_count} linked=#{linked_count}"
+    )
     linked_count
   end
 
@@ -298,12 +300,12 @@ class ScheduledPayment < ApplicationRecord
       .find(source_entry_id)
   end
 
-  def link_historical_entry!(entry, expected_tag_ids:, enforce_identity: true)
+  def link_historical_entry!(entry, expected_tag_ids:)
     return false if entry.from_scheduled_payment?
     return false unless entry.account_id == account_id && entry.currency == currency
     correct_direction = income? ? entry.amount.negative? : entry.amount >= 0
     return false unless correct_direction
-    return false if enforce_identity && entry.entryable.tags.map { |tag| tag.id.to_s }.sort != expected_tag_ids
+    return false if entry.entryable.tags.map { |tag| tag.id.to_s }.sort != expected_tag_ids
 
     transfer = entry.entryable.transfer
     if transfer?
@@ -329,6 +331,34 @@ class ScheduledPayment < ApplicationRecord
     scheduled_entry.transfer_entry = transfer.inflow_transaction.entry if transfer
     scheduled_entry.save!
     true
+  end
+
+  # The user explicitly selected this transaction as the source of the
+  # schedule. Do not make that deliberate choice pass through the heuristic
+  # filters used to discover additional history.
+  def link_historical_source_entry!(entry)
+    return :already_linked if entry.from_scheduled_payment?
+
+    transfer = entry.entryable.transfer
+    transfer_entry = transfer&.inflow_transaction&.entry
+    return :already_linked if transfer_entry&.from_scheduled_payment?
+
+    search_range = (entry.date - HISTORICAL_DATE_TOLERANCE_DAYS.days)..
+      (entry.date + HISTORICAL_DATE_TOLERANCE_DAYS.days)
+    scheduled_date = schedule_dates_in(search_range).min_by { |date| (date - entry.date).abs }
+    scheduled_date ||= entry.date
+
+    scheduled_entry = scheduled_payment_entries.find_or_initialize_by(scheduled_date: scheduled_date)
+    return :occupied if scheduled_entry.persisted? && !scheduled_entry.pending?
+
+    scheduled_entry.assign_attributes(
+      status: "confirmed",
+      entry: entry,
+      transfer_entry: transfer_entry,
+      rejection_reason: nil
+    )
+    scheduled_entry.save!
+    :linked
   end
 
   def historical_amount_tolerance
