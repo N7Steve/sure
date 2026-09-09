@@ -25,6 +25,8 @@ export default class extends Controller {
   connect() {
     this._connected = true;
     this._closing = false;
+    this._submittingAfterClose = false;
+    this._pendingSubmit = false;
     this._priorFocus = null;
     this._onKeydown = this.#onKeydown.bind(this);
     this._onClose = this.#onClose.bind(this);
@@ -101,11 +103,42 @@ export default class extends Controller {
   }
 
   close() {
-    if (!this.element.open || this._closing) return;
+    return this.#close();
+  }
+
+  closeBeforeSubmit(event) {
+    if (this._submittingAfterClose) return;
+
+    event.preventDefault();
+    if (this._pendingSubmit) return;
+
+    this._pendingSubmit = true;
+    const form = event.target;
+    const submitter = event.submitter;
+
+    this.#close({ clearFrame: false, reload: false }).then((closed) => {
+      this._pendingSubmit = false;
+      if (!closed || !form.isConnected) return;
+
+      this._submittingAfterClose = true;
+      try {
+        if (submitter) {
+          form.requestSubmit(submitter);
+        } else {
+          form.requestSubmit();
+        }
+      } finally {
+        this._submittingAfterClose = false;
+      }
+    });
+  }
+
+  #close({ clearFrame = true, reload = true } = {}) {
+    if (!this.element.open || this._closing) return Promise.resolve(false);
 
     if (this.#prefersReducedMotion()) {
-      this.#finishClose();
-      return;
+      this.#finishClose({ clearFrame, reload });
+      return Promise.resolve(true);
     }
 
     this._closing = true;
@@ -119,11 +152,14 @@ export default class extends Controller {
       { duration: CLOSE_DURATION, easing: EASING },
     );
 
-    Promise.allSettled([
+    return Promise.allSettled([
       this._contentAnimation.finished,
       this._backdropAnimation.finished,
     ]).then(() => {
-      if (this._connected && this._closing) this.#finishClose();
+      if (!this._connected || !this._closing) return false;
+
+      this.#finishClose({ clearFrame, reload });
+      return true;
     });
   }
 
@@ -195,13 +231,13 @@ export default class extends Controller {
     );
   }
 
-  #finishClose() {
+  #finishClose({ clearFrame = true, reload = true } = {}) {
     this._closing = false;
     this.#cancelAnimations();
     this.element.close();
-    this.#clearParentModalFrame();
+    if (clearFrame) this.#clearParentModalFrame();
 
-    if (this.reloadOnCloseValue) {
+    if (reload && this.reloadOnCloseValue) {
       Turbo.visit(window.location.href);
     }
   }

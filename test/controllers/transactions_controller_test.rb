@@ -129,6 +129,13 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_enqueued_with(job: SyncJob)
   end
 
+  test "new transaction dialog closes before submitting" do
+    get new_transaction_url, headers: { "Turbo-Frame" => "modal" }
+
+    assert_response :success
+    assert_select "dialog[data-action~='submit->DS--dialog#closeBeforeSubmit']"
+  end
+
   test "resubmitting the same idempotency key does not create a duplicate transaction" do
     idempotency_key = SecureRandom.uuid
     params = {

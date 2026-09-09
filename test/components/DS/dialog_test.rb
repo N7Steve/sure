@@ -10,4 +10,12 @@ class DS::DialogTest < ViewComponent::TestCase
     assert_selector "dialog > [data-DS--dialog-target='backdrop']"
     assert_selector "dialog [data-DS--dialog-target='content']", text: "Dialog body"
   end
+
+  test "can close before submitting a form" do
+    render_inline(DS::Dialog.new(close_on_submit: true, disable_frame: true)) do |dialog|
+      dialog.with_body { "Dialog body" }
+    end
+
+    assert_selector "dialog[data-action~='submit->DS--dialog#closeBeforeSubmit']"
+  end
 end
