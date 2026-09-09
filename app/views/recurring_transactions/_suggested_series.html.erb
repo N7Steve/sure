@@ -10,7 +10,8 @@
   open: true,
   data: {
     controller: "persisted-disclosure",
-    persisted_disclosure_key_value: "bills-suggested"
+    persisted_disclosure_key_value: "bills-suggested",
+    action: "turbo:before-morph-attribute->persisted-disclosure#preserveOpen"
   }
 ) do |disclosure| %>
   <% disclosure.with_summary_content do %>

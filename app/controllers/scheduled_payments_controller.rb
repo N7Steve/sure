@@ -57,12 +57,13 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def create
+    @from_entry_id = params.dig(:scheduled_payment, :from_entry_id).presence
     @scheduled_payment = Current.family.scheduled_payments.build(scheduled_payment_params)
     @scheduled_payment.next_run_date ||= @scheduled_payment.start_date
 
     if @scheduled_payment.save
       # Link matching historical entries (best-effort, non-blocking)
-      if params[:scheduled_payment][:from_entry_id].present?
+      if @from_entry_id.present?
         begin
           @scheduled_payment.link_matching_entries!(Current.user)
         rescue => e

@@ -89,6 +89,78 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @family.id, sp.family_id
   end
 
+  test "new from a transaction renders the compact tag selector" do
+    tag = tags(:one)
+    transaction = Transaction.create!(category: @category, tags: [ tag ])
+    entry = @family.entries.create!(
+      account: @account,
+      date: Date.current,
+      name: "Tagged subscription",
+      amount: 12,
+      currency: @account.currency,
+      entryable: transaction
+    )
+
+    get new_scheduled_payment_url(from_entry_id: entry.id)
+
+    assert_response :success
+    assert_select "[data-controller=tag-select]", count: 1
+    assert_select "[data-tag-select-target=option][data-tag-id=?][aria-selected=true]", tag.id.to_s, count: 1
+    assert_select "select[multiple][name='scheduled_payment[tag_ids][]']", count: 0
+  end
+
+  test "create from a transaction links history before a future start date" do
+    travel_to Date.new(2026, 9, 9) do
+      tag = tags(:one)
+      merchant = merchants(:netflix)
+      transaction = Transaction.create!(category: @category, merchant: merchant, tags: [ tag ])
+      entry = @family.entries.create!(
+        account: @account,
+        date: Date.new(2026, 9, 6),
+        name: "Suno",
+        amount: BigDecimal("11.22"),
+        currency: @account.currency,
+        entryable: transaction
+      )
+
+      post scheduled_payments_url, params: {
+        scheduled_payment: payment_attributes.merge(
+          from_entry_id: entry.id,
+          title: "Suno",
+          amount: BigDecimal("11.22"),
+          amount_estimated: true,
+          start_date: Date.new(2026, 10, 6),
+          category_id: @category.id,
+          merchant_id: merchant.id,
+          tag_ids: [ tag.id ]
+        )
+      }
+
+      payment = ScheduledPayment.order(:created_at).last
+      assert_redirected_to scheduled_payments_url
+      assert_equal entry.id, payment.scheduled_payment_entries.confirmed.sole.entry_id
+      assert_equal Date.new(2026, 10, 6), payment.next_run_date
+    end
+  end
+
+  test "invalid create from a transaction preserves the history-linking context" do
+    entry = @family.entries.create!(
+      account: @account,
+      date: Date.current,
+      name: "Source payment",
+      amount: 12,
+      currency: @account.currency,
+      entryable: Transaction.new(category: @category)
+    )
+
+    post scheduled_payments_url, params: {
+      scheduled_payment: payment_attributes.merge(from_entry_id: entry.id, title: "")
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "input[type=hidden][name='scheduled_payment[from_entry_id]'][value=?]", entry.id.to_s, count: 1
+  end
+
   test "create supports one-time movements and estimated amounts" do
     future_date = 2.months.from_now.to_date
 

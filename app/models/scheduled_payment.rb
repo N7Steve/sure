@@ -1,6 +1,10 @@
 class ScheduledPayment < ApplicationRecord
   include Monetizable
 
+  HISTORICAL_DATE_TOLERANCE_DAYS = 5
+  FIXED_AMOUNT_TOLERANCE = BigDecimal("0.05")
+  ESTIMATED_AMOUNT_TOLERANCE = BigDecimal("0.40")
+
   belongs_to :family
   belongs_to :account
   belongs_to :category, optional: true
@@ -221,8 +225,8 @@ class ScheduledPayment < ApplicationRecord
   end
 
   # Links existing entries that match this SP's pattern to create confirmed SPEs.
-  # Searches by: same name, same account, same merchant, similar amount,
-  # and date within ±5 days of any computed occurrence date.
+  # Searches by: same name, account, category, merchant, tags and currency;
+  # compatible amount and date within the historical schedule tolerance.
   def link_matching_entries!(user)
     return unless persisted?
 
@@ -235,11 +239,13 @@ class ScheduledPayment < ApplicationRecord
   private
 
   def link_historical_entries!
-    # Build base query: same account, same name, similar amount, same currency
+    # A future start date controls generation, but must not prevent linking the
+    # existing transaction from which the schedule was created or its history.
     amount_value = amount.abs
-    tolerance = amount_value * 0.05  # 5% tolerance on amount
+    tolerance = amount_value * historical_amount_tolerance
     min_amount = amount_value - tolerance
     max_amount = amount_value + tolerance
+    expected_tag_ids = tag_ids.map(&:to_s).sort
 
     candidates = family.entries
       .where(entryable_type: "Transaction")
@@ -249,19 +255,15 @@ class ScheduledPayment < ApplicationRecord
       .where("ABS(entries.amount) BETWEEN ? AND ?", min_amount, max_amount)
       .where(income? ? "entries.amount < 0" : "entries.amount >= 0")
       .where("LOWER(entries.name) = LOWER(?)", title)
+      .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+      .where(transactions: { category_id: category_id, merchant_id: merchant_id })
+      .preload(entryable: :tags)
 
-    # If merchant is set, also filter by merchant
-    if merchant_id.present?
-      candidates = candidates
-        .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
-        .where(transactions: { merchant_id: merchant_id })
-    end
-
-    # For each candidate, check if its date is within ±5 days of any occurrence
     candidates.find_each do |entry|
       entry.with_lock do
         # Skip if already linked to any SP.
         next if entry.from_scheduled_payment?
+        next unless entry.entryable.tags.map { |tag| tag.id.to_s }.sort == expected_tag_ids
         transfer = entry.entryable.transfer
         if transfer?
           next unless transfer && transfer.from_account.id == account_id && transfer.to_account.id == target_account_id
@@ -270,8 +272,9 @@ class ScheduledPayment < ApplicationRecord
           next if transfer
         end
 
-        search_range = (entry.date - 5.days)..(entry.date + 5.days)
-        matching_occurrences = occurrences_in(search_range)
+        search_range = (entry.date - HISTORICAL_DATE_TOLERANCE_DAYS.days)..
+          (entry.date + HISTORICAL_DATE_TOLERANCE_DAYS.days)
+        matching_occurrences = schedule_dates_in(search_range)
         next if matching_occurrences.empty?
 
         nearest_date = matching_occurrences.min_by { |date| (date - entry.date).abs }
@@ -287,6 +290,38 @@ class ScheduledPayment < ApplicationRecord
     # Do not jump over an unpaid gap just because a later charge was linked.
     while active? && scheduled_payment_entries.confirmed.exists?(scheduled_date: next_run_date)
       advance_next_run_date!(count_occurrence: false)
+    end
+  end
+
+  def historical_amount_tolerance
+    amount_estimated? ? ESTIMATED_AMOUNT_TOLERANCE : FIXED_AMOUNT_TOLERANCE
+  end
+
+  def schedule_dates_in(date_range)
+    date_range.select { |date| date_on_schedule?(date) }
+  end
+
+  def date_on_schedule?(date)
+    return false if start_date.blank?
+    return false if end_date.present? && date > end_date
+
+    case frequency
+    when "once"
+      date == start_date
+    when "daily"
+      true
+    when "weekly"
+      ((date - start_date).to_i % 7).zero?
+    when "biweekly"
+      ((date - start_date).to_i % 14).zero?
+    when "monthly", "quarterly", "yearly"
+      months = { "monthly" => 1, "quarterly" => 3, "yearly" => 12 }.fetch(frequency)
+      month_offset = (date.year - start_date.year) * 12 + date.month - start_date.month
+      expected_day = [ frequency_day || start_date.day, date.end_of_month.day ].min
+
+      (month_offset % months).zero? && date.day == expected_day
+    else
+      false
     end
   end
 

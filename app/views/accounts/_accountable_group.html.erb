@@ -10,7 +10,8 @@
         animated: true,
         data: {
           controller: "persisted-disclosure",
-          persisted_disclosure_key_value: disclosure_key
+          persisted_disclosure_key_value: disclosure_key,
+          action: "turbo:before-morph-attribute->persisted-disclosure#preserveOpen"
         }
       ) do |disclosure| %>
     <% disclosure.with_summary_content do %>

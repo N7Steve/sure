@@ -26,6 +26,12 @@ export default class extends Controller {
     this.element.removeEventListener("toggle", this.toggleHandler);
   }
 
+  // Same-URL Turbo refreshes use morphing. Preserve the client-owned open
+  // state while still allowing the disclosure's contents to update normally.
+  preserveOpen(event) {
+    if (event.detail.attributeName === "open") event.preventDefault();
+  }
+
   get storageKey() {
     return `disclosure:${this.keyValue}`;
   }

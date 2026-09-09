@@ -345,4 +345,127 @@ class ScheduledPaymentTest < ActiveSupport::TestCase
       sp.link_matching_entries!(users(:family_admin))
     end
   end
+
+  test "link_matching_entries! searches before a future start date" do
+    travel_to Date.new(2026, 9, 9) do
+      merchant = merchants(:netflix)
+      tag = tags(:one)
+      dates_and_amounts = {
+        Date.new(2026, 6, 6) => BigDecimal("11.61"),
+        Date.new(2026, 7, 9) => BigDecimal("11.72"),
+        Date.new(2026, 8, 6) => BigDecimal("11.63"),
+        Date.new(2026, 9, 6) => BigDecimal("11.22")
+      }
+      entries = dates_and_amounts.map do |date, amount|
+        create_historical_transaction(
+          name: "Suno", date: date, amount: amount,
+          category: @category, merchant: merchant, tags: [ tag ]
+        )
+      end
+      sp = @family.scheduled_payments.create!(
+        account: @account,
+        category: @category,
+        merchant: merchant,
+        tags: [ tag ],
+        title: "Suno",
+        amount: BigDecimal("11.22"),
+        amount_estimated: true,
+        currency: "USD",
+        frequency: "monthly",
+        start_date: Date.new(2026, 10, 6),
+        next_run_date: Date.new(2026, 10, 6),
+        payment_type: "expense"
+      )
+
+      assert_difference -> { sp.scheduled_payment_entries.confirmed.count }, 4 do
+        sp.link_matching_entries!(users(:family_admin))
+      end
+
+      assert_equal entries.map(&:id).sort, sp.scheduled_payment_entries.confirmed.pluck(:entry_id).sort
+      assert_equal Date.new(2026, 10, 6), sp.reload.next_run_date
+    end
+  end
+
+  test "link_matching_entries! uses five percent for fixed and forty percent for estimated amounts" do
+    travel_to Date.new(2026, 9, 9) do
+      fixed_inside = create_historical_transaction(
+        name: "Fixed fee", date: Date.new(2026, 8, 6), amount: BigDecimal("105")
+      )
+      create_historical_transaction(
+        name: "Fixed fee", date: Date.new(2026, 9, 6), amount: BigDecimal("105.01")
+      )
+      fixed = @family.scheduled_payments.create!(
+        account: @account, title: "Fixed fee", amount: 100, currency: "USD",
+        frequency: "monthly", start_date: Date.new(2026, 10, 6),
+        next_run_date: Date.new(2026, 10, 6), payment_type: "expense"
+      )
+
+      fixed.link_matching_entries!(users(:family_admin))
+
+      assert_equal [ fixed_inside.id ], fixed.scheduled_payment_entries.confirmed.pluck(:entry_id)
+
+      estimated_inside = create_historical_transaction(
+        name: "Variable fee", date: Date.new(2026, 8, 6), amount: BigDecimal("140")
+      )
+      create_historical_transaction(
+        name: "Variable fee", date: Date.new(2026, 9, 6), amount: BigDecimal("140.01")
+      )
+      estimated = @family.scheduled_payments.create!(
+        account: @account, title: "Variable fee", amount: 100, amount_estimated: true,
+        currency: "USD", frequency: "monthly", start_date: Date.new(2026, 10, 6),
+        next_run_date: Date.new(2026, 10, 6), payment_type: "expense"
+      )
+
+      estimated.link_matching_entries!(users(:family_admin))
+
+      assert_equal [ estimated_inside.id ], estimated.scheduled_payment_entries.confirmed.pluck(:entry_id)
+    end
+  end
+
+  test "link_matching_entries! requires the same category merchant and tags" do
+    travel_to Date.new(2026, 9, 9) do
+      merchant = merchants(:netflix)
+      tag = tags(:one)
+      exact = create_historical_transaction(
+        name: "Identity fee", date: Date.new(2026, 5, 6), amount: 20,
+        category: @category, merchant: merchant, tags: [ tag ]
+      )
+      create_historical_transaction(
+        name: "Identity fee", date: Date.new(2026, 6, 6), amount: 20,
+        category: categories(:income), merchant: merchant, tags: [ tag ]
+      )
+      create_historical_transaction(
+        name: "Identity fee", date: Date.new(2026, 7, 6), amount: 20,
+        category: @category, merchant: merchants(:amazon), tags: [ tag ]
+      )
+      create_historical_transaction(
+        name: "Identity fee", date: Date.new(2026, 8, 6), amount: 20,
+        category: @category, merchant: merchant, tags: [ tags(:two) ]
+      )
+      sp = @family.scheduled_payments.create!(
+        account: @account, category: @category, merchant: merchant, tags: [ tag ],
+        title: "Identity fee", amount: 20, currency: "USD", frequency: "monthly",
+        start_date: Date.new(2026, 10, 6), next_run_date: Date.new(2026, 10, 6),
+        payment_type: "expense"
+      )
+
+      sp.link_matching_entries!(users(:family_admin))
+
+      assert_equal [ exact.id ], sp.scheduled_payment_entries.confirmed.pluck(:entry_id)
+    end
+  end
+
+  private
+
+    def create_historical_transaction(name:, date:, amount:, category: nil, merchant: nil, tags: [])
+      transaction = Transaction.create!(category: category, merchant: merchant, tags: tags)
+      @family.entries.create!(
+        account: @account,
+        date: date,
+        name: name,
+        amount: amount,
+        currency: "USD",
+        entryable: transaction
+      )
+    end
 end

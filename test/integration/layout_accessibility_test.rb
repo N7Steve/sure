@@ -28,6 +28,7 @@ class LayoutAccessibilityTest < ActionDispatch::IntegrationTest
 
     assert_select "#account-sidebar-tabs details[data-controller~='persisted-disclosure'][data-controller~='DS--disclosure']"
     assert_select "#account-sidebar-tabs details[data-persisted-disclosure-key-value]"
+    assert_select "#account-sidebar-tabs details[data-action~='turbo:before-morph-attribute->persisted-disclosure#preserveOpen']"
   end
 
   test "settings layout renders skip-link pointing at #main and a <main> with id=\"main\"" do
