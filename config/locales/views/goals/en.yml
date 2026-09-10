@@ -339,6 +339,10 @@ en:
       subtypes:
         checking: Checking
         savings: Savings
+        payroll: Payroll
+        mortgage: Mortgage
+        investment: Investment
+        asset: Assets
         hsa: HSA
         cd: CD
         money_market: Money market

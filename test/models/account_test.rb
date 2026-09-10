@@ -338,6 +338,24 @@ class AccountTest < ActiveSupport::TestCase
     assert @account.taxable?
   end
 
+  test "custom depository subtypes are descriptive and do not change tax treatment" do
+    expected_labels = {
+      "payroll" => "Payroll Account",
+      "mortgage" => "Mortgage Account",
+      "investment" => "Investment Account",
+      "asset" => "Asset Account"
+    }
+
+    expected_labels.each do |subtype, label|
+      depository = Depository.new(subtype: subtype)
+
+      assert_nil depository.tax_treatment
+      I18n.with_locale(:en) do
+        assert_equal label, Depository.long_subtype_label_for(subtype)
+      end
+    end
+  end
+
   test "tax_treatment returns nil for accountables that do not implement it" do
     # CreditCard / Loan / Property / OtherAsset / OtherLiability do not
     # implement `tax_treatment`, so the `TaxTreatable#respond_to?` short-

@@ -6,6 +6,10 @@ class Depository < ApplicationRecord
   SUBTYPES = {
     "checking" => { short: "Checking", long: "Checking" },
     "savings" => { short: "Savings", long: "Savings" },
+    "payroll" => { short: "Payroll", long: "Payroll Account" },
+    "mortgage" => { short: "Mortgage", long: "Mortgage Account" },
+    "investment" => { short: "Investment", long: "Investment Account" },
+    "asset" => { short: "Assets", long: "Asset Account" },
     "hsa" => { short: "HSA", long: "Health Savings Account" },
     "cd" => { short: "CD", long: "Certificate of Deposit" },
     "money_market" => { short: "MM", long: "Money Market" }

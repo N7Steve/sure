@@ -26,9 +26,7 @@
             <%= link_to account.name, account, class: [(account.active? ? "text-primary" : "text-subdued"), "text-sm font-medium hover:underline"], data: { turbo_frame: "_top", clickable_row_target: "link" } %>
 
             <% if account.outside_finances? %>
-              <%= render DS::Tooltip.new(text: t("accounts.account.outside_finances_indicator", default: "Outside my finances"), as: :span) do %>
-                <%= icon("ban", class: "w-3.5 h-3.5 text-secondary") %>
-              <% end %>
+              <%= render DS::Tooltip.new(text: t("accounts.account.outside_finances_indicator", default: "Outside my finances"), icon: "info", size: "sm", as: :span) %>
             <% elsif account.tracking_only? %>
               <%= render DS::Tooltip.new(text: t("accounts.account.tracking_only_indicator", default: "Tracking only"), as: :span) do %>
                 <%= icon("eye-off", class: "w-3.5 h-3.5 text-secondary") %>

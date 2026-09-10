@@ -169,9 +169,14 @@ La fase 2 elimina la columna histórica `accounts.excluded`, sus scopes, setters
 
 Los valores persistidos `transfer_to_excluded` y `transfer_from_excluded` se conservan como identificadores internos compatibles para no migrar innecesariamente el histórico de transacciones. No deben utilizarse como terminología visible; la interfaz los presenta como dinero que sale o entra de mis finanzas.
 
+Los subtipos no son meras etiquetas en todo el dominio: algunos subtipos de inversión controlan fiscalidad y flujos especializados, y `Depository#hsa` también es fiscalmente privilegiado. Los subtipos propios de efectivo `payroll`, `mortgage`, `investment` y `asset`, en cambio, son deliberadamente descriptivos y no cambian cálculos ni tratamiento financiero.
+
 ### Comportamiento propio
 
 - Selector único de tratamiento financiero y acciones para activar/desactivar y archivar/restaurar cuentas.
+- El selector de tratamiento financiero se muestra en la parte principal del formulario, después de los campos propios de la cuenta, y no dentro de «Detalles adicionales».
+- Las cuentas fuera de mis finanzas usan un indicador informativo con tooltip en Ajustes, barra lateral e informes; no se presentan con iconografía de bloqueo o prohibición.
+- Los grupos desplegables de la barra lateral no incluyen accesos para crear cuentas; el alta se concentra en Ajustes.
 - Scopes por intención (`visible`, `navigation_visible`, `default_transaction_visible`, `included_in_reports` y `sync_enabled`); los aliases históricos se conservan temporalmente donde reducen el riesgo de integración.
 - Invalidación de cachés familiares cuando cambia la visibilidad.
 - Filtro de transacciones capaz de incluir explícitamente cuentas archivadas y fuera de mis finanzas.

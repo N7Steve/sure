@@ -274,6 +274,10 @@ es:
       subtypes:
         checking: Corriente
         savings: Ahorro
+        payroll: Nómina
+        mortgage: Hipoteca
+        investment: Inversión
+        asset: Activos
         hsa: HSA
         cd: Depósito a plazo
         money_market: Mercado monetario

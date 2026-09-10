@@ -124,7 +124,7 @@ en:
           one: "%{count} entry"
           other: "%{count} entries"
         percentage: "% of Total"
-        outside_finances_account: "Outside-finances account"
+        outside_finances_account: Outside my finances
       pagination:
         showing:
           one: Showing %{count} entry

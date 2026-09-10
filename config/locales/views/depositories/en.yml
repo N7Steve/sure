@@ -15,6 +15,18 @@ en:
       checking:
         long: Checking
         short: Checking
+      payroll:
+        long: Payroll Account
+        short: Payroll
+      mortgage:
+        long: Mortgage Account
+        short: Mortgage
+      investment:
+        long: Investment Account
+        short: Investment
+      asset:
+        long: Asset Account
+        short: Assets
       hsa:
         long: Health Savings Account
         short: HSA

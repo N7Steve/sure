@@ -65,4 +65,15 @@ class DepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "input[name='account[enable_category_matcher]']", 0
   end
+
+  test "edit form shows custom cash subtypes and financial treatment outside additional details" do
+    get edit_account_url(@account)
+
+    assert_response :success
+    %w[payroll mortgage investment asset].each do |subtype|
+      assert_select "select[name='account[subtype]'] option[value='#{subtype}']", 1
+    end
+    assert_select "select[name='account[financial_treatment]']", 1
+    assert_select "details select[name='account[financial_treatment]']", 0
+  end
 end

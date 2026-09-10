@@ -15,6 +15,18 @@ es:
       checking:
         long: Cuenta corriente
         short: Corriente
+      payroll:
+        long: Cuenta nómina
+        short: Nómina
+      mortgage:
+        long: Cuenta hipoteca
+        short: Hipoteca
+      investment:
+        long: Cuenta de inversión
+        short: Inversión
+      asset:
+        long: Cuenta de activos
+        short: Activos
       hsa:
         long: Cuenta de ahorro sanitario
         short: HSA
