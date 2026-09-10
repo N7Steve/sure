@@ -4,6 +4,14 @@ es:
     self_hostable:
       redis_configured: ¡Redis ya está configurado correctamente! Ahora puedes configurar tu aplicación Sure.
   shared:
+    custom_logo_field:
+      label: Imagen personalizada
+      upload: Subir imagen
+      change: Cambiar imagen
+      restore: Restaurar logo automático
+      hint: JPEG, PNG o WebP de hasta 5 MB. Tu imagen tiene prioridad sobre el logo automático.
+      invalid_content_type: debe ser JPEG, PNG o WebP
+      invalid_file_size: debe ocupar menos de %{max_megabytes} MB
     preview: Vista previa
     dot_separator: "·"
     sync_toast:

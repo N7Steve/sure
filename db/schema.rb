@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -1374,6 +1374,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.index ["status"], name: "index_lunchflow_items_on_status"
   end
 
+  create_table "merchant_customizations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "family_id", null: false
+    t.uuid "merchant_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id", "merchant_id"], name: "index_merchant_customizations_on_family_and_merchant", unique: true
+    t.index ["family_id"], name: "index_merchant_customizations_on_family_id"
+    t.index ["merchant_id"], name: "index_merchant_customizations_on_merchant_id"
+  end
+
   create_table "merchants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "color"
     t.datetime "created_at", null: false
@@ -2725,6 +2735,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
   add_foreign_key "llm_usages", "families"
   add_foreign_key "lunchflow_accounts", "lunchflow_items"
   add_foreign_key "lunchflow_items", "families"
+  add_foreign_key "merchant_customizations", "families"
+  add_foreign_key "merchant_customizations", "merchants"
   add_foreign_key "merchants", "families"
   add_foreign_key "mercury_accounts", "mercury_items"
   add_foreign_key "mercury_items", "families"

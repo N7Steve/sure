@@ -70,8 +70,8 @@
           <% merchant = record[:merchant] %>
           <div class="flex items-center gap-3 py-2 <%= "border-b border-secondary" if index < item[:entries].size - 1 %>"
                data-entry-id="<%= entry.id %>">
-            <% if merchant&.logo_url.present? %>
-              <%= image_tag Setting.transform_brand_fetch_url(merchant.logo_url),
+            <% if (merchant_logo_url = merchant&.display_logo_url(family: Current.family)).present? %>
+              <%= image_tag merchant_logo_url,
                     alt: merchant.name,
                     class: "w-6 h-6 shrink-0 rounded-full border border-secondary",
                     loading: "lazy" %>

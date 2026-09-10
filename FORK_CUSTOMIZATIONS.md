@@ -6,7 +6,7 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** y actualizado el **10 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal y la estabilización de la navegación Turbo:
+Inventario generado el **23 de agosto de 2026** y actualizado el **10 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo y la incorporación de logos personalizados para cuentas y comercios:
 
 | Concepto | Valor |
 | --- | --- |
@@ -17,7 +17,7 @@ Inventario generado el **23 de agosto de 2026** y actualizado el **10 de septiem
 | HEAD del fork con la integración y la corrección de `IncomeStatement` | `06f247d6b08a1a690fe3085c3a41ebcb4332e9b2` |
 | Merge-base | `79c826c0e3391063834887936bbe44dc1d90d0cf` |
 | Forma de integración | Contenido de `upstream` integrado mediante commits squash; el SHA de `upstream/main` no es ancestro de `HEAD` |
-| Cambios actuales sin commit | Consultar `git status --short`; el árbol incluye la frontera Agenda/Bills y otros ajustes del fork todavía no consolidados |
+| Cambios actuales sin commit | Consultar `git status --short`; el árbol incluye la frontera Agenda/Bills, los logos personalizados de cuentas/comercios y otros ajustes del fork todavía no consolidados |
 
 El alcance histórico inicial de este documento era `upstream/main...a01ed5290`. Después de la integración squash, el triple-dot contra `upstream/main` ya no representa únicamente las personalizaciones del fork: al no compartir el nuevo commit upstream como ancestro, Git muestra también gran parte del código oficial como diferencia. Para futuras auditorías se debe conservar explícitamente el SHA upstream integrado y comparar contra él por contenido o usar una rama temporal con historia real antes de resolver el siguiente merge.
 
@@ -31,6 +31,7 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 | Tratamiento financiero y archivo de cuentas | Propia | Preservar “incluida”, “solo seguimiento” y “fuera de mis finanzas”; el archivo sólo afecta a la presentación |
 | Roboadvisor e inversiones | Propia | Rendimiento, flujos, liquidez neta estimada y tratamiento fiscal |
 | Categorías y transacciones | Propia | Creación/edición de categorías, selectores, búsqueda, formulario y detalle enriquecidos |
+| Identidad visual de cuentas y comercios | Propia, todavía sin commit | Subida, previsualización, borrado, precedencia frente a Brandfetch/proveedor y aislamiento por familia |
 | Transferencias y divisiones | Propia o muy modificada | Clasificación al cruzar la frontera financiera, conversión y splitting |
 | Exportaciones de familia | Propia | Copia completa y CSV personalizado de transacciones |
 | UI/UX | Propia o adaptada | Vistas compactas, cuentas agrupadas, componentes interactivos y mejoras responsive |
@@ -322,6 +323,25 @@ Estos cambios son propios aunque muchos estén entrelazados con las funciones an
 - El widget upstream de **gasto acumulado / Spending Trend** sigue exactamente la misma semántica de mes configurado que Money In / Out. Su curva actual, curva comparativa, selector, etiquetas del eje y totales se construyen con períodos personalizados; por ejemplo, septiembre comienza el 25 de agosto cuando `month_start_day = 25`. El período activo se limita a hoy, mientras que la comparación usa el período personalizado anterior completo.
 - Traducciones propias, principalmente en `en` y `es`; el diff contiene además arreglos puntuales en otros idiomas.
 
+### Logos personalizados de cuentas y comercios
+
+Esta funcionalidad permite que cada familia sustituya las imágenes automáticas procedentes de Brandfetch o de un proveedor sin perderlas. Es una ampliación aditiva: al borrar el logo personalizado se recupera inmediatamente la resolución automática anterior.
+
+- Las cuentas tienen un adjunto Active Storage independiente, `Account#custom_logo`. La resolución visual sigue esta precedencia: **logo personalizado → Brandfetch → logo del proveedor → adjunto heredado `logo` → inicial generada por la vista**.
+- Los comercios usan `MerchantCustomization`, con una fila única por `(family_id, merchant_id)` y un adjunto `custom_logo`. El comercio puede ser global (`ProviderMerchant`), por lo que el archivo **no debe adjuntarse al propio comercio**: mantenerlo en la personalización evita compartir la imagen con otras familias. La precedencia es **logo personalizado de la familia → logo externo/Brandfetch del comercio → inicial generada**.
+- `Merchant#display_logo_url(family:)` centraliza esa resolución y debe usarse en todas las superficies que muestran comercios: transacciones, selectores y filtros, informes, Agenda, Bills y recurrencias. Se pasa la familia explícitamente para conservar el aislamiento multi-tenant.
+- `Merchant::Customizer` coordina de forma transaccional la edición del comercio y su personalización. Renombrar un `ProviderMerchant` conserva el comportamiento anterior y lo convierte en `FamilyMerchant`; cambiar únicamente su imagen no provoca esa conversión.
+- El concern `CustomLogoAttachable` comparte las restricciones: JPEG, PNG o WebP, máximo 5 MB, con variante cuadrada de 128×128 en WebP. El formulario permite previsualizar el archivo local, cambiarlo y marcar la restauración del logo automático.
+- La autorización de Active Storage cubre ambos tipos de adjunto: una cuenta debe ser accesible por `Current.user` y una personalización de comercio debe pertenecer a `Current.family`. No se deben exponer URLs de blobs de otras familias.
+- `Family::FinancialDataReset` elimina también las personalizaciones de comercio y sus adjuntos. Los archivos binarios siguen administrados por Active Storage y no se añaden como payload al formato actual de exportación familiar.
+- Para evitar consultas repetidas al representar listas, `Family` mantiene cachés en memoria durante la petición para personalizaciones de comercios y cuentas con logo propio. Cualquier alta, cambio o borrado debe invalidar el caché correspondiente.
+
+Archivos principales: `app/models/concerns/custom_logo_attachable.rb`, `app/models/merchant_customization.rb`, `app/models/merchant/customizer.rb`, `app/models/{account,merchant,family}.rb`, `app/controllers/concerns/accountable_resource.rb`, `app/controllers/family_merchants_controller.rb`, `app/views/shared/_custom_logo_field.html.erb`, `app/javascript/controllers/custom_logo_preview_controller.js`, `config/initializers/active_storage_authorization.rb` y las vistas que llaman a `display_logo_url`.
+
+La regresión está cubierta en `test/models/{account,merchant_customization}_test.rb`, `test/controllers/{depositories,family_merchants}_controller_test.rb` y `test/integration/active_storage_authorization_test.rb`. En este entorno no se han ejecutado Rails ni las migraciones por petición expresa; antes de publicar se deben ejecutar la migración y la suite Minitest en el entorno de despliegue. Las comprobaciones estáticas de sintaxis Ruby, Biome, YAML y whitespace sí se completaron correctamente. RuboCop no pudo iniciarse localmente porque faltan las gems `vernier` y `stackprof` del bundle instalado.
+
+El cambio no rompe contratos existentes ni reescribe datos: las cuentas sólo reciben un adjunto adicional y los comercios una tabla auxiliar. El único requisito operativo es aplicar `20260910140000_create_merchant_customizations.rb` antes de servir la nueva versión; desplegar el código sin esa migración puede fallar al consultar personalizaciones de comercios.
+
 Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker,persisted_disclosure,dashboard_section,reports_section,account_data_refresh,frame_refresh,sync_toast}.js`, `app/javascript/utils/{collapsible_animation,dialog,reload_frame}.js`, `app/views/accounts/_accountable_group.html.erb`, `app/views/layouts/shared/_head.html.erb`, `app/views/layouts/application.html.erb`, `app/assets/tailwind/application.css`, layout principal y vistas de cuentas/transacciones.
 
 Los ajustes de **Money In / Out** y **Spending Trend** comparten `dashboard_display_month` y `dashboard_period_start_for` en `app/controllers/pages_controller.rb`. Sus vistas son `app/views/pages/dashboard/_money_flow.html.erb` y `_spending_trend.html.erb`; la regresión está cubierta en `test/controllers/pages_controller_test.rb`, incluido el caso 25 de agosto–24 de septiembre.
@@ -379,6 +399,7 @@ El orden y el efecto sobre datos deben preservarse:
 | `20260908120000_add_amount_estimated_to_scheduled_payments.rb` | Identifica importes variables usados como estimación en Agenda |
 | `20260910120000_add_cashflow_boundary_to_accounts.rb` | Introduce “fuera de mis finanzas”, migra el antiguo `accounts.excluded` y exige exclusión de informes |
 | `20260910130000_remove_excluded_from_accounts.rb` | Retira la columna de compatibilidad `accounts.excluded` tras completar la migración |
+| `20260910140000_create_merchant_customizations.rb` | Crea personalizaciones de comercio aisladas por familia, con unicidad por `(family_id, merchant_id)`; los adjuntos usan las tablas existentes de Active Storage |
 
 `db/schema.rb` debe reflejar el resultado acumulado; no resolver sus conflictos de forma aislada sin comprobar estas migraciones.
 
@@ -388,17 +409,17 @@ Las 230 rutas del inventario original se agrupaban así. Tras la integración sq
 
 - `.github/workflows/`: automatización propia del fork.
 - `app/components/DS/`, `app/components/UI/`: componentes e interacciones personalizadas.
-- `app/controllers/`: cuentas, informes, categorías, transacciones, transferencias, divisiones, pagos programados, presupuestos y exportaciones.
+- `app/controllers/`: cuentas, comercios familiares, informes, categorías, transacciones, transferencias, divisiones, pagos programados, presupuestos y exportaciones.
 - `app/helpers/`: carteras, ajustes y transacciones.
-- `app/javascript/controllers/`: selectores, multiselect, autocompletado, formularios, tags, tooltips y pagos programados.
+- `app/javascript/controllers/`: selectores, multiselect, autocompletado, formularios, previsualización de logos, tags, tooltips y pagos programados.
 - `app/jobs/`: generación de pagos y exportaciones.
-- `app/models/`: cuentas, balances, informes, inversiones, transacciones, transferencias, sincronización, proveedores, exportaciones y pagos programados.
+- `app/models/`: cuentas, comercios y sus personalizaciones por familia, balances, informes, inversiones, transacciones, transferencias, sincronización, proveedores, exportaciones y pagos programados.
 - `app/services/shared_expenses_calculator.rb`: cálculo propio de gastos compartidos.
-- `app/views/`: cuentas, informes, inversiones, transacciones, transferencias, pagos programados, exportaciones y ajustes generales de UI.
+- `app/views/`: cuentas, comercios, informes, inversiones, transacciones, transferencias, pagos programados, exportaciones y ajustes generales de UI.
 - `config/locales/`: traducciones de todas las áreas anteriores.
-- `config/routes.rb`, `config/schedule.yml`, `config/initializers/sidekiq.rb`: rutas y ejecución periódica.
-- `db/migrate/` y `db/schema.rb`: las doce migraciones enumeradas y su esquema resultante.
-- `test/`: cobertura de pagos programados, cuentas, transferencias, transacciones, exportaciones, Syncable y componentes DS.
+- `config/routes.rb`, `config/schedule.yml`, `config/initializers/{sidekiq,active_storage_authorization}.rb`: rutas, ejecución periódica y autorización de adjuntos.
+- `db/migrate/` y `db/schema.rb`: las trece migraciones enumeradas y su esquema resultante.
+- `test/`: cobertura de pagos programados, cuentas, comercios personalizados, autorización de Active Storage, transferencias, transacciones, exportaciones, Syncable y componentes DS.
 - Raíz/scripts/docs: `Gemfile`, `README.md`, `informe_scheduled_payments.md`, `rollback-instructions.md`, `conflicts.txt`, `script.rb` y `script/debug_subtypes.rb`.
 
 Para obtener el manifiesto exacto y actualizado de archivos en cualquier momento:
@@ -424,13 +445,14 @@ git diff
 2. Revisar este inventario por área funcional, no sólo por archivo: upstream puede mover o renombrar el código.
 3. En conflictos de cuentas, preservar la separación entre tratamiento financiero (`exclude_from_reports`/`cashflow_boundary`), presentación (`archived`) y ciclo de vida (`status`). No reintroducir `accounts.excluded`; no confundirlo con `entries.excluded`.
 4. En conflictos de transacciones/transferencias, comprobar también pagos programados, informes y exportaciones; comparten modelos y controladores.
-5. No aceptar automáticamente el `db/schema.rb`: validar primero las doce migraciones propias.
+5. No aceptar automáticamente el `db/schema.rb`: validar primero las trece migraciones propias.
 6. Si upstream incorpora una función equivalente, decidir expresamente si migrar a ella y añadir pruebas de regresión antes de retirar la implementación del fork.
 7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada. Al resolver conflictos, integrar primero la evolución upstream del subsistema y reaplicar después la frontera pequeña formada por `bills_frontend_enabled?`, los guards de controlador y `Insight.for_product_frontend`; no resolverlos eliminando código Bills ni conectando ambos modelos.
 8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores internos de transferencias que cruzan la frontera (`transfer_to_excluded`/`transfer_from_excluded`) y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
 9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
-10. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
-11. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
+10. En conflictos de identidad visual, conservar `custom_logo` separado de las fuentes automáticas y la personalización de comercios en el ámbito de la familia. Verificar tanto la precedencia y restauración del fallback como la autorización de Active Storage y todas las llamadas a `Merchant#display_logo_url(family:)`.
+11. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
+12. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
 
 ## Comandos de auditoría
 

@@ -2,7 +2,7 @@
 Rails.application.config.to_prepare do
   module ActiveStorageAttachmentAuthorization
     extend ActiveSupport::Concern
-    PROTECTED_RECORD_TYPES = %w[Transaction AccountStatement].freeze
+    PROTECTED_RECORD_TYPES = %w[Transaction AccountStatement Account MerchantCustomization].freeze
 
     included do
       include Authentication
@@ -32,6 +32,10 @@ Rails.application.config.to_prepare do
           transaction_attachment_authorized?(attachment)
         when "AccountStatement"
           account_statement_attachment_authorized?(attachment)
+        when "Account"
+          account_attachment_authorized?(attachment)
+        when "MerchantCustomization"
+          merchant_customization_attachment_authorized?(attachment)
         else
           false
         end
@@ -51,6 +55,24 @@ Rails.application.config.to_prepare do
         return false if statement.nil?
 
         statement.viewable_by?(Current.user)
+      rescue ActiveRecord::RecordNotFound
+        false
+      end
+
+      def account_attachment_authorized?(attachment)
+        account = attachment.record
+        return false if account.nil? || Current.user.nil?
+
+        Current.user.accessible_accounts.exists?(id: account.id)
+      rescue ActiveRecord::RecordNotFound
+        false
+      end
+
+      def merchant_customization_attachment_authorized?(attachment)
+        customization = attachment.record
+        return false if customization.nil?
+
+        customization.family_id == Current.family&.id
       rescue ActiveRecord::RecordNotFound
         false
       end

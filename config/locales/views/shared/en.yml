@@ -6,6 +6,14 @@ en:
   shared:
     preview: Preview
     dot_separator: "·"
+    custom_logo_field:
+      label: Custom image
+      upload: Upload image
+      change: Change image
+      restore: Restore automatic logo
+      hint: JPEG, PNG, or WebP up to 5 MB. Your image takes precedence over the automatic logo.
+      invalid_content_type: must be a JPEG, PNG, or WebP
+      invalid_file_size: must be smaller than %{max_megabytes} MB
     sync_toast:
       message: "New data available"
       refresh: "Refresh"

@@ -33,8 +33,8 @@
                  </div>
                <% elsif transaction.merchant.present? %>
                  <div class="flex items-center gap-2">
-                   <% if transaction.merchant.logo_url.present? %>
-                     <%= image_tag Setting.transform_brand_fetch_url(transaction.merchant.logo_url),
+                   <% if (merchant_logo_url = transaction.merchant.display_logo_url(family: Current.family)).present? %>
+                     <%= image_tag merchant_logo_url,
                          class: "w-5 h-5 rounded-full border border-secondary shrink-0",
                          loading: "lazy" %>
                    <% end %>

@@ -11,7 +11,7 @@
   <span class="check-icon w-5 shrink-0 <%= "hidden" unless selected %>">
     <%= view_helpers.icon("check") %>
   </span>
-  <% logo_url = merchant.respond_to?(:logo_url) && merchant.logo_url.present? ? Setting.transform_brand_fetch_url(merchant.logo_url) : nil %>
+  <% logo_url = merchant.display_logo_url(family: Current.family) %>
   <span data-merchant-select-avatar class="shrink-0">
     <% if logo_url %>
       <%= image_tag logo_url, class: "w-5 h-5 rounded-full border border-secondary", loading: "lazy" %>

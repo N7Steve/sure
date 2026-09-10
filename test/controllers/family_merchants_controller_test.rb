@@ -1,6 +1,8 @@
 require "test_helper"
 
 class FamilyMerchantsControllerTest < ActionDispatch::IntegrationTest
+  include EntriesTestHelper
+
   setup do
     sign_in @user = users(:family_admin)
     @merchant = merchants(:netflix)
@@ -30,6 +32,43 @@ class FamilyMerchantsControllerTest < ActionDispatch::IntegrationTest
     patch family_merchant_url(@merchant), params: { family_merchant: { name: "new name", color: "#000000" } }
     assert_redirected_to family_merchants_path
     assert_equal "#000000", @merchant.reload.color
+  end
+
+  test "attaches and removes a family-specific custom logo" do
+    patch family_merchant_url(@merchant), params: {
+      family_merchant: {
+        name: @merchant.name,
+        custom_logo: fixture_file_upload("profile_image.png", "image/png", :binary)
+      }
+    }
+
+    assert_redirected_to family_merchants_path
+    customization = MerchantCustomization.find_by!(family: @user.family, merchant: @merchant)
+    assert customization.custom_logo.attached?
+
+    patch family_merchant_url(@merchant), params: {
+      family_merchant: { name: @merchant.name, delete_custom_logo: "1" }
+    }
+
+    assert_redirected_to family_merchants_path
+    assert_not MerchantCustomization.exists?(family: @user.family, merchant: @merchant)
+  end
+
+  test "provider merchant custom logo is scoped to the current family" do
+    provider_merchant = ProviderMerchant.create!(name: "Shared Store", source: "plaid")
+    create_transaction(merchant: provider_merchant)
+
+    patch family_merchant_url(provider_merchant), params: {
+      provider_merchant: {
+        name: provider_merchant.name,
+        custom_logo: fixture_file_upload("profile_image.png", "image/png", :binary)
+      }
+    }
+
+    assert_redirected_to family_merchants_path
+    assert MerchantCustomization.exists?(family: @user.family, merchant: provider_merchant)
+    assert_not MerchantCustomization.exists?(family: families(:empty), merchant: provider_merchant)
+    assert_equal 1, ProviderMerchant.where(id: provider_merchant.id).count
   end
 
   test "should destroy merchant" do

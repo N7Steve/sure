@@ -438,6 +438,27 @@ class AccountTest < ActiveSupport::TestCase
     assert_not ActiveStorage::Attachment.exists?(attachment_id)
   end
 
+  test "custom logo takes precedence over Brandfetch and legacy logos" do
+    Setting.stubs(:brand_fetch_client_id).returns("brandfetch-client")
+    @account.update!(institution_domain: "example.com")
+    @account.custom_logo.attach(
+      io: file_fixture("profile_image.png").open,
+      filename: "custom.png",
+      content_type: "image/png"
+    )
+
+    assert_includes @account.logo_url, "/rails/active_storage/representations/"
+    assert_not_includes @account.logo_url, "brandfetch.io"
+  end
+
+  test "automatic logo remains available without a custom logo" do
+    Setting.stubs(:brand_fetch_client_id).returns("brandfetch-client")
+    @account.update!(institution_domain: "example.com")
+
+    assert_includes @account.automatic_logo_url, "brandfetch.io/example.com"
+    assert_equal @account.automatic_logo_url, @account.logo_url
+  end
+
   test "visible scope includes outside-finances accounts while navigation scopes distinguish them" do
     @account.update!(financial_treatment: "included")
     assert_includes Account.visible, @account

@@ -1,15 +1,20 @@
 <%# locals: (family_merchant:) %>
 
 <div data-controller="color-avatar">
-  <%= styled_form_with model: family_merchant, url: family_merchant.persisted? ? family_merchant_path(family_merchant) : family_merchants_path, class: "space-y-4" do |f| %>
+  <%= styled_form_with model: family_merchant, url: family_merchant.persisted? ? family_merchant_path(family_merchant) : family_merchants_path, multipart: true, class: "space-y-4" do |f| %>
     <section class="space-y-4">
       <% if family_merchant.errors.any? %>
         <%= render "shared/form_errors", model: family_merchant %>
       <% end %>
 
-      <div class="w-fit m-auto mb-4">
-        <%= render partial: "shared/color_avatar", locals: { name: family_merchant.name, color: family_merchant.color } %>
-      </div>
+      <% customization = Current.family.merchant_customization_for(family_merchant) if family_merchant.persisted? %>
+      <%= render "shared/custom_logo_field",
+            form: f,
+            custom_logo: customization&.custom_logo,
+            custom_logo_url: customization&.custom_logo_url,
+            fallback_logo_url: family_merchant.logo_url.present? ? Setting.transform_brand_fetch_url(family_merchant.logo_url) : nil,
+            name: family_merchant.name,
+            color: family_merchant.color %>
       <div class="flex gap-2 items-center justify-center">
         <% FamilyMerchant::COLORS.each do |color| %>
           <label class="relative">

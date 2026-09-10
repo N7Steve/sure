@@ -76,4 +76,22 @@ class DepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='account[financial_treatment]']", 1
     assert_select "details select[name='account[financial_treatment]']", 0
   end
+
+  test "update attaches and removes a custom account logo" do
+    patch depository_path(@account), params: {
+      account: {
+        custom_logo: fixture_file_upload("profile_image.png", "image/png", :binary)
+      }
+    }
+
+    assert_redirected_to account_path(@account)
+    assert @account.reload.custom_logo.attached?
+
+    patch depository_path(@account), params: {
+      account: { delete_custom_logo: "1" }
+    }
+
+    assert_redirected_to account_path(@account)
+    assert_not @account.reload.custom_logo.attached?
+  end
 end

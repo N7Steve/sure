@@ -49,11 +49,41 @@ class Family < ApplicationRecord
   has_many :tags, dependent: :destroy
   has_many :categories, dependent: :destroy
   has_many :merchants, dependent: :destroy, class_name: "FamilyMerchant"
+  has_many :merchant_customizations, dependent: :destroy
 
   has_many :budgets, dependent: :destroy
   has_many :budget_categories, through: :budgets
 
   has_many :goals, dependent: :destroy
+
+  def merchant_customization_for(merchant)
+    merchant_customizations_by_merchant_id[merchant.id]
+  end
+
+  def account_custom_logo?(account)
+    account.family_id == id && account_ids_with_custom_logo.include?(account.id)
+  end
+
+  def reset_merchant_customizations_cache!
+    remove_instance_variable(:@merchant_customizations_by_merchant_id) if defined?(@merchant_customizations_by_merchant_id)
+  end
+
+  def reset_account_custom_logos_cache!
+    remove_instance_variable(:@account_ids_with_custom_logo) if defined?(@account_ids_with_custom_logo)
+  end
+
+  def merchant_customizations_by_merchant_id
+    @merchant_customizations_by_merchant_id ||= merchant_customizations
+      .with_attached_custom_logo
+      .index_by(&:merchant_id)
+  end
+
+  def account_ids_with_custom_logo
+    @account_ids_with_custom_logo ||= ActiveStorage::Attachment
+      .where(record_type: "Account", record_id: accounts.select(:id), name: "custom_logo")
+      .pluck(:record_id)
+      .to_set
+  end
 
   # Net inflow into every depository account linked to any primary-currency
   # goal, over the given window. Transfers between linked accounts net to zero

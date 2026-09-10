@@ -4,8 +4,8 @@
 <div class="group flex lg:grid lg:grid-cols-12 items-center text-sm font-medium p-3 lg:p-4 <%= is_dismissed ? 'opacity-50 bg-surface-inset' : 'text-primary' %>">
   <%# Name + badge %>
   <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-6 min-w-0">
-    <% if sp.merchant.present? && sp.merchant.respond_to?(:logo_url) && sp.merchant.logo_url.present? %>
-      <%= image_tag Setting.transform_brand_fetch_url(sp.merchant.logo_url),
+    <% if (merchant_logo_url = sp.merchant&.display_logo_url(family: Current.family)).present? %>
+      <%= image_tag merchant_logo_url,
           class: "w-9 h-9 rounded-full", loading: "lazy" %>
     <% else %>
       <%= render DS::FilledIcon.new(variant: :text, text: sp.title, size: "lg", rounded: true) %>

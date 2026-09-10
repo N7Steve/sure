@@ -1,0 +1,68 @@
+<%# locals: (form:, custom_logo:, custom_logo_url:, fallback_logo_url:, name:, color: nil) %>
+
+<% input_id = "#{form.object_name.to_s.gsub(/[^a-zA-Z0-9_-]/, "_")}_custom_logo" %>
+<% custom_logo_attached = custom_logo&.attached? %>
+<div class="space-y-3" data-controller="custom-logo-preview">
+  <p class="text-sm font-medium text-primary"><%= t("shared.custom_logo_field.label") %></p>
+
+  <div class="flex items-center gap-4">
+    <div class="w-12 h-12 shrink-0 flex items-center justify-center">
+      <%= tag.img src: custom_logo_url.presence,
+            alt: "",
+            class: class_names("w-full h-full rounded-full object-cover", "hidden": custom_logo_url.blank?),
+            data: { custom_logo_preview_target: "customImage" } %>
+
+      <%= tag.img src: fallback_logo_url.presence,
+            alt: "",
+            class: class_names("w-full h-full rounded-full object-cover", "hidden": custom_logo_url.present? || fallback_logo_url.blank?),
+            data: { custom_logo_preview_target: "fallbackImage" } %>
+
+      <div class="<%= "hidden" if custom_logo_url.present? || fallback_logo_url.present? %>" data-custom-logo-preview-target="placeholder">
+        <%= render DS::FilledIcon.new(
+              variant: :text,
+              text: name,
+              hex_color: color,
+              size: "lg",
+              rounded: true
+            ) %>
+      </div>
+
+      <%= tag.img alt: "",
+            class: "hidden w-full h-full rounded-full object-cover",
+            data: { custom_logo_preview_target: "previewImage" } %>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <label for="<%= input_id %>" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-primary hover:bg-surface-hover border border-secondary cursor-pointer">
+        <%= icon "upload", size: "sm" %>
+        <span data-custom-logo-preview-target="uploadText"
+              data-upload-text="<%= t("shared.custom_logo_field.upload") %>"
+              data-change-text="<%= t("shared.custom_logo_field.change") %>"><%= custom_logo_attached ? t("shared.custom_logo_field.change") : t("shared.custom_logo_field.upload") %></span>
+      </label>
+
+      <%= render DS::Button.new(
+            text: t("shared.custom_logo_field.restore"),
+            variant: "secondary",
+            size: "sm",
+            class: class_names("hidden": !custom_logo_attached),
+            data: {
+              action: "custom-logo-preview#clear",
+              custom_logo_preview_target: "clearButton"
+            }
+          ) %>
+    </div>
+  </div>
+
+  <p class="text-xs text-secondary"><%= t("shared.custom_logo_field.hint") %></p>
+
+  <%= file_field_tag "#{form.object_name}[custom_logo]",
+        id: input_id,
+        class: "sr-only",
+        accept: CustomLogoAttachable::ALLOWED_CUSTOM_LOGO_CONTENT_TYPES.join(","),
+        data: {
+          action: "change->custom-logo-preview#preview",
+          custom_logo_preview_target: "input"
+        } %>
+  <%= hidden_field_tag "#{form.object_name}[delete_custom_logo]", "0",
+        data: { custom_logo_preview_target: "deleteField" } %>
+</div>

@@ -42,7 +42,7 @@ module AccountableResource
     end || (Time.zone.today - 2.years)
     Account.transaction do
       @account = Current.family.accounts.create_and_sync(
-        account_params.except(:return_to, :opening_balance_date).merge(owner: Current.user),
+        account_params.except(:return_to, :opening_balance_date, :delete_custom_logo).merge(owner: Current.user),
         opening_balance_date: opening_balance_date
       )
       @account.lock_saved_attributes!
@@ -72,12 +72,17 @@ module AccountableResource
     # Update remaining account attributes. Note: currency is intentionally allowed
     # here so all account types (depositories, credit cards, loans, etc.) can
     # have their currency changed via this shared update path.
-    update_params = account_params.except(:return_to, :balance, :opening_balance_date)
+    update_params = account_params.except(:return_to, :balance, :opening_balance_date, :delete_custom_logo)
     unless @account.update(update_params)
       @error_message = @account.errors.full_messages.join(", ")
       render :edit, status: :unprocessable_entity
       return
     end
+
+    if delete_custom_logo? && account_params[:custom_logo].blank?
+      @account.custom_logo.purge_later
+    end
+    Current.family.reset_account_custom_logos_cache!
 
     @account.lock_saved_attributes!
     redirect_back_or_to account_path(@account), notice: t("accounts.update.success", type: accountable_type.name.underscore.humanize)
@@ -114,7 +119,12 @@ module AccountableResource
         :institution_name, :institution_domain, :notes,
         :financial_treatment, :archived,
         :enable_category_matcher,
+        :custom_logo, :delete_custom_logo,
         accountable_attributes: self.class.permitted_accountable_attributes
       )
+    end
+
+    def delete_custom_logo?
+      ActiveModel::Type::Boolean.new.cast(account_params[:delete_custom_logo])
     end
 end

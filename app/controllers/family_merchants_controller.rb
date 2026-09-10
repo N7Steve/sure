@@ -41,9 +41,11 @@ class FamilyMerchantsController < ApplicationController
   end
 
   def create
-    @family_merchant = FamilyMerchant.new(merchant_params.merge(family: Current.family))
+    @family_merchant = FamilyMerchant.new(merchant_attributes.merge(family: Current.family))
+    result = customize_merchant(@family_merchant)
+    @family_merchant = result.merchant
 
-    if @family_merchant.save
+    if result.success?
       respond_to do |format|
         format.html { redirect_to family_merchants_path, notice: t(".success") }
         format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, family_merchants_path) }
@@ -68,34 +70,18 @@ class FamilyMerchantsController < ApplicationController
   end
 
   def update
-    if @merchant.is_a?(ProviderMerchant)
-      if merchant_params[:name].present? && merchant_params[:name] != @merchant.name
-        # Name changed — convert ProviderMerchant to FamilyMerchant for this family only
-        @family_merchant = @merchant.convert_to_family_merchant_for(Current.family, merchant_params)
-        respond_to do |format|
-          format.html { redirect_to family_merchants_path, notice: t(".converted_success") }
-          format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, family_merchants_path) }
-        end
-      else
-        # Only website changed — update the ProviderMerchant directly
-        @merchant.update!(merchant_params.slice(:website_url))
-        @merchant.generate_logo_url_from_website!
-        respond_to do |format|
-          format.html { redirect_to family_merchants_path, notice: t(".success") }
-          format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, family_merchants_path) }
-        end
-      end
-    elsif @merchant.update(merchant_params)
+    result = customize_merchant(@merchant)
+    @family_merchant = result.merchant
+
+    if result.success?
+      translation_key = result.converted? ? ".converted_success" : ".success"
       respond_to do |format|
-        format.html { redirect_to family_merchants_path, notice: t(".success") }
+        format.html { redirect_to family_merchants_path, notice: t(translation_key) }
         format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, family_merchants_path) }
       end
     else
       render :edit, status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordInvalid => e
-    @family_merchant = e.record
-    render :edit, status: :unprocessable_entity
   end
 
   def destroy
@@ -166,7 +152,25 @@ class FamilyMerchantsController < ApplicationController
     def merchant_params
       # Handle both family_merchant and provider_merchant param keys
       key = params.key?(:family_merchant) ? :family_merchant : :provider_merchant
-      params.require(key).permit(:name, :color, :website_url)
+      params.require(key).permit(:name, :color, :website_url, :custom_logo, :delete_custom_logo)
+    end
+
+    def merchant_attributes
+      merchant_params.except(:custom_logo, :delete_custom_logo)
+    end
+
+    def delete_custom_logo?
+      ActiveModel::Type::Boolean.new.cast(merchant_params[:delete_custom_logo])
+    end
+
+    def customize_merchant(merchant)
+      Merchant::Customizer.new(
+        family: Current.family,
+        merchant: merchant,
+        attributes: merchant_attributes,
+        custom_logo: merchant_params[:custom_logo],
+        delete_custom_logo: delete_custom_logo?
+      ).call
     end
 
     def merchant_json(merchant)

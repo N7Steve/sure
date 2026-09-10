@@ -31,9 +31,7 @@ class DS::MerchantSelect < DesignSystemComponent
 
   def selected_merchant_logo_url
     merchant = selected_merchant
-    return nil unless merchant&.respond_to?(:logo_url) && merchant.logo_url.present?
-
-    Setting.transform_brand_fetch_url(merchant.logo_url)
+    merchant&.display_logo_url(family: Current.family)
   end
 
   private

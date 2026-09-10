@@ -2,6 +2,7 @@
 
 <% transaction = entry.entryable %>
 <% transaction_security_logo_url = transaction.activity_security&.display_logo_url %>
+<% transaction_merchant_logo_url = transaction.merchant&.display_logo_url(family: Current.family) %>
 <% open_path = if transaction.transfer?
      transaction.transfer.present? ? transfer_path(transaction.transfer) : entry_path(entry)
    else
@@ -28,8 +29,8 @@
 
         <div class="flex md:hidden items-center gap-1 col-span-2 relative shrink-0">
           <%= render "transactions/transaction_category", transaction: transaction, variant: "mobile", entry: entry, in_split_group: in_split_group %>
-          <% if transaction.merchant&.logo_url.present? %>
-            <%= image_tag Setting.transform_brand_fetch_url(transaction.merchant.logo_url),
+          <% if transaction_merchant_logo_url.present? %>
+            <%= image_tag transaction_merchant_logo_url,
                 class: "w-5 h-5 rounded-full absolute -bottom-1 -right-1 border border-secondary pointer-events-none",
                 loading: "lazy" %>
           <% end %>
@@ -49,8 +50,8 @@
                 <%= image_tag Setting.transform_brand_fetch_url(transaction_security_logo_url),
                     class: "w-9 h-9 rounded-full border border-secondary",
                     loading: "lazy" %>
-              <% elsif transaction.merchant&.logo_url.present? %>
-                <%= image_tag Setting.transform_brand_fetch_url(transaction.merchant.logo_url),
+              <% elsif transaction_merchant_logo_url.present? %>
+                <%= image_tag transaction_merchant_logo_url,
                     class: "w-9 h-9 rounded-full border border-secondary",
                     loading: "lazy" %>
               <% else %>

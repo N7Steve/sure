@@ -93,6 +93,34 @@ class ActiveStorageAuthorizationTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "user cannot access a custom account logo from a different family" do
+    account = accounts(:depository)
+    account.custom_logo.attach(
+      io: file_fixture("profile_image.png").open,
+      filename: "account.png",
+      content_type: "image/png"
+    )
+
+    sign_in @user_b
+    get rails_representation_path(account.custom_logo.variant(:small))
+
+    assert_response :not_found
+  end
+
+  test "user cannot access another family's merchant customization" do
+    customization = MerchantCustomization.create!(family: @user_a.family, merchant: merchants(:netflix))
+    customization.custom_logo.attach(
+      io: file_fixture("profile_image.png").open,
+      filename: "merchant.png",
+      content_type: "image/png"
+    )
+
+    sign_in @user_b
+    get rails_representation_path(customization.custom_logo.variant(:small))
+
+    assert_response :not_found
+  end
+
   test "user cannot access statement blob from a different family" do
     sign_in @user_b
 

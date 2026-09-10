@@ -33,6 +33,7 @@ class Family::FinancialDataReset
     tags
     taggings
     merchants
+    merchant_customizations
     family_merchant_associations
     provider_items
     syncs
@@ -142,6 +143,7 @@ class Family::FinancialDataReset
       scope(:budget_categories).destroy_all
       scope(:taggings).destroy_all
       scope(:family_merchant_associations).delete_all
+      scope(:merchant_customizations).destroy_all
       scope(:account_statements).destroy_all
       scope(:family_exports).destroy_all
       scope(:imports).destroy_all
@@ -289,6 +291,7 @@ class Family::FinancialDataReset
           tags: tag_scope,
           taggings: Tagging.where(tag_id: tag_scope.select(:id)),
           merchants: FamilyMerchant.where(family_id: family.id),
+          merchant_customizations: MerchantCustomization.where(family_id: family.id),
           family_merchant_associations: FamilyMerchantAssociation.where(family_id: family.id),
           syncs: Sync.for_family(family)
         }
@@ -307,6 +310,7 @@ class Family::FinancialDataReset
       scopes = [
         attachment_scope(Account, account_ids),
         attachment_scope(AccountStatement, scope(:account_statements).select(:id)),
+        attachment_scope(MerchantCustomization, scope(:merchant_customizations).select(:id)),
         attachment_scope(FamilyExport, scope(:family_exports).select(:id)),
         attachment_scope(Import, scope(:imports).select(:id)),
         attachment_scope(Transaction, scope(:transactions).select(:id))

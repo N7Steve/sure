@@ -1,5 +1,6 @@
 class Account < ApplicationRecord
   include AASM, Syncable, Monetizable, Chartable, Linkable, Enrichable, Anchorable, Reconcileable, TaxTreatable
+  include CustomLogoAttachable
 
   after_save :invalidate_family_caches, if: -> {
     saved_change_to_cashflow_boundary? || saved_change_to_archived? || saved_change_to_exclude_from_reports?
@@ -597,6 +598,10 @@ class Account < ApplicationRecord
   end
 
   def logo_url
+    (custom_logo_url if custom_logo_available?) || automatic_logo_url
+  end
+
+  def automatic_logo_url
     if institution_domain.present? && Setting.brand_fetch_client_id.present?
       logo_size = Setting.brand_fetch_logo_size
 
@@ -767,6 +772,14 @@ class Account < ApplicationRecord
   end
 
   private
+
+    def custom_logo_available?
+      if Current.family&.id == family_id
+        Current.family.account_custom_logo?(self)
+      else
+        custom_logo.attached?
+      end
+    end
 
     def cashflow_boundary_requires_report_exclusion
       return unless cashflow_boundary? && !exclude_from_reports?

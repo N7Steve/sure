@@ -58,7 +58,11 @@ module DS
     # Returns true if the item has a logo (used in :logo variant)
     def logo_for(item)
       obj = item[:object]
-      obj&.respond_to?(:logo_url) && obj.logo_url.present? ? Setting.transform_brand_fetch_url(obj.logo_url) : nil
+      if obj.respond_to?(:display_logo_url)
+        obj.display_logo_url(family: Current.family)
+      elsif obj&.respond_to?(:logo_url) && obj.logo_url.present?
+        Setting.transform_brand_fetch_url(obj.logo_url)
+      end
     end
 
     # Returns true if the item represents a child/subcategory of another item

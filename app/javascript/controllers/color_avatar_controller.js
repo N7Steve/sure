@@ -14,12 +14,16 @@ export default class extends Controller {
   }
 
   handleNameChange = (e) => {
+    if (!this.hasAvatarTarget) return;
+
     this.avatarTarget.textContent = (
       e.currentTarget.value?.[0] || "?"
     ).toUpperCase();
   };
 
   handleColorChange(e) {
+    if (!this.hasAvatarTarget) return;
+
     const color = e.currentTarget.value;
     this.avatarTarget.style.backgroundColor = `color-mix(in srgb, ${color} 10%, transparent)`;
     this.avatarTarget.style.borderColor = `color-mix(in srgb, ${color} 10%, transparent)`;

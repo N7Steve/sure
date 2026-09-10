@@ -3,9 +3,9 @@
 <tr class="border-b border-subdued last:border-0 hover:bg-surface-hover">
   <td class="py-3 px-4 text-sm text-primary">
     <div class="flex w-full items-center gap-2.5">
-      <% if provider_merchant.logo_url %>
+      <% if (merchant_logo_url = provider_merchant.display_logo_url(family: Current.family)).present? %>
         <div class="w-8 h-8 rounded-full flex justify-center items-center">
-          <%= image_tag Setting.transform_brand_fetch_url(provider_merchant.logo_url), class: "w-8 h-8 rounded-full", loading: "lazy" %>
+          <%= image_tag merchant_logo_url, class: "w-8 h-8 rounded-full", loading: "lazy" %>
         </div>
       <% else %>
         <div class="w-8 h-8 rounded-full flex items-center justify-center bg-container-inset text-secondary text-sm font-medium">
