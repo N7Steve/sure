@@ -27,7 +27,7 @@
       <%# Account %>
       <div>
         <%= f.collection_select :account_id,
-            Current.family.accounts.writable_by(Current.user).alphabetically,
+            Current.family.accounts.writable_by(Current.user).navigation_visible.alphabetically,
             :id, :name,
             { prompt: t("scheduled_payments.form.select_account", default: "Select account"),
               label: t("scheduled_payments.form.account_label", default: "Account"),
@@ -109,7 +109,7 @@
       <div data-scheduled-payment-form-target="transferFields"
            class="<%= 'hidden' unless scheduled_payment.transfer? %>">
         <%= f.collection_select :target_account_id,
-            Current.family.accounts.writable_by(Current.user).alphabetically,
+            Current.family.accounts.writable_by(Current.user).navigation_visible.alphabetically,
             :id, :name,
             { prompt: t("scheduled_payments.form.select_target_account", default: "Select target account"),
               label: t("scheduled_payments.form.target_account_label", default: "Target account"),

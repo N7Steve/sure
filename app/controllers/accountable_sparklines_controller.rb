@@ -36,7 +36,7 @@ class AccountableSparklinesController < ApplicationController
     end
 
     def account_scope
-      @account_scope ||= family.accounts.visible.where(accountable_type: accountable.name)
+      @account_scope ||= family.accounts.visible.included_in_reports.where(accountable_type: accountable.name)
     end
 
     def account_ids
@@ -84,6 +84,6 @@ class AccountableSparklinesController < ApplicationController
     end
 
     def cache_key
-      family.build_cache_key("#{accountable.name}_sparkline_#{Account::Chartable::SPARKLINE_CACHE_VERSION}", invalidate_on_data_updates: true)
+      family.build_cache_key("#{accountable.name}_sparkline_#{Account::Chartable::SPARKLINE_CACHE_VERSION}_financial_scope_v2", invalidate_on_data_updates: true)
     end
 end

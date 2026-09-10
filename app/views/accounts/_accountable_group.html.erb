@@ -1,7 +1,9 @@
 <%# locals: (account_group:, mobile: false, all_tab: false, open: nil, **args) %>
 
+<% sidebar_accounts = account_group.accounts.reject(&:archived?) %>
+<% if sidebar_accounts.any? %>
 <div id="<%= account_group.dom_id(tab: all_tab ? :all : nil, mobile: mobile) %>">
-  <% is_open = open.nil? ? account_group.accounts.any? { |account| page_active?(account_path(account)) } : open %>
+  <% is_open = open.nil? ? sidebar_accounts.any? { |account| page_active?(account_path(account)) } : open %>
   <% disclosure_context = all_tab ? "all" : account_group.classification %>
   <% disclosure_key = ["account-sidebar", Current.user.id, mobile ? "mobile" : "desktop", disclosure_context, account_group.key].join("-") %>
   <%= render DS::Disclosure.new(
@@ -29,7 +31,7 @@
     <% end %>
 
     <div class="space-y-1">
-      <% account_group.accounts.each do |account| %>
+      <% sidebar_accounts.each do |account| %>
         <%= link_to account_path(account),
                   class: class_names(
                     "block flex items-center gap-2 px-3 py-2 rounded-lg",
@@ -47,11 +49,8 @@
             </div>
             <div class="flex items-center gap-1">
               <%= tag.p account.short_subtype_label, class: "text-sm text-secondary truncate min-w-0" %>
-              <% if account.excluded? %>
+              <% if account.cashflow_boundary? %>
                 <%= icon("ban", size: "xs", class: "text-gray-400 opacity-50") %>
-              <% end %>
-              <% if account.archived? %>
-                <%= icon("archive", size: "xs", class: "text-gray-400 opacity-50") %>
               <% end %>
             </div>
           </div>
@@ -81,3 +80,4 @@
     </div>
   <% end %>
 </div>
+<% end %>

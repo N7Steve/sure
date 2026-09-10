@@ -420,12 +420,16 @@ class AccountTest < ActiveSupport::TestCase
     assert_not ActiveStorage::Attachment.exists?(attachment_id)
   end
 
-  test "visible scope excludes accounts marked as excluded" do
-    @account.update!(excluded: false)
+  test "visible scope includes outside-finances accounts while navigation scopes distinguish them" do
+    @account.update!(financial_treatment: "included")
     assert_includes Account.visible, @account
+    assert_includes Account.navigation_visible, @account
+    assert_includes Account.default_transaction_visible, @account
 
-    @account.update!(excluded: true)
-    assert_not_includes Account.visible, @account
+    @account.update!(financial_treatment: "outside_finances")
+    assert_includes Account.visible, @account
+    assert_includes Account.navigation_visible, @account
+    assert_not_includes Account.default_transaction_visible, @account
   end
 
   test "sync_enabled scope includes accounts marked as excluded" do
@@ -434,6 +438,59 @@ class AccountTest < ActiveSupport::TestCase
 
     @account.update!(excluded: true)
     assert_includes Account.sync_enabled, @account
+  end
+
+  test "financial treatment maps to report and cashflow boundary flags" do
+    @account.update!(financial_treatment: "included")
+    assert_equal "included", @account.financial_treatment
+    refute @account.exclude_from_reports?
+    refute @account.cashflow_boundary?
+    refute @account.excluded?
+
+    @account.update!(financial_treatment: "tracking")
+    assert_equal "tracking", @account.financial_treatment
+    assert @account.exclude_from_reports?
+    refute @account.cashflow_boundary?
+    refute @account.excluded?
+
+    @account.update!(financial_treatment: "outside_finances")
+    assert_equal "outside_finances", @account.financial_treatment
+    assert @account.exclude_from_reports?
+    assert @account.cashflow_boundary?
+    assert @account.excluded?
+  end
+
+  test "legacy excluded writes are mirrored to the new financial treatment" do
+    @account.update!(excluded: true)
+
+    assert_equal "outside_finances", @account.financial_treatment
+    assert @account.cashflow_boundary?
+    assert @account.exclude_from_reports?
+  end
+
+  test "cashflow boundary requires exclusion from reports" do
+    @account.cashflow_boundary = true
+    @account.exclude_from_reports = false
+
+    assert_not @account.valid?
+    assert @account.errors[:exclude_from_reports].present?
+  end
+
+  test "financial treatment rejects unknown values" do
+    @account.financial_treatment = "unknown"
+
+    assert_not @account.valid?
+    assert @account.errors[:financial_treatment].present?
+  end
+
+  test "archived accounts remain visible to calculations but not navigation" do
+    @account.update!(archived: true)
+
+    assert_includes Account.visible, @account
+    assert_includes Account.data_visible, @account
+    assert_includes Account.sync_enabled, @account
+    assert_not_includes Account.navigation_visible, @account
+    assert_not_includes Account.default_transaction_visible, @account
   end
   test "destroying account moves linked statements to inbox after commit" do
     statement = AccountStatement.create_from_upload!(

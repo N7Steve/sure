@@ -735,6 +735,17 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#account-sidebar-desktop[data-sync-refresh='sidebar'][target='_top']"
   end
 
+  test "sidebar hides archived accounts but keeps outside-finances accounts visible" do
+    archived = @user.family.accounts.create!(name: "Archived history account", balance: 0, currency: "USD", accountable: Depository.new, archived: true)
+    outside = @user.family.accounts.create!(name: "Shared household account", balance: 0, currency: "USD", accountable: Depository.new, financial_treatment: "outside_finances")
+
+    get sidebar_accounts_path
+
+    assert_response :success
+    assert_not_includes response.body, archived.name
+    assert_includes response.body, outside.name
+  end
+
   test "sidebar returns a scoped mobile frame" do
     get sidebar_accounts_path(mobile: true)
 

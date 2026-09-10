@@ -5,6 +5,8 @@ en:
       uncategorized: Uncategorized
       other_investments: Other Investments
       investment_contributions: Investment Contributions
+      transfer_to_excluded: Money leaving my finances
+      transfer_from_excluded: Money entering my finances
       defaults:
         income: Income
         food_and_drink: Food & Drink

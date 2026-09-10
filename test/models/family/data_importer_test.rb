@@ -54,6 +54,50 @@ class Family::DataImporterTest < ActiveSupport::TestCase
     assert_equal "disabled", account.status
   end
 
+  test "imports archived and financial treatment account settings" do
+    ndjson = build_ndjson([
+      {
+        type: "Account",
+        data: {
+          id: "outside-account",
+          name: "Shared household",
+          balance: "1000.00",
+          currency: "USD",
+          accountable_type: "Depository",
+          archived: true,
+          cashflow_boundary: true,
+          exclude_from_reports: true
+        }
+      }
+    ])
+
+    account = Family::DataImporter.new(@family, ndjson).import![:accounts].first
+
+    assert account.archived?
+    assert_equal "outside_finances", account.financial_treatment
+  end
+
+  test "maps legacy excluded accounts to outside my finances" do
+    ndjson = build_ndjson([
+      {
+        type: "Account",
+        data: {
+          id: "legacy-excluded-account",
+          name: "Legacy shared account",
+          balance: "1000.00",
+          currency: "USD",
+          accountable_type: "Depository",
+          excluded: true
+        }
+      }
+    ])
+
+    account = Family::DataImporter.new(@family, ndjson).import![:accounts].first
+
+    assert_equal "outside_finances", account.financial_treatment
+    assert account.exclude_from_reports?
+  end
+
   test "does not import pending deletion account status" do
     ndjson = build_ndjson([
       {

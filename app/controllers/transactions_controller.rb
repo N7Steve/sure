@@ -62,9 +62,9 @@ class TransactionsController < ApplicationController
     Transaction::ActivitySecurityPreloader.new(@transactions).preload
 
     # Prepare accounts for the filter partial
-    include_excluded = @q && @q[:active_accounts_only] == "false"
-    base_accounts = Current.user.accessible_accounts.sidebar_visible
-    @filter_accounts = include_excluded ? base_accounts.alphabetically : base_accounts.not_excluded.alphabetically
+    include_hidden = @q && @q[:active_accounts_only] == "false"
+    base_accounts = Current.user.accessible_accounts.visible
+    @filter_accounts = include_hidden ? base_accounts.alphabetically : base_accounts.default_transaction_visible.alphabetically
 
     # Preload split parent data
     entry_ids = @transactions.map { |t| t.entry.id }
@@ -768,18 +768,18 @@ class TransactionsController < ApplicationController
       cleaned_params.delete(:amount_operator) unless cleaned_params[:amount].present?
 
       if cleaned_params[:account_ids].present?
-        include_excluded = cleaned_params[:active_accounts_only].to_s == "false"
-        base_accounts = Current.user.accessible_accounts.sidebar_visible
-        
-        allowed_ids = if include_excluded
+        include_hidden = cleaned_params[:active_accounts_only].to_s == "false"
+        base_accounts = Current.user.accessible_accounts.visible
+
+        allowed_ids = if include_hidden
                         base_accounts.pluck(:id).map(&:to_s)
                       else
-                        base_accounts.not_excluded.pluck(:id).map(&:to_s)
+                        base_accounts.default_transaction_visible.pluck(:id).map(&:to_s)
                       end
-        
+
         params_account_ids = Array(cleaned_params[:account_ids]).map(&:to_s)
         valid_ids = params_account_ids & allowed_ids
-        
+
         if valid_ids.empty?
           cleaned_params.delete(:account_ids)
         else

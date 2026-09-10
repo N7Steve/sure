@@ -28,10 +28,10 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 | Pagos recurrentes / programados | Propia | Modelos, generación, confirmación/rechazo, transferencias recurrentes e integración en transacciones |
 | Bills / recurrencias detectadas | Upstream, oculto | Conservar la implementación como referencia reutilizable, pero sin superficies de acceso visibles; Pagos programados es el único producto recurrente expuesto |
 | Informes personalizados | Propia | Resumen, desglose, gastos compartidos, exportación y secciones reordenables |
-| Exclusión y archivo de cuentas | Propia | Las tres semánticas distintas: excluida, archivada y excluida sólo de informes |
+| Tratamiento financiero y archivo de cuentas | Propia | Preservar “incluida”, “solo seguimiento” y “fuera de mis finanzas”; el archivo sólo afecta a la presentación |
 | Roboadvisor e inversiones | Propia | Rendimiento, flujos, liquidez neta estimada y tratamiento fiscal |
 | Categorías y transacciones | Propia | Creación/edición de categorías, selectores, búsqueda, formulario y detalle enriquecidos |
-| Transferencias y divisiones | Propia o muy modificada | Clasificación con cuentas excluidas, conversión y splitting |
+| Transferencias y divisiones | Propia o muy modificada | Clasificación al cruzar la frontera financiera, conversión y splitting |
 | Exportaciones de familia | Propia | Copia completa y CSV personalizado de transacciones |
 | UI/UX | Propia o adaptada | Vistas compactas, cuentas agrupadas, componentes interactivos y mejoras responsive |
 | Períodos mensuales del dashboard | Propia | Money In / Out y gasto acumulado deben respetar conjuntamente `family.month_start_day` |
@@ -157,21 +157,25 @@ Archivos upstream que forman esta frontera: `app/controllers/bills_controller.rb
 
 ## 3. Visibilidad, exclusión y archivo de cuentas
 
-El fork distingue conceptos que no son intercambiables:
+El formulario expone una única decisión de tratamiento financiero, respaldada por dos propiedades ortogonales:
 
-- **Excluida (`excluded`)**: queda fuera de la experiencia financiera habitual y afecta a la clasificación de transferencias y filtros.
-- **Archivada (`archived`)**: se oculta de navegación/listados sin borrar sus datos históricos.
-- **Excluida de informes (`exclude_from_reports`)**: conserva la cuenta disponible, pero no entra en los cálculos de informes.
+- **Incluida en mis finanzas**: forma parte del patrimonio, los informes y la actividad habitual.
+- **Solo seguimiento (`exclude_from_reports`)**: permite consultar y sincronizar la cuenta, pero la excluye del patrimonio, los informes y las métricas. Las transferencias conservan su naturaleza de transferencia.
+- **Fuera de mis finanzas (`cashflow_boundary`)**: implica `exclude_from_reports`; además, las transferencias que cruzan esta frontera se contabilizan como gasto al salir de mis finanzas y como ingreso al entrar. Es el tratamiento destinado a cuentas operativas compartidas como la cuenta de la hipoteca.
+- **Archivada (`archived`)**: es únicamente una preferencia de presentación. Se oculta de la barra lateral, selectores operativos y listado predeterminado de transacciones, pero sigue sincronizándose y permanece en el patrimonio, informes y gráficos históricos.
+- **Desactivada (`status = disabled`)**: conserva la semántica de ciclo de vida upstream y no se modifica en esta fase.
+
+Durante la fase 1, la columna histórica `accounts.excluded` se conserva como espejo compatible de `cashflow_boundary`. Las escrituras antiguas se traducen al nuevo tratamiento y la migración inicial copia las cuentas excluidas a `cashflow_boundary = true` y `exclude_from_reports = true`. Su retirada física queda reservada para una fase posterior.
 
 ### Comportamiento propio
 
-- Acciones para activar/desactivar, excluir/incluir y archivar/restaurar cuentas.
-- Scopes diferenciados (`visible`, `data_visible`, `sidebar_visible`, `sync_enabled`, `excluded`, `archived`, etc.).
+- Selector único de tratamiento financiero y acciones para activar/desactivar y archivar/restaurar cuentas.
+- Scopes por intención (`visible`, `navigation_visible`, `default_transaction_visible`, `included_in_reports` y `sync_enabled`); los aliases históricos se conservan temporalmente donde reducen el riesgo de integración.
 - Invalidación de cachés familiares cuando cambia la visibilidad.
-- Filtro de transacciones capaz de incluir cuentas excluidas de forma explícita.
+- Filtro de transacciones capaz de incluir explícitamente cuentas archivadas y fuera de mis finanzas.
 - Históricos, balance, net worth, sparklines y páginas de cuenta adaptados a estas reglas.
-- Transferencias hacia/desde cuentas excluidas reclasificadas para que los informes no las interpreten como gasto/ingreso ordinario.
-- Las cuentas excluidas pueden seguir sincronizándose; ocultar datos no equivale a desactivar el proveedor.
+- Transferencias que cruzan la frontera de mis finanzas reclasificadas como salida/entrada; cambiar el tratamiento también reclasifica transferencias existentes.
+- Las cuentas fuera de mis finanzas y archivadas pueden seguir sincronizándose; presentación, tratamiento financiero y ciclo de vida son conceptos separados.
 
 ### Archivos clave
 
@@ -366,6 +370,7 @@ El orden y el efecto sobre datos deben preservarse:
 | `20260508160000_fix_corrupted_transfer_outflow_amounts.rb` | Corrige importes de salida de transferencias programadas; irreversible |
 | `20260817000000_add_custom_options_to_family_exports.rb` | Añade tipo, solicitante, rango, filtros y conteo a exportaciones |
 | `20260908120000_add_amount_estimated_to_scheduled_payments.rb` | Identifica importes variables usados como estimación en Agenda |
+| `20260910120000_add_cashflow_boundary_to_accounts.rb` | Introduce “fuera de mis finanzas”, migra `excluded` y exige exclusión de informes |
 
 `db/schema.rb` debe reflejar el resultado acumulado; no resolver sus conflictos de forma aislada sin comprobar estas migraciones.
 
@@ -384,7 +389,7 @@ Las 230 rutas del inventario original se agrupaban así. Tras la integración sq
 - `app/views/`: cuentas, informes, inversiones, transacciones, transferencias, pagos programados, exportaciones y ajustes generales de UI.
 - `config/locales/`: traducciones de todas las áreas anteriores.
 - `config/routes.rb`, `config/schedule.yml`, `config/initializers/sidekiq.rb`: rutas y ejecución periódica.
-- `db/migrate/` y `db/schema.rb`: las diez migraciones enumeradas y su esquema resultante.
+- `db/migrate/` y `db/schema.rb`: las once migraciones enumeradas y su esquema resultante.
 - `test/`: cobertura de pagos programados, cuentas, transferencias, transacciones, exportaciones, Syncable y componentes DS.
 - Raíz/scripts/docs: `Gemfile`, `README.md`, `informe_scheduled_payments.md`, `rollback-instructions.md`, `conflicts.txt`, `script.rb` y `script/debug_subtypes.rb`.
 
@@ -409,12 +414,12 @@ git diff
 
 1. Antes de actualizar, guardar los SHA de `upstream/main`, `HEAD` y el merge-base en la sección “Foto de referencia”.
 2. Revisar este inventario por área funcional, no sólo por archivo: upstream puede mover o renombrar el código.
-3. En conflictos de cuentas, preservar la separación entre `excluded`, `archived` y `exclude_from_reports`.
+3. En conflictos de cuentas, preservar la separación entre tratamiento financiero (`exclude_from_reports`/`cashflow_boundary`), presentación (`archived`) y ciclo de vida (`status`); `excluded` sólo es compatibilidad de fase 1.
 4. En conflictos de transacciones/transferencias, comprobar también pagos programados, informes y exportaciones; comparten modelos y controladores.
-5. No aceptar automáticamente el `db/schema.rb`: validar primero las diez migraciones propias.
+5. No aceptar automáticamente el `db/schema.rb`: validar primero las once migraciones propias.
 6. Si upstream incorpora una función equivalente, decidir expresamente si migrar a ella y añadir pruebas de regresión antes de retirar la implementación del fork.
 7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada. Al resolver conflictos, integrar primero la evolución upstream del subsistema y reaplicar después la frontera pequeña formada por `bills_frontend_enabled?`, los guards de controlador y `Insight.for_product_frontend`; no resolverlos eliminando código Bills ni conectando ambos modelos.
-8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores de transferencias con cuentas excluidas y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
+8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores internos de transferencias que cruzan la frontera (`transfer_to_excluded`/`transfer_from_excluded`) y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
 9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
 10. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
 11. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.

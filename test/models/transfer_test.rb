@@ -141,6 +141,37 @@ class TransferTest < ActiveSupport::TestCase
     end
   end
 
+  test "crossing into an outside-finances account is an expense boundary" do
+    source = accounts(:depository)
+    destination = accounts(:credit_card)
+    destination.update!(financial_treatment: "outside_finances")
+
+    assert_equal "transfer_to_excluded", Transfer.outflow_kind_for(source, destination)
+    assert_equal "transfer_to_excluded", Transfer.inflow_kind_for(source, destination)
+  end
+
+  test "crossing out of an outside-finances account is an income boundary" do
+    source = accounts(:depository)
+    destination = accounts(:credit_card)
+    source.update!(financial_treatment: "outside_finances")
+
+    assert_equal "transfer_from_excluded", Transfer.outflow_kind_for(source, destination)
+    assert_equal "transfer_from_excluded", Transfer.inflow_kind_for(source, destination)
+  end
+
+  test "changing financial treatment reclassifies existing transfers" do
+    transfer = transfers(:one)
+    destination = transfer.to_account
+
+    destination.update!(financial_treatment: "outside_finances")
+    assert_equal "transfer_to_excluded", transfer.outflow_transaction.reload.kind
+    assert_equal "transfer_to_excluded", transfer.inflow_transaction.reload.kind
+
+    destination.update!(financial_treatment: "included")
+    assert_equal "cc_payment", transfer.outflow_transaction.reload.kind
+    assert_equal "funds_movement", transfer.inflow_transaction.reload.kind
+  end
+
   test "kind_for_account returns investment_contribution for investment accounts" do
     assert_equal "investment_contribution", Transfer.kind_for_account(accounts(:investment))
   end

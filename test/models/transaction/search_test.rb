@@ -670,6 +670,23 @@ class Transaction::SearchTest < ActiveSupport::TestCase
     assert_empty search.transactions_scope
   end
 
+  test "default search hides archived and outside-finances accounts" do
+    archived_account = @family.accounts.create!(name: "Archived", balance: 0, currency: "USD", accountable: Depository.new, archived: true)
+    outside_account = @family.accounts.create!(name: "Outside", balance: 0, currency: "USD", accountable: Depository.new, financial_treatment: "outside_finances")
+    regular = create_transaction(account: @checking_account, amount: 10)
+    archived = create_transaction(account: archived_account, amount: 20)
+    outside = create_transaction(account: outside_account, amount: 30)
+
+    default_ids = Transaction::Search.new(@family).transactions_scope.pluck(:id)
+    all_ids = Transaction::Search.new(@family, filters: { active_accounts_only: false }).transactions_scope.pluck(:id)
+
+    assert_includes default_ids, regular.entryable.id
+    assert_not_includes default_ids, archived.entryable.id
+    assert_not_includes default_ids, outside.entryable.id
+    assert_includes all_ids, archived.entryable.id
+    assert_includes all_ids, outside.entryable.id
+  end
+
   test "totals handles empty accessible_account_ids without raising" do
     create_transaction(account: @checking_account, amount: 100)
 

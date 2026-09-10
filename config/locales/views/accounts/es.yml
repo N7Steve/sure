@@ -16,14 +16,12 @@ es:
       troubleshoot: Solucionar problemas
       enable: Activar cuenta
       disable: Desactivar cuenta
-      exclude_from_reports: Excluir de todos los informes
-      include_in_reports: Incluir en los informes
-      excluded_from_reports_indicator: Excluida de los informes
+      outside_finances_indicator: Fuera de mis finanzas
+      tracking_only_indicator: Solo seguimiento
       set_default: Establecer como predeterminada
       remove_default: Quitar predeterminada
       default_label: Predeterminada
       disabled_label: Desactivada
-      excluded_label: Excluida
       archived_label: Archivada
       delete: Eliminar cuenta
       sharing: Compartir
@@ -48,8 +46,12 @@ es:
       opening_balance_date_label: Fecha del saldo inicial
       name_label: Nombre de la cuenta
       name_placeholder: Ejemplo de nombre de cuenta
-      exclude_from_reports_label: Excluir de informes y métricas
-      exclude_from_reports_description: Las cuentas excluidas están ocultas en los informes y los cálculos de patrimonio neto.
+      financial_treatment_label: Tratamiento financiero
+      financial_treatment_description: Define si la cuenta forma parte de tus finanzas y cómo se tratan las transferencias con ella.
+      financial_treatment_options:
+        included: Incluida en mis finanzas
+        tracking: Solo seguimiento
+        outside_finances: Fuera de mis finanzas
       archive_label: Archivar cuenta
       archive_description: Las cuentas archivadas se ocultan de la barra lateral pero siguen contando en tu patrimonio neto e informes.
       additional_details: Detalles adicionales
@@ -59,13 +61,12 @@ es:
       institution_domain_placeholder: ej. chase.com
       notes_label: Notas
       notes_placeholder: Guarda información adicional como números de cuenta, códigos de sucursal, IBAN, números de ruta, etc.
-      exclude_from_reports: Excluir de todos los informes
     index:
       accounts: Cuentas
       account_groups:
         total: Total
         active: Activa
-        excluded: Excluida
+        excluded: Fuera de mis finanzas
         archived: Archivada
       new_account: Nueva cuenta
       sync: Sincronizar todo
@@ -130,8 +131,6 @@ es:
         manage: Gestionar cuentas
         sharing: Compartir
         statements: Extractos
-        exclude_from_reports: Excluir de todos los informes
-        include_in_reports: Incluir en los informes
     update:
       success: Cuenta %{type} actualizada
     sidebar:

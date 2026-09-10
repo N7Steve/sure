@@ -661,6 +661,23 @@ class IncomeStatementTest < ActiveSupport::TestCase
     assert_equal Money.new(1000, @family.currency), totals.expense_money
   end
 
+  test "includes transactions from archived accounts" do
+    archived_account = @family.accounts.create!(
+      name: "Archived Checking",
+      currency: @family.currency,
+      balance: 3000,
+      accountable: Depository.new,
+      archived: true
+    )
+
+    create_transaction(account: archived_account, amount: 100, category: @groceries_category)
+
+    totals = IncomeStatement.new(@family).totals(date_range: Period.last_30_days.date_range)
+
+    assert_equal 5, totals.transactions_count
+    assert_equal Money.new(1000, @family.currency), totals.expense_money
+  end
+
   # net_category_totals tests
   test "net_category_totals nets expense and refund in the same category" do
     Entry.joins(:account).where(accounts: { family_id: @family.id }).destroy_all

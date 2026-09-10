@@ -243,6 +243,7 @@ class TransfersController < ApplicationController
     def set_accounts
       @accounts = accessible_accounts
         .active
+        .not_archived
         .alphabetically
         .includes(
           :account_providers,

@@ -20,9 +20,9 @@ class Transfer < ApplicationRecord
 
   class << self
     def outflow_kind_for(source, destination)
-      if destination.excluded? && !source.excluded?
+      if destination.cashflow_boundary? && !source.cashflow_boundary?
         "transfer_to_excluded"
-      elsif source.excluded? && !destination.excluded?
+      elsif source.cashflow_boundary? && !destination.cashflow_boundary?
         "transfer_from_excluded"
       elsif destination.loan?
         "loan_payment"
@@ -36,9 +36,9 @@ class Transfer < ApplicationRecord
     end
 
     def inflow_kind_for(source, destination)
-      if destination.excluded? && !source.excluded?
+      if destination.cashflow_boundary? && !source.cashflow_boundary?
         "transfer_to_excluded"
-      elsif source.excluded? && !destination.excluded?
+      elsif source.cashflow_boundary? && !destination.cashflow_boundary?
         "transfer_from_excluded"
       else
         "funds_movement"

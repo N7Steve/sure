@@ -326,7 +326,9 @@ class Family::DataImporter
           institution_name: data["institution_name"],
           institution_domain: data["institution_domain"],
           notes: data["notes"],
-          status: importable_account_status(data["status"])
+          status: importable_account_status(data["status"]),
+          archived: boolean_import_value(data, "archived", default: false),
+          financial_treatment: imported_financial_treatment(data)
         )
 
         account.save!
@@ -351,6 +353,14 @@ class Family::DataImporter
 
     def importable_account_status(status)
       status.to_s.in?(%w[active disabled draft]) ? status.to_s : "active"
+    end
+
+    def imported_financial_treatment(data)
+      return "outside_finances" if boolean_import_value(data, "cashflow_boundary", default: false)
+      return "outside_finances" if !data.key?("cashflow_boundary") && boolean_import_value(data, "excluded", default: false)
+      return "tracking" if boolean_import_value(data, "exclude_from_reports", default: false)
+
+      "included"
     end
 
     def import_balances(records)

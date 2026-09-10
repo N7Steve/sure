@@ -13,7 +13,8 @@ class Transaction::Search
   attribute :categories, array: true
   attribute :merchants, array: true
   attribute :tags, array: true
-  # Determines whether transactions from excluded accounts should be filtered out (true by default).
+  # Determines whether transactions from archived and outside-finances accounts
+  # should be filtered out (true by default).
   attribute :active_accounts_only, :boolean, default: true
 
   attr_reader :family, :accessible_account_ids
@@ -52,7 +53,7 @@ class Transaction::Search
   # because those transactions are retirement savings, not daily income/expenses.
   def totals
     @totals ||= begin
-      Rails.cache.fetch("transaction_search_totals/v2/#{cache_key_base}") do
+      Rails.cache.fetch("transaction_search_totals/v3/#{cache_key_base}") do
         scope = transactions_scope
 
         # Exclude tax-advantaged accounts from totals calculation
@@ -111,10 +112,10 @@ class Transaction::Search
   private
     Totals = Data.define(:count, :income_money, :expense_money, :transfer_inflow_money, :transfer_outflow_money)
 
-    # Applies a filter to only include transactions from active, non-excluded accounts,
-    # if the active_accounts_only_filter flag is enabled.
+    # Applies the habitual transaction scope unless the caller explicitly asks
+    # to include archived and outside-finances accounts.
     def apply_active_accounts_filter(query, active_accounts_only_filter)
-      scope = active_accounts_only_filter ? Account.data_visible : Account.where(status: Account::VISIBLE_STATUSES)
+      scope = active_accounts_only_filter ? Account.default_transaction_visible : Account.visible
       query.merge(scope)
     end
 

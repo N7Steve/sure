@@ -30,7 +30,7 @@ class BalanceSheet::AccountTotals
 
     def visible_accounts
       @visible_accounts ||= begin
-        scope = family.accounts.sidebar_visible.with_attached_logo.includes(:account_shares, :accountable, :plaid_account, :simplefin_account, account_providers: :provider)
+        scope = family.accounts.visible.with_attached_logo.includes(:account_shares, :accountable, :plaid_account, :simplefin_account, account_providers: :provider)
         scope = scope.accessible_by(user) if user
         scope
       end
@@ -61,7 +61,7 @@ class BalanceSheet::AccountTotals
     def cache_key
       shares_version = user ? AccountShare.where(user: user).maximum(:updated_at)&.to_i : nil
       family.build_cache_key(
-        [ "balance_sheet_account_ids", user&.id, shares_version ].compact.join("_"),
+        [ "balance_sheet_account_ids_v2", user&.id, shares_version ].compact.join("_"),
         invalidate_on_data_updates: true
       )
     end

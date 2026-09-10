@@ -39,7 +39,6 @@ class BalanceSheet::AccountGroup
 
   def total
     accounts
-      .reject(&:excluded?)
       .reject { |account| account.respond_to?(:exclude_from_reports?) && account.exclude_from_reports? }
       .sum(&:converted_balance)
   end

@@ -25,8 +25,12 @@
           <div class="flex items-center gap-1.5">
             <%= link_to account.name, account, class: [(account.active? ? "text-primary" : "text-subdued"), "text-sm font-medium hover:underline"], data: { turbo_frame: "_top", clickable_row_target: "link" } %>
 
-            <% if account.exclude_from_reports? %>
-              <%= render DS::Tooltip.new(text: t("accounts.account.excluded_from_reports_indicator"), as: :span) do %>
+            <% if account.outside_finances? %>
+              <%= render DS::Tooltip.new(text: t("accounts.account.outside_finances_indicator", default: "Outside my finances"), as: :span) do %>
+                <%= icon("ban", class: "w-3.5 h-3.5 text-secondary") %>
+              <% end %>
+            <% elsif account.tracking_only? %>
+              <%= render DS::Tooltip.new(text: t("accounts.account.tracking_only_indicator", default: "Tracking only"), as: :span) do %>
                 <%= icon("eye-off", class: "w-3.5 h-3.5 text-secondary") %>
               <% end %>
             <% end %>
@@ -48,9 +52,6 @@
             <% end %>
             <% if account.disabled? %>
               <%= icon("pause-circle", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.disabled_label")) %>
-            <% end %>
-            <% if account.excluded? %>
-              <%= icon("ban", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.excluded_label")) %>
             <% end %>
             <% if account.archived? %>
               <%= icon("archive", size: "xs", class: "text-gray-400 opacity-50 shrink-0", title: t("accounts.account.archived_label")) %>
@@ -115,18 +116,6 @@
             <% elsif account.disabled? %>
               <% menu.with_item(variant: "button", text: t("accounts.account.enable"), href: toggle_active_account_path(account), method: :patch, icon: "toggle-left", data: { turbo_frame: :_top }) %>
             <% end %>
-            <% if account.exclude_from_reports? %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.include_in_reports"), href: toggle_exclude_from_reports_account_path(account), method: :patch, icon: "eye", data: { turbo_frame: :_top }) %>
-            <% else %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.exclude_from_reports"), href: toggle_exclude_from_reports_account_path(account), method: :patch, icon: "eye-off", data: { turbo_frame: :_top }) %>
-            <% end %>
-
-            <% if account.excluded? %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.include", default: "Include account"), href: polymorphic_path([:toggle_excluded, account], excluded: false), method: :patch, icon: "toggle-right", data: { turbo_frame: :_top }) %>
-            <% else %>
-              <% menu.with_item(variant: "button", text: t("accounts.account.exclude", default: "Exclude account"), href: polymorphic_path([:toggle_excluded, account], excluded: true), method: :patch, icon: "toggle-left", data: { turbo_frame: :_top }) %>
-            <% end %>
-
             <% if account.archived? %>
               <% menu.with_item(variant: "button", text: t("accounts.account.unarchive", default: "Unarchive account"), href: polymorphic_path([:toggle_archived, account], archived: false), method: :patch, icon: "archive-restore", data: { turbo_frame: :_top }) %>
             <% else %>

@@ -10,7 +10,7 @@
         }
       ) %>
   <div class="my-2" id="list" data-list-filter-target="list">
-    <% (@filter_accounts || Current.user.accessible_accounts.not_excluded.alphabetically).each do |account| %>
+    <% (@filter_accounts || Current.user.accessible_accounts.default_transaction_visible.alphabetically).each do |account| %>
       <div class="filterable-item flex items-center gap-2 p-2" data-filter-name="<%= account.name %>">
         <%= form.check_box :account_ids,
                            {
@@ -22,8 +22,10 @@
                            nil %>
         <%= form.label :account_ids, value: account.id, class: "text-sm text-primary flex items-center gap-1" do %>
           <%= account.name %>
-          <% if account.excluded? %> 
-            <span class="text-xs text-secondary"><%= t("accounts.accountable_group.excluded_badge", default: "Excluded") %></span>
+          <% if account.outside_finances? %>
+            <span class="text-xs text-secondary"><%= t("accounts.account.outside_finances_indicator", default: "Outside my finances") %></span>
+          <% elsif account.archived? %>
+            <span class="text-xs text-secondary"><%= t("accounts.account.archived_label") %></span>
           <% end %>
         <% end %>
       </div>

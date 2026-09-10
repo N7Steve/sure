@@ -279,17 +279,17 @@ class Category < ApplicationRecord
         lucide_icon: "trending-up"
       )
     end
-  # Synthetic category for transfers from excluded accounts
+  # Synthetic categories for transfers crossing the user's financial boundary.
   def transfer_from_excluded
     new(
-      name: I18n.t(TRANSFER_FROM_EXCLUDED_NAME_KEY, default: "Transfer from excluded account"),
+      name: I18n.t(TRANSFER_FROM_EXCLUDED_NAME_KEY, default: "Money entering my finances"),
       color: "#9CA3AF", # Tailwind gray-400
       lucide_icon: "arrow-right-left"
     )
   end
     def transfer_to_excluded
       new(
-        name: I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Transfer to excluded account"),
+        name: I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Money leaving my finances"),
         color: TRANSFER_COLOR,
         lucide_icon: "arrow-right-left"
       )
@@ -434,14 +434,14 @@ class Category < ApplicationRecord
     !persisted? && name == I18n.t(OTHER_INVESTMENTS_NAME_KEY)
   end
 
-  # Predicate: is this the synthetic "Transfer to Excluded Account" category?
+  # Predicate: is this the synthetic category for money leaving the boundary?
   def transfer_to_excluded?
-    !persisted? && name == I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Transfer to excluded account")
+    !persisted? && name == I18n.t(TRANSFER_TO_EXCLUDED_NAME_KEY, default: "Money leaving my finances")
   end
 
-  # Predicate: is this the synthetic "Transfer from Excluded Account" category?
+  # Predicate: is this the synthetic category for money entering the boundary?
   def transfer_from_excluded?
-    !persisted? && name == I18n.t(TRANSFER_FROM_EXCLUDED_NAME_KEY, default: "Transfer from excluded account")
+    !persisted? && name == I18n.t(TRANSFER_FROM_EXCLUDED_NAME_KEY, default: "Money entering my finances")
   end
 
   # Predicate: is this any synthetic (non-persisted) category?

@@ -74,8 +74,8 @@ class Transaction < ApplicationRecord
     loan_payment: "loan_payment", # A payment to a Loan account, treated as an expense in budgets
     one_time: "one_time", # A one-time expense/income, excluded from budget analytics
     investment_contribution: "investment_contribution", # Transfer to investment/crypto account, treated as an expense in budgets
-    transfer_to_excluded: "transfer_to_excluded", # Transfer to an excluded account (e.g., hidden savings), treated as an expense
-    transfer_from_excluded: "transfer_from_excluded" # Transfer from an excluded account, treated as an income
+    transfer_to_excluded: "transfer_to_excluded", # Crossing out of the user's financial boundary; treated as an expense
+    transfer_from_excluded: "transfer_from_excluded" # Crossing into the user's financial boundary; treated as income
   }
 
   # All kinds where money moves between accounts (transfer? returns true).

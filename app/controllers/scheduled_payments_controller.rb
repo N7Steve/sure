@@ -240,7 +240,7 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def prepare_forecast
-    @forecast_accounts = Current.family.accounts.accessible_by(Current.user).visible
+    @forecast_accounts = Current.family.accounts.accessible_by(Current.user).navigation_visible
       .where(accountable_type: "Depository").alphabetically.to_a
     requested_account = @forecast_accounts.find do |account|
       account.id.to_s == params[:account_id].to_s

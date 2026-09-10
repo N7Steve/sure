@@ -124,7 +124,7 @@ en:
           one: "%{count} entry"
           other: "%{count} entries"
         percentage: "% of Total"
-        excluded_account: "Excluded account"
+        excluded_account: "Outside-finances account"
       pagination:
         showing:
           one: Showing %{count} entry

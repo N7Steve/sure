@@ -217,7 +217,7 @@ class GoalsController < ApplicationController
     end
 
     def linkable_accounts_for_new
-      Current.user.accessible_accounts.where(accountable_type: FUNDABLE_TYPES).visible.alphabetically.to_a
+      Current.user.accessible_accounts.where(accountable_type: FUNDABLE_TYPES).default_transaction_visible.alphabetically.to_a
     end
 
     def sync_linked_accounts!(goal, accounts, allocations = {})

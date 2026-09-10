@@ -72,6 +72,18 @@ class BalanceSheetTest < ActiveSupport::TestCase
     assert depository_group.accounts.any?(&:exclude_from_reports?)
   end
 
+  test "archived accounts stay in current net worth and report account groups" do
+    active_asset = create_account(balance: 1000, accountable: Depository.new)
+    archived_asset = create_account(balance: 5000, accountable: Depository.new)
+    archived_asset.update!(archived: true)
+
+    balance_sheet = BalanceSheet.new(@family)
+    depository_group = balance_sheet.assets.account_groups.find { |group| group.name == Depository.display_name }
+
+    assert_equal 6000, balance_sheet.net_worth
+    assert_equal [ active_asset.id, archived_asset.id ].sort, depository_group.accounts.map(&:id).sort
+  end
+
   test "net worth series preserves disabled history without carrying it into current totals" do
     period = Period.custom(start_date: Date.current - 1.day, end_date: Date.current)
     active_account = create_account(balance: 20_000, accountable: Depository.new)

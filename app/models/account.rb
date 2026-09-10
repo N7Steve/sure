@@ -1,9 +1,10 @@
 class Account < ApplicationRecord
   include AASM, Syncable, Monetizable, Chartable, Linkable, Enrichable, Anchorable, Reconcileable, TaxTreatable
 
-  after_save :invalidate_family_caches, if: :saved_change_to_excluded?
-  after_save :invalidate_family_caches, if: :saved_change_to_archived?
-  after_save :invalidate_family_caches, if: :saved_change_to_exclude_from_reports?
+  after_save :invalidate_family_caches, if: -> {
+    saved_change_to_cashflow_boundary? || saved_change_to_archived? || saved_change_to_exclude_from_reports?
+  }
+  after_update :reclassify_boundary_transfers, if: :saved_change_to_cashflow_boundary?
   before_validation :assign_default_owner, if: -> { owner_id.blank? }
 
   # Unlink scheduled entries before cleanup_transfers/entries tries to delete
@@ -18,6 +19,8 @@ class Account < ApplicationRecord
   after_destroy_commit :move_account_statements_to_inbox
 
   validates :name, :balance, :currency, presence: true
+  validate :cashflow_boundary_requires_report_exclusion
+  validate :financial_treatment_is_known
   validate :owner_belongs_to_family, if: -> { owner_id.present? && family_id.present? }
 
   belongs_to :family
@@ -52,11 +55,14 @@ class Account < ApplicationRecord
 
   VISIBLE_STATUSES = %w[draft active].freeze
   HISTORICAL_STATUSES = (VISIBLE_STATUSES + %w[disabled]).freeze
+  FINANCIAL_TREATMENTS = %w[included tracking outside_finances].freeze
 
-  scope :visible, -> { where(status: VISIBLE_STATUSES, excluded: false, archived: false) }
-  scope :data_visible, -> { where(status: VISIBLE_STATUSES, excluded: false) }
-  scope :sidebar_visible, -> { where(status: VISIBLE_STATUSES, archived: false) }
-  scope :sync_enabled, -> { where(status: VISIBLE_STATUSES) }
+  scope :visible, -> { where(status: VISIBLE_STATUSES) }
+  scope :navigation_visible, -> { visible.where(archived: false) }
+  scope :default_transaction_visible, -> { navigation_visible.where(cashflow_boundary: false) }
+  scope :data_visible, -> { visible }
+  scope :sidebar_visible, -> { navigation_visible }
+  scope :sync_enabled, -> { visible }
   scope :historical, -> { where(status: HISTORICAL_STATUSES) }
   # Accounts whose data should be included in financial reports, dashboards,
   # and exports. Excludes accounts where the user has opted to suppress them.
@@ -75,12 +81,64 @@ class Account < ApplicationRecord
   scope :not_archived, -> { where(archived: false) }
 
   scope :visible_manual, -> {
-    visible.manual
+    navigation_visible.manual
   }
 
   scope :listable_manual, -> {
     manual.where.not(status: :pending_deletion)
   }
+
+  def financial_treatment
+    return @invalid_financial_treatment if defined?(@invalid_financial_treatment)
+    return "outside_finances" if cashflow_boundary?
+    return "tracking" if exclude_from_reports?
+
+    "included"
+  end
+
+  def financial_treatment=(value)
+    treatment = value.to_s
+    unless treatment.in?(FINANCIAL_TREATMENTS)
+      @invalid_financial_treatment = treatment
+      return
+    end
+
+    remove_instance_variable(:@invalid_financial_treatment) if defined?(@invalid_financial_treatment)
+
+    case treatment
+    when "included"
+      self.cashflow_boundary = false
+      self.exclude_from_reports = false
+    when "tracking"
+      self.cashflow_boundary = false
+      self.exclude_from_reports = true
+    when "outside_finances"
+      self.cashflow_boundary = true
+      self.exclude_from_reports = true
+    end
+  end
+
+  def tracking_only?
+    exclude_from_reports? && !cashflow_boundary?
+  end
+
+  def outside_finances?
+    cashflow_boundary?
+  end
+
+  # Phase-one compatibility for callers that still write the fork's legacy
+  # account-level flag. Entry#excluded is a separate concept and is untouched.
+  def excluded=(value)
+    excluded = ActiveModel::Type::Boolean.new.cast(value)
+    self.cashflow_boundary = excluded
+    self.exclude_from_reports = excluded
+  end
+
+  def cashflow_boundary=(value)
+    boundary = ActiveModel::Type::Boolean.new.cast(value)
+    write_attribute(:cashflow_boundary, boundary)
+    write_attribute(:excluded, boundary)
+  end
 
   # All accounts a user can access (owned + shared with them)
   scope :accessible_by, ->(user) {
@@ -640,7 +698,7 @@ class Account < ApplicationRecord
   end
 
   def eligible_for_transaction_default?
-    supports_default? && active? && !linked?
+    supports_default? && active? && !linked? && !archived? && !cashflow_boundary?
   end
 
   # Determines if this account supports manual trade entry
@@ -725,6 +783,35 @@ class Account < ApplicationRecord
   end
 
   private
+
+    def cashflow_boundary_requires_report_exclusion
+      return unless cashflow_boundary? && !exclude_from_reports?
+
+      errors.add(:exclude_from_reports, :inclusion)
+    end
+
+    def financial_treatment_is_known
+      return unless defined?(@invalid_financial_treatment)
+
+      errors.add(:financial_treatment, :inclusion)
+    end
+
+    def reclassify_boundary_transfers
+      transaction_ids = entries.where(entryable_type: "Transaction").select(:entryable_id)
+      transfers = Transfer
+        .where(inflow_transaction_id: transaction_ids)
+        .or(Transfer.where(outflow_transaction_id: transaction_ids))
+        .includes(inflow_transaction: { entry: :account }, outflow_transaction: { entry: :account })
+
+      transfers.find_each do |transfer|
+        source = transfer.from_account
+        destination = transfer.to_account
+        next unless source && destination
+
+        transfer.outflow_transaction.update!(kind: Transfer.outflow_kind_for(source, destination))
+        transfer.inflow_transaction.update!(kind: Transfer.inflow_kind_for(source, destination))
+      end
+    end
 
     def invalidate_family_caches
       top_entry_id = entries.order(updated_at: :desc).limit(1).pluck(:id).first

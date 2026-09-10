@@ -260,7 +260,7 @@ class RecurringTransaction
       def cash_on_hand
         return @cash_on_hand if defined?(@cash_on_hand)
 
-        accounts = family.accounts.visible
+        accounts = family.accounts.navigation_visible.included_in_reports
                          .where(accountable_type: "Depository")
                          .merge(Account.accessible_by(user))
 

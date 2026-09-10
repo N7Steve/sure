@@ -5,6 +5,8 @@ es:
       uncategorized: Sin clasificar
       other_investments: Otras inversiones
       investment_contributions: Aportaciones a inversiones
+      transfer_to_excluded: Dinero que sale de mis finanzas
+      transfer_from_excluded: Dinero que entra en mis finanzas
       defaults:
         income: Ingresos
         food_and_drink: Comida y bebida

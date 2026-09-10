@@ -124,6 +124,7 @@ es:
           one: '%{count} movimiento'
           other: '%{count} movimientos'
         percentage: '% del total'
+        excluded_account: Cuenta fuera de mis finanzas
       pagination:
         showing:
           one: Mostrando %{count} movimiento
