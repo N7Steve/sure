@@ -240,12 +240,16 @@ class ScheduledPaymentsController < ApplicationController
   end
 
   def prepare_forecast
-    @forecast_accounts = Current.family.accounts.accessible_by(Current.user).navigation_visible
+    @forecast_accounts = Current.family.accounts.accessible_by(Current.user).default_transaction_visible
       .where(accountable_type: "Depository").alphabetically.to_a
     requested_account = @forecast_accounts.find do |account|
       account.id.to_s == params[:account_id].to_s
     end
-    @forecast_account = requested_account || @forecast_accounts.first
+    default_account_id = Current.user.default_account_for_transactions&.id
+    default_account = @forecast_accounts.find do |account|
+      account.id == default_account_id
+    end
+    @forecast_account = requested_account || default_account || @forecast_accounts.first
     return unless @forecast_account
 
     @forecast = ScheduledPayment::Forecast.new(

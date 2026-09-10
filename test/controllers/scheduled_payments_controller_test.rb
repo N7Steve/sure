@@ -52,6 +52,37 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.projected_savings_explanation")
   end
 
+  test "forecast excludes accounts outside finances" do
+    outside_account = @family.accounts.create!(
+      name: "Outside cash",
+      balance: 100,
+      currency: "USD",
+      accountable: Depository.new,
+      financial_treatment: "outside_finances"
+    )
+
+    get scheduled_payments_url(view: "forecast", account_id: outside_account.id)
+
+    assert_response :success
+    assert_select "select[name=account_id] option[value=?]", outside_account.id.to_s, count: 0
+    assert_select "select[name=account_id] option[selected][value=?]", @account.id.to_s
+  end
+
+  test "forecast selects the default account when none is requested" do
+    @family.accounts.create!(
+      name: "Aardvark cash",
+      balance: 100,
+      currency: "USD",
+      accountable: Depository.new
+    )
+    @user.update!(default_account: @account)
+
+    get scheduled_payments_url(view: "forecast")
+
+    assert_response :success
+    assert_select "select[name=account_id] option[selected][value=?]", @account.id.to_s
+  end
+
   test "forecast falls back from an inaccessible account and invalid horizon" do
     foreign_account = families(:empty).accounts.create!(
       name: "Foreign cash", balance: 0, currency: "USD", accountable: Depository.new
