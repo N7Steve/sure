@@ -48,22 +48,22 @@ class BalanceSheetTest < ActiveSupport::TestCase
     assert_equal 1000, BalanceSheet.new(@family).liabilities.total
   end
 
-  test "excluded accounts do not affect totals" do
+  test "tracking-only accounts do not affect totals" do
     create_account(balance: 1000, accountable: CreditCard.new)
     create_account(balance: 10000, accountable: Depository.new)
 
-    excluded_asset = create_account(balance: 5000, accountable: Depository.new)
-    excluded_asset.update!(exclude_from_reports: true)
+    tracking_asset = create_account(balance: 5000, accountable: Depository.new)
+    tracking_asset.update!(financial_treatment: "tracking")
 
     assert_equal 10000 - 1000, BalanceSheet.new(@family).net_worth
     assert_equal 10000, BalanceSheet.new(@family).assets.total
     assert_equal 1000, BalanceSheet.new(@family).liabilities.total
   end
 
-  test "excluded accounts still have their own balance in account groups" do
+  test "tracking-only accounts still have their own balance in account groups" do
     create_account(balance: 1000, accountable: Depository.new)
-    excluded_asset = create_account(balance: 5000, accountable: Depository.new)
-    excluded_asset.update!(exclude_from_reports: true)
+    tracking_asset = create_account(balance: 5000, accountable: Depository.new)
+    tracking_asset.update!(financial_treatment: "tracking")
 
     asset_groups = BalanceSheet.new(@family).assets.account_groups
     depository_group = asset_groups.find { |ag| ag.name == Depository.display_name }
@@ -112,17 +112,17 @@ class BalanceSheetTest < ActiveSupport::TestCase
   test "historical account scope respects shared-account finance settings" do
     member = users(:new_email)
     included_account = create_account(balance: 0, accountable: Depository.new)
-    excluded_account = create_account(balance: 0, accountable: Depository.new)
+    omitted_account = create_account(balance: 0, accountable: Depository.new)
 
     included_account.disable!
-    excluded_account.disable!
+    omitted_account.disable!
     included_account.share_with!(member, include_in_finances: true)
-    excluded_account.share_with!(member, include_in_finances: false)
+    omitted_account.share_with!(member, include_in_finances: false)
 
     account_ids = BalanceSheet::HistoricalAccountScope.new(@family, user: member).account_ids
 
     assert_includes account_ids, included_account.id
-    assert_not_includes account_ids, excluded_account.id
+    assert_not_includes account_ids, omitted_account.id
   end
 
   test "calculates asset group totals" do

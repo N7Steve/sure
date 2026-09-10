@@ -241,8 +241,8 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "dashboard money flow widget excludes accounts ineligible for cashflow totals from its account filter" do
-    excluded_account = @family.accounts.create!(
-      name: "Excluded From Reports",
+    tracking_account = @family.accounts.create!(
+      name: "Tracking Only",
       currency: @family.currency,
       balance: 0,
       exclude_from_reports: true,
@@ -252,23 +252,23 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :ok
-    assert_select "input[type='checkbox'][value=?]", excluded_account.id.to_s, count: 0
+    assert_select "input[type='checkbox'][value=?]", tracking_account.id.to_s, count: 0
   end
 
   test "dashboard money flow widget ignores account ids excluded from cashflow totals" do
-    excluded_account = @family.accounts.create!(
-      name: "Excluded From Reports",
+    tracking_account = @family.accounts.create!(
+      name: "Tracking Only",
       currency: @family.currency,
       balance: 0,
       exclude_from_reports: true,
       accountable: Depository.new
     )
-    create_transaction(account: excluded_account, name: "Not counted", amount: 999)
+    create_transaction(account: tracking_account, name: "Not counted", amount: 999)
 
     get root_path
     default_bars = money_flow_bars
 
-    get root_path, params: { money_flow_account_ids: [ excluded_account.id ] }
+    get root_path, params: { money_flow_account_ids: [ tracking_account.id ] }
 
     assert_response :ok
     filtered_bars = money_flow_bars
@@ -297,8 +297,8 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "dashboard money flow income/expense links stay scoped to eligible accounts by default" do
-    excluded_account = @family.accounts.create!(
-      name: "Excluded From Reports",
+    tracking_account = @family.accounts.create!(
+      name: "Tracking Only",
       currency: @family.currency,
       balance: 0,
       exclude_from_reports: true,
@@ -316,9 +316,9 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     # accessible-accounts set transactions_path defaults to when account_ids
     # is absent.
     assert_includes income_href, "q%5Baccount_ids%5D%5B%5D="
-    assert_not_includes income_href, excluded_account.id.to_s
+    assert_not_includes income_href, tracking_account.id.to_s
     assert_includes expense_href, "q%5Baccount_ids%5D%5B%5D="
-    assert_not_includes expense_href, excluded_account.id.to_s
+    assert_not_includes expense_href, tracking_account.id.to_s
   end
 
   test "dashboard money flow income/expense links omit account_ids when the default selection matches all accessible accounts" do

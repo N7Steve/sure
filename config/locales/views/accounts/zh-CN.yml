@@ -15,7 +15,6 @@ zh-CN:
       unarchive: 取消归档账户
       default_label: 默认
       disabled_label: 已停用
-      excluded_label: 已排除
       archived_label: 已归档
       complete_setup: 完成设置
       edit: 编辑
@@ -55,14 +54,12 @@ zh-CN:
       archive_label: 归档账户
       archive_description: 归档的账户将从侧边栏隐藏，但仍计入您的净资产和报告中。
     accountable_group:
-      excluded_badge: （已排除）
       archived_badge: （已归档）
     index:
       accounts: 账户管理
       account_groups:
         total: 总计
         active: 活跃
-        excluded: 已排除
         archived: 已归档
       name_placeholder: 示例账户名称
       additional_details: 其他详情

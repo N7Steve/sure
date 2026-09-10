@@ -10,7 +10,6 @@ pt-BR:
       troubleshoot: Solucionar problemas
       default_label: Padrão
       disabled_label: Desativada
-      excluded_label: Excluída
       archived_label: Arquivada
     chart:
       data_not_available: Dados não disponíveis para o período selecionado
@@ -32,14 +31,12 @@ pt-BR:
       archive_label: Arquivar conta
       archive_description: Contas arquivadas ficam ocultas na barra lateral mas ainda contam no seu patrimônio líquido e relatórios.
     accountable_group:
-      excluded_badge: "(Excluída)"
       archived_badge: "(Arquivada)"
     index:
       accounts: Contas
       account_groups:
         total: Total
         active: Ativa
-        excluded: Excluída
         archived: Arquivada
       new_account: Nova conta
       sync: Sincronizar todas

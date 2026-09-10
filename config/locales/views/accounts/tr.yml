@@ -14,7 +14,6 @@ tr:
       edit: Düzenle
       enable: Hesabı etkinleştir
       exclude_from_reports: Tüm raporlardan hariç tut
-      excluded_from_reports_indicator: Raporlardan hariç tutuldu
       include_in_reports: Raporlara dahil et
       link_lunchflow: Lunch Flow ile bağla
       link_provider: Sağlayıcı ile bağla

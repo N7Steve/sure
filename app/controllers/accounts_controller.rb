@@ -3,7 +3,7 @@ class AccountsController < ApplicationController
 
   before_action :set_account, only: %i[show sparkline sync set_default remove_default]
   before_action :set_manageable_account, only: %i[
-    toggle_active toggle_excluded toggle_archived toggle_exclude_from_reports
+    toggle_active toggle_archived
     destroy unlink confirm_unlink select_provider
   ]
   include Periodable
@@ -209,17 +209,6 @@ class AccountsController < ApplicationController
     redirect_to accounts_path
   end
 
-  def toggle_excluded
-    excluded_param = params[:excluded] || params.dig(:account, :excluded)
-    if excluded_param.present?
-      cast_value = ActiveModel::Type::Boolean.new.cast(excluded_param)
-      @account.update!(financial_treatment: cast_value ? "outside_finances" : "included")
-    else
-      @account.update!(financial_treatment: @account.outside_finances? ? "included" : "outside_finances")
-    end
-    redirect_to accounts_path
-  end
-
   def toggle_archived
     archived_param = params[:archived] || params.dig(:account, :archived)
     if archived_param.present?
@@ -228,14 +217,6 @@ class AccountsController < ApplicationController
     else
       @account.toggle!(:archived)
     end
-    redirect_to accounts_path
-  end
-
-  # Toggles the exclude_from_reports flag on the account and redirects to the
-  # account list. The flag controls whether the account's data appears in
-  # financial reports, dashboards, and exports.
-  def toggle_exclude_from_reports
-    @account.update!(financial_treatment: @account.tracking_only? ? "included" : "tracking")
     redirect_to accounts_path
   end
 

@@ -18,7 +18,6 @@ it:
       disable: Disabilita conto
       exclude_from_reports: Escludi da tutti i report
       include_in_reports: Includi nei report
-      excluded_from_reports_indicator: Escluso dai report
       set_default: Imposta come predefinito
       remove_default: Rimuovi predefinito
       default_label: Predefinito

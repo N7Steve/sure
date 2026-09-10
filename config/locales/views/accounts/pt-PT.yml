@@ -18,7 +18,6 @@ pt-PT:
       disable: Desativar conta
       exclude_from_reports: Excluir de todos os relatórios
       include_in_reports: Incluir nos relatórios
-      excluded_from_reports_indicator: Excluída dos relatórios
       set_default: Definir como predefinida
       remove_default: Remover predefinição
       default_label: Predefinida

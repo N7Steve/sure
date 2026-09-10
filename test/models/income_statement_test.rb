@@ -66,7 +66,7 @@ class IncomeStatementTest < ActiveSupport::TestCase
     assert_equal expected_total_expense, expense_totals.category_totals.find { |ct| ct.category.id == @food_category.id }.total
   end
 
-  test "reports transfers involving excluded accounts as synthetic categories" do
+  test "reports transfers crossing the financial boundary as synthetic categories" do
     create_transaction(account: @checking_account, amount: 125, kind: "transfer_to_excluded")
     create_transaction(account: @checking_account, amount: -75, kind: "transfer_from_excluded")
 
@@ -133,13 +133,13 @@ class IncomeStatementTest < ActiveSupport::TestCase
 
   test "eligible_accounts excludes accounts not reflected in totals" do
     tax_advantaged_account = @family.accounts.create! name: "401k", currency: @family.currency, balance: 10000, accountable: Investment.new(subtype: "401k")
-    excluded_account = @family.accounts.create! name: "Excluded", currency: @family.currency, balance: 0, exclude_from_reports: true, accountable: Depository.new
+    tracking_account = @family.accounts.create! name: "Tracking", currency: @family.currency, balance: 0, financial_treatment: "tracking", accountable: Depository.new
 
     eligible_ids = IncomeStatement.new(@family).eligible_accounts.pluck(:id)
 
     assert_includes eligible_ids, @checking_account.id
     assert_not_includes eligible_ids, tax_advantaged_account.id
-    assert_not_includes eligible_ids, excluded_account.id
+    assert_not_includes eligible_ids, tracking_account.id
   end
 
   test "calculates median expense" do
@@ -623,16 +623,16 @@ class IncomeStatementTest < ActiveSupport::TestCase
 
   # Exclude-from-reports tests
   test "excludes transactions from accounts with exclude_from_reports set" do
-    excluded_account = @family.accounts.create!(
-      name: "Excluded Checking",
+    tracking_account = @family.accounts.create!(
+      name: "Tracking Checking",
       currency: @family.currency,
       balance: 3000,
       accountable: Depository.new,
-      exclude_from_reports: true
+      financial_treatment: "tracking"
     )
 
-    create_transaction(account: excluded_account, amount: 500, category: @groceries_category)
-    create_transaction(account: excluded_account, amount: -300, category: @income_category)
+    create_transaction(account: tracking_account, amount: 500, category: @groceries_category)
+    create_transaction(account: tracking_account, amount: -300, category: @income_category)
 
     income_statement = IncomeStatement.new(@family)
     totals = income_statement.totals(date_range: Period.last_30_days.date_range)

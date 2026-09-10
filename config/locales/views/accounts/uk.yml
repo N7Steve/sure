@@ -18,7 +18,6 @@ uk:
       disable: "Вимкнути обліковий запис"
       exclude_from_reports: "Виключити з усіх звітів"
       include_in_reports: "Включити у звіти"
-      excluded_from_reports_indicator: "Виключено зі звітів"
       set_default: "Встановити за замовчуванням"
       remove_default: "Скасувати за замовчуванням"
       default_label: "За замовчуванням"

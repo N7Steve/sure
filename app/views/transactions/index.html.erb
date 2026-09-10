@@ -49,7 +49,7 @@
   </header>
 
   <%= render "summary", totals: @search.totals %>
-  <% include_excluded = @q && @q[:active_accounts_only] == "false" %>
+  <% include_hidden_accounts = @q && @q[:default_accounts_only] == "false" %>
 
   <%
     show_upcoming_tab = bills_frontend_enabled? && !Current.family.recurring_transactions_disabled?
@@ -68,7 +68,7 @@
 
         <div class="flex items-center gap-6">
           <%= render "transactions/compact_view_toggle" %>
-          <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
+          <%= render "transactions/include_hidden_accounts_toggle", include_hidden_accounts: include_hidden_accounts %>
         </div>
       </div>
 
@@ -89,7 +89,7 @@
   <% else %>
     <div class="flex items-center justify-end gap-6 mb-4">
       <%= render "transactions/compact_view_toggle" %>
-      <%= render "transactions/include_excluded_toggle", include_excluded: include_excluded %>
+      <%= render "transactions/include_hidden_accounts_toggle", include_hidden_accounts: include_hidden_accounts %>
     </div>
     <%= render "transactions/list", transactions: @transactions, projected_recurring: @projected_recurring, q: params[:q], pagy: @pagy %>
   <% end %>

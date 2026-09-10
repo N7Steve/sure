@@ -134,7 +134,7 @@ de:
       edit_tags: Tags bearbeiten
       import: Importieren
     index:
-      include_excluded_accounts: Ausgeschlossene Konten einbeziehen
+      include_hidden_accounts: Archivierte Konten und Konten außerhalb meiner Finanzen einbeziehen
       transaction: Transaktion
       transactions: Transaktionen
       import: Import

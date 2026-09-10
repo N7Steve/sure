@@ -182,7 +182,7 @@ es:
       import: Importar
     index:
       title: Transacciones
-      include_excluded_accounts: Incluir cuentas archivadas y fuera de mis finanzas
+      include_hidden_accounts: Incluir cuentas archivadas y fuera de mis finanzas
       transaction: transacción
       transactions: transacciones
       import: Importar

@@ -32,7 +32,7 @@
            <span class="<%= item[:outflow_account].cashflow_boundary? ? 'text-subdued' : 'text-primary font-medium' %> truncate">
              <%= item[:outflow_account].name %>
              <% if item[:outflow_account].cashflow_boundary? %>
-               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: t("reports.transactions_breakdown.table.excluded_account") %>
+               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: t("reports.transactions_breakdown.table.outside_finances_account") %>
              <% end %>
            </span>
            
@@ -42,7 +42,7 @@
            <span class="<%= item[:inflow_account].cashflow_boundary? ? 'text-subdued' : 'text-primary font-medium' %> truncate">
              <%= item[:inflow_account].name %>
              <% if item[:inflow_account].cashflow_boundary? %>
-               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: t("reports.transactions_breakdown.table.excluded_account") %>
+               <%= icon "ban", class: "w-3.5 h-3.5 inline ml-0.5 text-subdued mb-0.5", title: t("reports.transactions_breakdown.table.outside_finances_account") %>
              <% end %>
            </span>
            

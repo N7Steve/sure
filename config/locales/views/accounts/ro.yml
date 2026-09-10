@@ -8,7 +8,6 @@ ro:
       troubleshoot: Depanare
       default_label: Implicit
       disabled_label: Dezactivat
-      excluded_label: Exclus
       archived_label: Arhivat
     chart:
       data_not_available: Date indisponibile pentru perioada selectată
@@ -29,14 +28,12 @@ ro:
       archive_label: Arhivează cont
       archive_description: Conturile arhivate sunt ascunse din bara laterală, dar continuă să fie incluse în valoarea netă și rapoarte.
     accountable_group:
-      excluded_badge: "(Exclus)"
       archived_badge: "(Arhivat)"
     index:
       accounts: Conturi
       account_groups:
         total: Total
         active: Activ
-        excluded: Exclus
         archived: Arhivat
       new_account: Cont nou
       sync: Sincronizează tot

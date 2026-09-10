@@ -662,9 +662,7 @@ Rails.application.routes.draw do
       post :sync
       get :sparkline
       patch :toggle_active
-      patch :toggle_excluded
       patch :toggle_archived
-      patch :toggle_exclude_from_reports
       patch :set_default
       patch :remove_default
       get :select_provider

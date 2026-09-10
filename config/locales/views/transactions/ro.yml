@@ -51,7 +51,7 @@ ro:
       general_merchant: "General"
       linked_with_provider: Conectat cu %{provider}
     index:
-      include_excluded_accounts: Include conturile excluse
+      include_hidden_accounts: Include conturile arhivate și din afara finanțelor
       transaction: tranzacție
       transactions: tranzacții
     searches:

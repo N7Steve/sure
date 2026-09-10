@@ -63,6 +63,22 @@ class Family::DataExporterTest < ActiveSupport::TestCase
     end
   end
 
+  test "exports financial treatment without the removed account excluded flag" do
+    @account.update!(financial_treatment: "outside_finances", archived: true)
+
+    Zip::File.open_buffer(@exporter.generate_export) do |zip|
+      account_record = zip.read("all.ndjson").each_line
+        .map { |line| JSON.parse(line) }
+        .find { |record| record["type"] == "Account" && record.dig("data", "id") == @account.id }
+      data = account_record.fetch("data")
+
+      assert_equal true, data["cashflow_boundary"]
+      assert_equal true, data["exclude_from_reports"]
+      assert_equal true, data["archived"]
+      assert_not data.key?("excluded")
+    end
+  end
+
   test "exports attachment manifest metadata without binary payloads" do
     entry = @account.entries.create!(
       name: "Receipt Transaction",

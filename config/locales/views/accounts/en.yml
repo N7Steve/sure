@@ -42,7 +42,6 @@ en:
       new_account: New account
       no_accounts: No accounts yet
     accountable_group:
-      excluded_badge: "(Outside my finances)"
       archived_badge: "(Archived)"
     form:
       balance: "Balance on date:"

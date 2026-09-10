@@ -14,7 +14,6 @@ pl:
       remove_default: Usuń status domyślnego
       default_label: Domyślne
       disabled_label: Wyłączone
-      excluded_label: Wykluczone
       archived_label: Zarchiwizowane
       delete: Usuń konto
       sharing: Udostępnianie
@@ -50,14 +49,12 @@ pl:
       archive_label: Zarchiwizuj konto
       archive_description: Zarchiwizowane konta są ukryte na pasku bocznym, ale nadal uwzględniane w wartości netto i raportach.
     accountable_group:
-      excluded_badge: "(Wykluczone)"
       archived_badge: "(Zarchiwizowane)"
     index:
       accounts: Konta
       account_groups:
         total: Razem
         active: Aktywne
-        excluded: Wykluczone
         archived: Zarchiwizowane
       new_account: Nowe konto
       sync: Synchronizuj wszystko

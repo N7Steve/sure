@@ -62,7 +62,7 @@ class TransactionsController < ApplicationController
     Transaction::ActivitySecurityPreloader.new(@transactions).preload
 
     # Prepare accounts for the filter partial
-    include_hidden = @q && @q[:active_accounts_only] == "false"
+    include_hidden = @q && @q[:default_accounts_only] == "false"
     base_accounts = Current.user.accessible_accounts.visible
     @filter_accounts = include_hidden ? base_accounts.alphabetically : base_accounts.default_transaction_visible.alphabetically
 
@@ -757,7 +757,7 @@ class TransactionsController < ApplicationController
       cleaned_params = params.fetch(:q, {})
               .permit(
                 :start_date, :end_date, :search, :amount,
-                :amount_operator, :active_accounts_only,
+                :amount_operator, :default_accounts_only,
                 account_ids: [],
                 categories: [], merchants: [], types: [], tags: [], status: []
               )
@@ -768,7 +768,7 @@ class TransactionsController < ApplicationController
       cleaned_params.delete(:amount_operator) unless cleaned_params[:amount].present?
 
       if cleaned_params[:account_ids].present?
-        include_hidden = cleaned_params[:active_accounts_only].to_s == "false"
+        include_hidden = cleaned_params[:default_accounts_only].to_s == "false"
         base_accounts = Current.user.accessible_accounts.visible
 
         allowed_ids = if include_hidden

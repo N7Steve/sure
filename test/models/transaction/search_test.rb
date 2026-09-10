@@ -678,7 +678,7 @@ class Transaction::SearchTest < ActiveSupport::TestCase
     outside = create_transaction(account: outside_account, amount: 30)
 
     default_ids = Transaction::Search.new(@family).transactions_scope.pluck(:id)
-    all_ids = Transaction::Search.new(@family, filters: { active_accounts_only: false }).transactions_scope.pluck(:id)
+    all_ids = Transaction::Search.new(@family, filters: { default_accounts_only: false }).transactions_scope.pluck(:id)
 
     assert_includes default_ids, regular.entryable.id
     assert_not_includes default_ids, archived.entryable.id

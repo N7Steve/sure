@@ -432,11 +432,8 @@ class AccountTest < ActiveSupport::TestCase
     assert_not_includes Account.default_transaction_visible, @account
   end
 
-  test "sync_enabled scope includes accounts marked as excluded" do
-    @account.update!(excluded: false)
-    assert_includes Account.sync_enabled, @account
-
-    @account.update!(excluded: true)
+  test "sync_enabled scope includes outside-finances accounts" do
+    @account.update!(financial_treatment: "outside_finances")
     assert_includes Account.sync_enabled, @account
   end
 
@@ -445,27 +442,16 @@ class AccountTest < ActiveSupport::TestCase
     assert_equal "included", @account.financial_treatment
     refute @account.exclude_from_reports?
     refute @account.cashflow_boundary?
-    refute @account.excluded?
 
     @account.update!(financial_treatment: "tracking")
     assert_equal "tracking", @account.financial_treatment
     assert @account.exclude_from_reports?
     refute @account.cashflow_boundary?
-    refute @account.excluded?
 
     @account.update!(financial_treatment: "outside_finances")
     assert_equal "outside_finances", @account.financial_treatment
     assert @account.exclude_from_reports?
     assert @account.cashflow_boundary?
-    assert @account.excluded?
-  end
-
-  test "legacy excluded writes are mirrored to the new financial treatment" do
-    @account.update!(excluded: true)
-
-    assert_equal "outside_finances", @account.financial_treatment
-    assert @account.cashflow_boundary?
-    assert @account.exclude_from_reports?
   end
 
   test "cashflow boundary requires exclusion from reports" do
@@ -591,11 +577,11 @@ class AccountTest < ActiveSupport::TestCase
 
   test "included_in_reports scope excludes accounts marked as exclude_from_reports" do
     included = @family.accounts.create! name: "Included", balance: 100, currency: "USD", accountable: Depository.new
-    excluded = @family.accounts.create! name: "Excluded", balance: 200, currency: "USD", accountable: Depository.new, exclude_from_reports: true
+    tracking = @family.accounts.create! name: "Tracking", balance: 200, currency: "USD", accountable: Depository.new, financial_treatment: "tracking"
 
     results = @family.accounts.included_in_reports
     assert_includes results, included
-    assert_not_includes results, excluded
+    assert_not_includes results, tracking
   end
 
   test "auto_share_with_family creates shares for all non-owner members" do

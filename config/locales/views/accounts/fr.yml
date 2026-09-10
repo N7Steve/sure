@@ -14,7 +14,6 @@ fr:
       edit: Modifier
       enable: Activer le compte
       exclude_from_reports: Exclure de tous les rapports
-      excluded_from_reports_indicator: Exclu des rapports
       include_in_reports: Inclure dans les rapports
       link_lunchflow: Lier avec Lunch Flow
       link_provider: Lier avec un fournisseur
@@ -62,7 +61,6 @@ fr:
       account_groups:
         total: Total
         active: Actif
-        excluded: Exclu
         archived: Archivé
       manual_accounts:
         other_accounts: Autres comptes

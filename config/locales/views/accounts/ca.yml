@@ -10,7 +10,6 @@ ca:
       complete_setup: Completa la configuració
       default_label: Per defecte
       disabled_label: Desactivat
-      excluded_label: Exclòs
       archived_label: Arxivat
       delete: Elimina el compte
       disable: Desactiva el compte
@@ -67,7 +66,6 @@ ca:
       archive_description: Els comptes arxivats s'oculten de la barra lateral però continuen comptant al patrimoni net i els informes.
       opening_balance_date_label: Data del saldo inicial
     accountable_group:
-      excluded_badge: "(Exclòs)"
       archived_badge: "(Arxivat)"
     index:
       accounts: Comptes

@@ -184,7 +184,7 @@ ca:
       edit_rules: Edita regles
       edit_tags: Edita etiquetes
       import: Importa
-      include_excluded_accounts: Incloure comptes exclosos
+      include_hidden_accounts: Incloure comptes arxivats i fora de les meves finances
       new_rule: Nova regla
       new_transaction: Nova transacció
       title: Transaccions

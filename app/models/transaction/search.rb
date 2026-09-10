@@ -15,7 +15,7 @@ class Transaction::Search
   attribute :tags, array: true
   # Determines whether transactions from archived and outside-finances accounts
   # should be filtered out (true by default).
-  attribute :active_accounts_only, :boolean, default: true
+  attribute :default_accounts_only, :boolean, default: true
 
   attr_reader :family, :accessible_account_ids
 
@@ -33,7 +33,7 @@ class Transaction::Search
       # Scope to accessible accounts when provided (including an empty array, which should yield no results)
       query = query.where(entries: { account_id: accessible_account_ids }) unless accessible_account_ids.nil?
 
-      query = apply_active_accounts_filter(query, active_accounts_only)
+      query = apply_default_accounts_filter(query, default_accounts_only)
       query = apply_category_filter(query, categories)
       query = apply_type_filter(query, types)
       query = apply_status_filter(query, status)
@@ -114,8 +114,8 @@ class Transaction::Search
 
     # Applies the habitual transaction scope unless the caller explicitly asks
     # to include archived and outside-finances accounts.
-    def apply_active_accounts_filter(query, active_accounts_only_filter)
-      scope = active_accounts_only_filter ? Account.default_transaction_visible : Account.visible
+    def apply_default_accounts_filter(query, default_accounts_only_filter)
+      scope = default_accounts_only_filter ? Account.default_transaction_visible : Account.visible
       query.merge(scope)
     end
 

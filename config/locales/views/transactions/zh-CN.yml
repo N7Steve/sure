@@ -162,7 +162,7 @@ zh-CN:
       linked_with_provider: 已与 %{provider} 关联
     index:
       import: 导入
-      include_excluded_accounts: 包含已排除的账户
+      include_hidden_accounts: 包含已归档和财务范围外的账户
     index:
       title: 交易
       transaction: 交易

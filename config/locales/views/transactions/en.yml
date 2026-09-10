@@ -197,7 +197,7 @@ en:
       edit_tags: Edit tags
       import: Import
     index:
-      include_excluded_accounts: Include archived and outside-finances accounts
+      include_hidden_accounts: Include archived and outside-finances accounts
       title: "Transactions"
       transaction: transaction
       transactions: transactions

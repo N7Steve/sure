@@ -52,7 +52,7 @@ nb:
       general_merchant: "General"
       linked_with_provider: Koblet med %{provider}
     index:
-      include_excluded_accounts: Inkluder ekskluderte kontoer
+      include_hidden_accounts: Inkluder arkiverte kontoer og kontoer utenfor økonomien min
       transaction: transaksjon
       transactions: transaksjoner
     searches:

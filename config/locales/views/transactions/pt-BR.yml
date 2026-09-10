@@ -55,7 +55,7 @@ pt-BR:
       general_merchant: "General"
       linked_with_provider: Vinculado com %{provider}
     index:
-      include_excluded_accounts: Incluir contas excluídas
+      include_hidden_accounts: Incluir contas arquivadas e fora das minhas finanças
       transaction: transação
       transactions: transações
     searches:

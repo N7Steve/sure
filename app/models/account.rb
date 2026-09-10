@@ -75,8 +75,6 @@ class Account < ApplicationRecord
       .where(account_providers: { id: nil })
       .where(plaid_account_id: nil, simplefin_account_id: nil)
   }
-  scope :excluded, -> { where(excluded: true) }
-  scope :not_excluded, -> { where(excluded: false) }
   scope :archived, -> { where(archived: true) }
   scope :not_archived, -> { where(archived: false) }
 
@@ -124,20 +122,6 @@ class Account < ApplicationRecord
 
   def outside_finances?
     cashflow_boundary?
-  end
-
-  # Phase-one compatibility for callers that still write the fork's legacy
-  # account-level flag. Entry#excluded is a separate concept and is untouched.
-  def excluded=(value)
-    excluded = ActiveModel::Type::Boolean.new.cast(value)
-    self.cashflow_boundary = excluded
-    self.exclude_from_reports = excluded
-  end
-
-  def cashflow_boundary=(value)
-    boundary = ActiveModel::Type::Boolean.new.cast(value)
-    write_attribute(:cashflow_boundary, boundary)
-    write_attribute(:excluded, boundary)
   end
 
   # All accounts a user can access (owned + shared with them)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -118,7 +118,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_120000) do
     t.text "notes"
     t.jsonb "holdings_snapshot_data"
     t.datetime "holdings_snapshot_at"
-    t.boolean "excluded", default: false, null: false
     t.boolean "archived", default: false, null: false
     t.uuid "owner_id"
     t.uuid "plaid_account_id"

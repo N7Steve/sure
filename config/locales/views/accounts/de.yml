@@ -13,13 +13,11 @@ de:
       remove_default: Standard aufheben
       default_label: Standard
       disabled_label: Deaktiviert
-      excluded_label: Ausgeschlossen
       archived_label: Archiviert
       delete: Konto löschen
       change_simplefin_account: SimpleFIN-Konto wechseln
       complete_setup: Setup abschließen
       exclude_from_reports: Aus allen Berichten ausschließen
-      excluded_from_reports_indicator: Nicht in Berichten
       include_in_reports: In Berichte aufnehmen
       sharing: Freigabe
     chart:
@@ -56,7 +54,6 @@ de:
       account_groups:
         total: Gesamt
         active: Aktiv
-        excluded: Ausgeschlossen
         archived: Archiviert
       manual_accounts:
         other_accounts: Andere Konten

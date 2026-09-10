@@ -10,7 +10,6 @@ nl:
       troubleshoot: Problemen oplossen
       default_label: Standaard
       disabled_label: Gedeactiveerd
-      excluded_label: Uitgesloten
       archived_label: Gearchiveerd
     chart:
       data_not_available: Gegevens niet beschikbaar voor de geselecteerde periode
@@ -39,14 +38,12 @@ nl:
       archive_label: Account archiveren
       archive_description: Gearchiveerde accounts worden verborgen in de zijbalk maar tellen nog steeds mee in uw nettowaarde en rapporten.
     accountable_group:
-      excluded_badge: "(Uitgesloten)"
       archived_badge: "(Gearchiveerd)"
     index:
       accounts: Accounts
       account_groups:
         total: Totaal
         active: Actief
-        excluded: Uitgesloten
         archived: Gearchiveerd
       new_account: Nieuw account
       sync: Synchroniseer alles
