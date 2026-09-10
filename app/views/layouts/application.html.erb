@@ -41,6 +41,7 @@ end %>
 
       <%= turbo_frame_tag "account-sidebar-mobile",
             class: "block",
+            target: "_top",
             data: {
               sync_refresh: "sidebar",
               sync_refresh_url: sidebar_accounts_path(mobile: true, active_account_id: sidebar_active_account_id)
@@ -126,6 +127,7 @@ end %>
           <div class="grow">
             <%= turbo_frame_tag "account-sidebar-desktop",
                   class: "block",
+                  target: "_top",
                   data: {
                     sync_refresh: "sidebar",
                     sync_refresh_url: sidebar_accounts_path(active_account_id: sidebar_active_account_id)

@@ -6,5 +6,10 @@ export default class extends Controller {
     document
       .querySelectorAll('turbo-frame[data-sync-refresh="sidebar"]')
       .forEach((frame) => reloadFrame(frame, frame.dataset.syncRefreshUrl));
+
+    const accountFrame = document.querySelector(
+      'turbo-frame[data-sync-refresh="account"]',
+    );
+    if (accountFrame) reloadFrame(accountFrame);
   }
 }

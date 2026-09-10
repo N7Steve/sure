@@ -2,6 +2,7 @@
 
 <%= turbo_frame_tag frame_id,
       class: "block",
+      target: "_top",
       data: {
         sync_refresh: "sidebar",
         sync_refresh_url: sidebar_accounts_path(

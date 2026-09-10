@@ -1,9 +1,8 @@
 require "test_helper"
 
 class Account::SyncCompleteEventTest < ActiveSupport::TestCase
-  test "broadcast refreshes the account frame without refreshing the page" do
+  test "broadcast refreshes account data without refreshing the page" do
     account = accounts(:depository)
-    trigger_id = ActionView::RecordIdentifier.dom_id(account, :refresh_trigger)
 
     account.expects(:broadcast_replace_to).with(
       account.family,
@@ -13,16 +12,10 @@ class Account::SyncCompleteEventTest < ActiveSupport::TestCase
     ).once
     account.expects(:broadcast_replace_to).with(
       account.family,
-      target: "account-sidebar-refresh-trigger",
-      partial: "shared/sidebar_refresh"
+      target: "account-data-refresh-trigger",
+      partial: "shared/account_data_refresh"
     ).once
     account.family.expects(:broadcast_sync_complete).once
-    account.expects(:broadcast_replace_to).with(
-      account,
-      target: trigger_id,
-      partial: "shared/frame_refresh",
-      locals: { id: trigger_id, url: nil }
-    ).once
     account.expects(:broadcast_refresh).never
 
     Account::SyncCompleteEvent.new(account).broadcast

@@ -21,7 +21,7 @@
 
     <% if Current.family %>
       <%= turbo_stream_from Current.family %>
-      <div id="account-sidebar-refresh-trigger" hidden></div>
+      <div id="account-data-refresh-trigger" hidden></div>
     <% end %>
 
     <%= turbo_frame_tag "modal" %>

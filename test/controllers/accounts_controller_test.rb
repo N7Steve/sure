@@ -732,14 +732,14 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     get sidebar_accounts_path
 
     assert_response :success
-    assert_select "turbo-frame#account-sidebar-desktop[data-sync-refresh='sidebar']"
+    assert_select "turbo-frame#account-sidebar-desktop[data-sync-refresh='sidebar'][target='_top']"
   end
 
   test "sidebar returns a scoped mobile frame" do
     get sidebar_accounts_path(mobile: true)
 
     assert_response :success
-    assert_select "turbo-frame#account-sidebar-mobile[data-sync-refresh='sidebar']"
+    assert_select "turbo-frame#account-sidebar-mobile[data-sync-refresh='sidebar'][target='_top']"
   end
 end
 

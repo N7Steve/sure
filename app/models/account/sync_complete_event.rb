@@ -16,13 +16,13 @@ class Account::SyncCompleteEvent
       locals: { account: account }
     )
 
-    # Account balances in the application sidebar live outside page-owned
-    # frames. Signal each browser to reload its own authorized sidebar after
-    # balance materialization has completed.
+    # Account balances in the application sidebar and account page live in
+    # separate frames. Signal each browser to reload its own authorized
+    # account surfaces after balance materialization has completed.
     account.broadcast_replace_to(
       account.family,
-      target: "account-sidebar-refresh-trigger",
-      partial: "shared/sidebar_refresh"
+      target: "account-data-refresh-trigger",
+      partial: "shared/account_data_refresh"
     )
 
     # If this is a manual, unlinked account (i.e. not part of a Plaid Item),
@@ -30,18 +30,5 @@ class Account::SyncCompleteEvent
     unless account.linked?
       account.family.broadcast_sync_complete
     end
-
-    # Ask the browser viewing this account to reload only the account page frame.
-    # Rendering that frame in the authenticated browser request preserves user-
-    # specific authorization, filters and pagination without morphing the body.
-    account.broadcast_replace_to(
-      account,
-      target: ActionView::RecordIdentifier.dom_id(account, :refresh_trigger),
-      partial: "shared/frame_refresh",
-      locals: {
-        id: ActionView::RecordIdentifier.dom_id(account, :refresh_trigger),
-        url: nil
-      }
-    )
   end
 end
