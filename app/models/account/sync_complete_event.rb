@@ -22,7 +22,17 @@ class Account::SyncCompleteEvent
       account.family.broadcast_sync_complete
     end
 
-    # Refresh entire account page (only applies if currently viewing this account)
-    account.broadcast_refresh
+    # Ask the browser viewing this account to reload only the account page frame.
+    # Rendering that frame in the authenticated browser request preserves user-
+    # specific authorization, filters and pagination without morphing the body.
+    account.broadcast_replace_to(
+      account,
+      target: ActionView::RecordIdentifier.dom_id(account, :refresh_trigger),
+      partial: "shared/frame_refresh",
+      locals: {
+        id: ActionView::RecordIdentifier.dom_id(account, :refresh_trigger),
+        url: nil
+      }
+    )
   end
 end

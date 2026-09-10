@@ -136,6 +136,61 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dialog[data-action~='submit->DS--dialog#closeBeforeSubmit']"
   end
 
+  test "transactions index exposes a family-scoped refresh frame" do
+    get transactions_url
+
+    assert_response :success
+    assert_select 'turbo-frame#transactions-page-data[data-sync-refresh="family"][target="_top"]'
+    assert_select "#transactions-page-refresh-trigger"
+  end
+
+  test "turbo create from transactions reloads only transaction data" do
+    post transactions_url,
+      params: valid_create_params,
+      headers: {
+        "Accept" => "text/vnd.turbo-stream.html",
+        "HTTP_REFERER" => transactions_url
+      }
+
+    assert_response :success
+    assert_select 'turbo-stream[action="replace"][target="transactions-page-refresh-trigger"]' do
+      assert_select 'template [data-controller="frame-refresh"]'
+    end
+    assert_select 'turbo-stream[action="replace"][target="modal"]'
+    assert_select 'turbo-stream[action="redirect"]', count: 0
+  end
+
+  test "turbo create from its account reloads only the account frame" do
+    account = @entry.account
+    trigger_id = ActionView::RecordIdentifier.dom_id(account, :refresh_trigger)
+
+    post transactions_url,
+      params: valid_create_params,
+      headers: {
+        "Accept" => "text/vnd.turbo-stream.html",
+        "HTTP_REFERER" => account_url(account, tab: "activity")
+      }
+
+    assert_response :success
+    assert_select "turbo-stream[action='replace'][target='#{trigger_id}']" do
+      assert_select 'template [data-controller="frame-refresh"]'
+    end
+    assert_select 'turbo-stream[action="redirect"]', count: 0
+  end
+
+  test "turbo create keeps the redirect fallback for other pages" do
+    post transactions_url,
+      params: valid_create_params,
+      headers: {
+        "Accept" => "text/vnd.turbo-stream.html",
+        "HTTP_REFERER" => root_url
+      }
+
+    assert_response :success
+    assert_select 'turbo-stream[action="redirect"]', count: 1
+    assert_select '[data-controller="frame-refresh"]', count: 0
+  end
+
   test "resubmitting the same idempotency key does not create a duplicate transaction" do
     idempotency_key = SecureRandom.uuid
     params = {
@@ -1598,6 +1653,21 @@ end
   end
 
   private
+    def valid_create_params
+      {
+        entry: {
+          account_id: @entry.account_id,
+          name: "New transaction",
+          date: Date.current,
+          currency: "USD",
+          amount: 100,
+          nature: "inflow",
+          entryable_type: "Transaction",
+          idempotency_key: SecureRandom.uuid
+        }
+      }
+    end
+
     def rendered_entry_ids
       css_select("turbo-frame[id^='entry_']").map { |node| node["id"].delete_prefix("entry_") }
     end

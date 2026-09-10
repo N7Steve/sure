@@ -16,10 +16,9 @@ Turbo.config.forms.confirm = (data) => {
   return confirmDialogController.handleConfirm(data);
 };
 
-// When a background sync happens and finishes, the server does a `broadcast_refresh` 
-// which causes Turbo 8 to fetch the page and idiotmorph the body.
-// By default, if the user has a transaction modal open (e.g., drawer or modal frame), 
-// the server's HTML will have an empty `<turbo-frame id="drawer">`. Morphing would 
+// Some pages still use a Turbo morph refresh after a background sync when they
+// do not expose a narrower refresh frame. If the user has a transaction modal
+// open, the server's HTML will have an empty `<turbo-frame id="drawer">`. Morphing would
 // replace the user's open modal with this empty frame, abruptly closing it mid-edit.
 // This listener stops the morphing of those frames if the user has them open but the server doesn't.
 document.addEventListener("turbo:before-morph-element", (event) => {

@@ -1,0 +1,8 @@
+<%# locals: (id:, url: nil) %>
+
+<%= tag.div id: id,
+            hidden: true,
+            data: {
+              controller: "frame-refresh",
+              frame_refresh_url_value: url
+            }.compact %>

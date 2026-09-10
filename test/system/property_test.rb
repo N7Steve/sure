@@ -19,12 +19,9 @@ class PropertiesEditTest < ApplicationSystemTestCase
 
   private
 
-    # The account page issues a Turbo morph refresh shortly after it loads
-    # (`turbo_refreshes_with method: :morph` reacting to a family-stream
-    # broadcast). If the edit modal is opened while that refresh is in flight,
-    # the morph re-renders the page and wipes the just-loaded `#modal`
-    # turbo-frame before the dialog is interactive — and can detach the menu
-    # node mid-click ("Node with given id does not belong to the document"),
+    # The account page reloads its scoped Turbo Frame after account sync. If the
+    # edit modal is opened while that refresh is in flight, it can detach the
+    # menu node mid-click ("Node with given id does not belong to the document"),
     # which Capybara does not auto-retry. Open via the account menu and retry
     # until the edit form is present so the test is deterministic instead of
     # racing the broadcast.

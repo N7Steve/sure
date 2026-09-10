@@ -14,46 +14,6 @@
 @import "./print-report.css";
 @import "./privacy-mode.css";
 
-/* Turbo page visits use the browser's View Transition API for a short,
-   transform-free crossfade on the replaceable content only. The surrounding
-   navigation and sidebars remain visually stable. */
-:root {
-  view-transition-name: none;
-}
-
-#main {
-  view-transition-name: page-content;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  @keyframes page-fade-out {
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes page-fade-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  ::view-transition-old(page-content) {
-    animation: 100ms ease-in both page-fade-out;
-  }
-
-  ::view-transition-new(page-content) {
-    animation: 180ms ease-out 30ms both page-fade-in;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(page-content),
-  ::view-transition-new(page-content) {
-    animation: none;
-  }
-}
-
 @layer components {
   .pcr-app{
     position: static !important;

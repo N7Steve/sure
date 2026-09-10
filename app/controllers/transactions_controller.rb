@@ -669,8 +669,46 @@ class TransactionsController < ApplicationController
 
       respond_to do |format|
         format.html { redirect_back_or_to account_path(entry.account) }
-        format.turbo_stream { stream_redirect_back_or_to(account_path(entry.account)) }
+        format.turbo_stream do
+          if (refresh_target = create_refresh_target(entry))
+            render turbo_stream: [
+              turbo_stream.replace(
+                refresh_target.fetch(:trigger_id),
+                partial: "shared/frame_refresh",
+                locals: {
+                  id: refresh_target.fetch(:trigger_id),
+                  url: refresh_target.fetch(:url)
+                }
+              ),
+              turbo_stream.replace("modal", view_context.turbo_frame_tag("modal")),
+              *flash_notification_stream_items
+            ]
+          else
+            stream_redirect_back_or_to(account_path(entry.account))
+          end
+        end
       end
+    end
+
+    def create_refresh_target(entry)
+      referer = URI.parse(request.referer.to_s)
+      return if referer.host.present? && referer.host != request.host
+
+      route = Rails.application.routes.recognize_path(referer.path, method: :get)
+
+      if route[:controller] == "transactions" && route[:action] == "index"
+        {
+          trigger_id: "transactions-page-refresh-trigger",
+          url: request.referer
+        }
+      elsif route[:controller] == "accounts" && route[:action] == "show" && route[:id].to_s == entry.account.to_param
+        {
+          trigger_id: ActionView::RecordIdentifier.dom_id(entry.account, :refresh_trigger),
+          url: request.referer
+        }
+      end
+    rescue URI::InvalidURIError, ActionController::RoutingError
+      nil
     end
 
     def tag_ids_param

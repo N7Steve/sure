@@ -15,13 +15,6 @@ class LayoutAccessibilityTest < ActionDispatch::IntegrationTest
     assert_select "main#main"
   end
 
-  test "application layout opts into same-origin view transitions" do
-    get root_path
-    assert_response :ok
-
-    assert_select 'meta[name="view-transition"][content="same-origin"]', count: 1
-  end
-
   test "account sidebar groups persist and animate their disclosure state" do
     get root_path
     assert_response :ok

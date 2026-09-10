@@ -102,7 +102,10 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
 
   test "should get show" do
     get account_url(@account)
+
     assert_response :success
+    assert_select "turbo-frame##{dom_id(@account, :container)}[data-sync-refresh='account']"
+    assert_select "##{dom_id(@account, :refresh_trigger)}"
   end
 
   test "sync all requests fresh Plaid transactions before syncing the family" do

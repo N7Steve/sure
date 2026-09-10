@@ -104,9 +104,8 @@ class AccountsTest < ApplicationSystemTestCase
       end
     end
 
-    # The account page issues a Turbo morph refresh shortly after it loads
-    # (`turbo_refreshes_with method: :morph` reacting to a family-stream
-    # broadcast). Opening the menu while that refresh is in flight can detach the
+    # The account page reloads its scoped Turbo Frame after account sync.
+    # Opening the menu while that refresh is in flight can detach the
     # node mid-click ("Node with given id does not belong to the document") or
     # wipe the just-opened edit form — neither of which Capybara auto-retries.
     # Retry until the edit form is present so the test is deterministic instead

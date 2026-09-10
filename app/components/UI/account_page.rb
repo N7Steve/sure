@@ -20,6 +20,10 @@ class UI::AccountPage < ApplicationComponent
     dom_id(account, :container)
   end
 
+  def refresh_trigger_id
+    dom_id(account, :refresh_trigger)
+  end
+
   def broadcast_channel
     account
   end

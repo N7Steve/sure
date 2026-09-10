@@ -1,4 +1,6 @@
-<div class="space-y-4 pb-6 lg:pb-12 flex flex-col">
+<%= turbo_frame_tag "transactions-page-data", target: "_top", class: "space-y-4 pb-6 lg:pb-12 flex flex-col", data: { sync_refresh: "family" } do %>
+  <div id="transactions-page-refresh-trigger" hidden></div>
+
   <header class="flex justify-between items-center text-primary font-medium">
     <h1 class="text-xl"><%= t(".title") %></h1>
     <div class="flex items-center gap-5">
@@ -83,7 +85,6 @@
           </div>
         <% end %>
       <% end %>
-
     <% end %>
   <% else %>
     <div class="flex items-center justify-end gap-6 mb-4">
@@ -92,4 +93,4 @@
     </div>
     <%= render "transactions/list", transactions: @transactions, projected_recurring: @projected_recurring, q: params[:q], pagy: @pagy %>
   <% end %>
-</div>
+<% end %>

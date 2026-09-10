@@ -1,9 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
+import { reloadFrame } from "utils/reload_frame";
 
 // Connects to data-controller="sync-toast"
 //
 // Shown when a background sync completes and the family's data has changed.
-// - Idle              → morph-refreshes the page after a short delay.
+// - Scoped data frame → reloads only that frame after a short delay.
+// - Account page      → its account broadcast owns the scoped refresh.
+// - Other idle page   → morph-refreshes the page after a short delay.
 // - Mid-form          → stays put; the user refreshes when ready.
 // - A modal <dialog> is open → the toast is deferred (it would otherwise sit
 //   dimmed-but-clickable behind the dialog's top-layer backdrop, and a refresh
@@ -15,6 +18,13 @@ export default class extends Controller {
   };
 
   connect() {
+    // Account pages receive their own account-scoped frame refresh from the
+    // sync completion event. A second family-level visit would be redundant.
+    if (document.querySelector('turbo-frame[data-sync-refresh="account"]')) {
+      this.element.remove();
+      return;
+    }
+
     if (this.#dialogOpen()) {
       this.#deferUntilDialogCloses();
       return;
@@ -27,12 +37,20 @@ export default class extends Controller {
     this.#removeDeferredDialogListener();
   }
 
-  // Turbo 8 morph refresh (the app sets `turbo_refreshes_with method: :morph,
-  // scroll: :preserve`) instead of window.location.reload(): no white flash,
-  // scroll position and `data-turbo-permanent` elements (the AI chat panel)
-  // are preserved.
+  // Prefer a page-owned family frame. Other pages fall back to Turbo 8's
+  // morph refresh, which preserves scroll and `data-turbo-permanent` elements.
   refresh() {
     clearTimeout(this._timer);
+
+    const familyFrame = document.querySelector(
+      'turbo-frame[data-sync-refresh="family"]',
+    );
+    if (familyFrame) {
+      reloadFrame(familyFrame);
+      this.element.remove();
+      return;
+    }
+
     Turbo.visit(window.location.href, { action: "replace" });
   }
 
