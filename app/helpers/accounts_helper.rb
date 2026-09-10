@@ -13,6 +13,8 @@ module AccountsHelper
   # Used as a cache-key component so the sidebar's active-link styling is
   # correct without busting the cache for every unrelated path change.
   def sidebar_active_account_id
+    return @sidebar_active_account_id if defined?(@sidebar_active_account_id)
+
     match = request.path.match(%r{\A/accounts/([\w-]+)})
     match && match[1]
   end

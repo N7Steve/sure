@@ -727,6 +727,20 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     ActionView::Base.logger = original_view_logger
     Rails.logger = original_rails_logger
   end
+
+  test "sidebar returns a scoped desktop frame" do
+    get sidebar_accounts_path
+
+    assert_response :success
+    assert_select "turbo-frame#account-sidebar-desktop[data-sync-refresh='sidebar']"
+  end
+
+  test "sidebar returns a scoped mobile frame" do
+    get sidebar_accounts_path(mobile: true)
+
+    assert_response :success
+    assert_select "turbo-frame#account-sidebar-mobile[data-sync-refresh='sidebar']"
+  end
 end
 
 class AccountsControllerSimplefinCtaTest < ActionDispatch::IntegrationTest

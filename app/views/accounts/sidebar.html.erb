@@ -1,0 +1,16 @@
+<% frame_id = @mobile_sidebar ? "account-sidebar-mobile" : "account-sidebar-desktop" %>
+
+<%= turbo_frame_tag frame_id,
+      class: "block",
+      data: {
+        sync_refresh: "sidebar",
+        sync_refresh_url: sidebar_accounts_path(
+          mobile: @mobile_sidebar,
+          active_account_id: @sidebar_active_account_id
+        )
+      } do %>
+  <%= render "accounts/account_sidebar_tabs",
+        family: Current.family,
+        active_tab: @account_group_tab,
+        mobile: @mobile_sidebar %>
+<% end %>

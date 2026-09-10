@@ -74,6 +74,16 @@ class AccountsController < ApplicationController
     redirect_to accounts_path, notice: t("accounts.sync_all.syncing")
   end
 
+  def sidebar
+    @mobile_sidebar = ActiveModel::Type::Boolean.new.cast(params[:mobile])
+    active_account_id = params[:active_account_id].presence
+    @sidebar_active_account_id = if active_account_id
+      Current.user.accessible_accounts.where(id: active_account_id).pick(:id)&.to_s
+    end
+
+    render layout: false
+  end
+
   def show
     @chart_view = params[:chart_view] || "balance"
     @tab = params[:tab]

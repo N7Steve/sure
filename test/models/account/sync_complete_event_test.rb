@@ -11,6 +11,11 @@ class Account::SyncCompleteEventTest < ActiveSupport::TestCase
       partial: "accounts/account",
       locals: { account: account }
     ).once
+    account.expects(:broadcast_replace_to).with(
+      account.family,
+      target: "account-sidebar-refresh-trigger",
+      partial: "shared/sidebar_refresh"
+    ).once
     account.family.expects(:broadcast_sync_complete).once
     account.expects(:broadcast_replace_to).with(
       account,

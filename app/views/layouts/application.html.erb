@@ -39,12 +39,19 @@ end %>
         </div>
       <% end %>
 
-      <%= render(
-        "accounts/account_sidebar_tabs",
-        family: Current.family,
-        active_tab: @account_group_tab,
-        mobile: true
-      ) %>
+      <%= turbo_frame_tag "account-sidebar-mobile",
+            class: "block",
+            data: {
+              sync_refresh: "sidebar",
+              sync_refresh_url: sidebar_accounts_path(mobile: true, active_account_id: sidebar_active_account_id)
+            } do %>
+        <%= render(
+          "accounts/account_sidebar_tabs",
+          family: Current.family,
+          active_tab: @account_group_tab,
+          mobile: true
+        ) %>
+      <% end %>
     </div>
 
     <%# MOBILE - Top nav %>
@@ -117,7 +124,14 @@ end %>
           <%= yield :sidebar %>
         <% else %>
           <div class="grow">
-            <%= render "accounts/account_sidebar_tabs", family: Current.family, active_tab: @account_group_tab %>
+            <%= turbo_frame_tag "account-sidebar-desktop",
+                  class: "block",
+                  data: {
+                    sync_refresh: "sidebar",
+                    sync_refresh_url: sidebar_accounts_path(active_account_id: sidebar_active_account_id)
+                  } do %>
+              <%= render "accounts/account_sidebar_tabs", family: Current.family, active_tab: @account_group_tab %>
+            <% end %>
           </div>
 
           <% if Current.family.trialing? && !self_hosted? %>

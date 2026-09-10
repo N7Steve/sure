@@ -16,6 +16,15 @@ class Account::SyncCompleteEvent
       locals: { account: account }
     )
 
+    # Account balances in the application sidebar live outside page-owned
+    # frames. Signal each browser to reload its own authorized sidebar after
+    # balance materialization has completed.
+    account.broadcast_replace_to(
+      account.family,
+      target: "account-sidebar-refresh-trigger",
+      partial: "shared/sidebar_refresh"
+    )
+
     # If this is a manual, unlinked account (i.e. not part of a Plaid Item),
     # trigger the family sync complete broadcast so net worth graph is updated
     unless account.linked?
