@@ -49,6 +49,28 @@ class UI::PeriodPickerTest < ViewComponent::TestCase
     assert_match(/period=/, href)
   end
 
+  test "supports a custom query parameter" do
+    render_inline(UI::PeriodPicker.new(
+      selected: "last_30_days",
+      url: "/",
+      param: :net_worth_chart_period
+    ))
+
+    href = page.first("a[role='menuitemradio']")[:href]
+    assert_match(/net_worth_chart_period=/, href)
+    assert_no_match(/[?&]period=/, href)
+  end
+
+  test "supports a contextual accessible label" do
+    render_inline(UI::PeriodPicker.new(
+      selected: "last_5_years",
+      url: "/",
+      aria_label: "Net Worth time period: 5Y"
+    ))
+
+    assert_selector "button[aria-label='Net Worth time period: 5Y']"
+  end
+
   test "accepts a Period object as selected" do
     render_inline(UI::PeriodPicker.new(selected: Period.last_7_days, url: "/"))
 

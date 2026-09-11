@@ -6,7 +6,7 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** y actualizado el **10 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo y la incorporación de logos personalizados para cuentas y comercios:
+Inventario generado el **23 de agosto de 2026** y actualizado el **11 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo, la incorporación de logos personalizados para cuentas y comercios y la separación de períodos por widget en Inicio:
 
 | Concepto | Valor |
 | --- | --- |
@@ -36,6 +36,7 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 | Exportaciones de familia | Propia | Copia completa y CSV personalizado de transacciones |
 | UI/UX | Propia o adaptada | Vistas compactas, cuentas agrupadas, componentes interactivos y mejoras responsive |
 | Períodos mensuales del dashboard | Propia | Money In / Out y gasto acumulado deben respetar conjuntamente `family.month_start_day` |
+| Períodos independientes del dashboard | Propia | Cada widget que consume un período general conserva su propio selector y preferencia; no reintroducir un selector global |
 | Sincronización y proveedores | Soporte del fork | Cambios que mantienen la coherencia de cuentas y sincronizaciones con las funciones anteriores |
 | Gestión familiar y usuarios | Propia, todavía sin commit | Claridad de roles/alcance y borrado seguro de la última persona de una familia |
 | Workflows, scripts y documentos auxiliares | Revisar caso a caso | Están en el diff del fork, pero no todos son funcionalidad de producto |
@@ -319,6 +320,7 @@ Estos cambios son propios aunque muchos estén entrelazados con las funciones an
 - Las modales `DS::Dialog` funden coordinadamente panel y overlay al abrir y cerrar, incluido el cierre con Escape. Los desplegables de subcategorías del desglose de Informes y las cards plegables de Inicio e Informes animan altura, contenido y chevrón con la misma duración breve; todos estos movimientos respetan la preferencia de movimiento reducido.
 - Toast para deshacer el descarte de insights.
 - Ajustes visuales en presupuestos, operaciones, cuentas, informes y dashboard.
+- Inicio no tiene un selector de período global. **Flujo de caja**, **Salidas**, **Inversiones** y **Patrimonio neto** muestran un `UI::PeriodPicker` propio en la esquina superior derecha de su card, calculan sus consultas con períodos independientes y guardan la elección por usuario en `preferences.dashboard_widget_periods`. Cambiar cualquiera de esos períodos conserva en la URL los períodos de las demás cards y los filtros propios de Money In / Out y Gasto. Money In / Out y Gasto mantienen sus selectores mensuales especializados; Balance de situación e Insights no reciben un selector porque no consumen el período general.
 - El widget **Money In / Out** respeta el `month_start_day` configurado por la familia: cada barra y el resumen usan periodos mensuales personalizados (por ejemplo, del día 25 al 24 del mes siguiente), el periodo activo se limita a la fecha actual y los enlaces de desglose conservan exactamente ese rango. Los periodos que empiezan entre los días 1 y 15 conservan el nombre de ese mes; los que empiezan después del 15 se muestran como el mes siguiente (25 de agosto–24 de septiembre se presenta como “septiembre”). El selector mensual utiliza la misma regla para mantener coherentes la etiqueta, la barra resaltada y los totales.
 - El widget upstream de **gasto acumulado / Spending Trend** sigue exactamente la misma semántica de mes configurado que Money In / Out. Su curva actual, curva comparativa, selector, etiquetas del eje y totales se construyen con períodos personalizados; por ejemplo, septiembre comienza el 25 de agosto cuando `month_start_day = 25`. El período activo se limita a hoy, mientras que la comparación usa el período personalizado anterior completo.
 - Traducciones propias, principalmente en `en` y `es`; el diff contiene además arreglos puntuales en otros idiomas.
@@ -344,7 +346,7 @@ El cambio no rompe contratos existentes ni reescribe datos: las cuentas sólo re
 
 Componentes/controladores especialmente sensibles a conflictos: `app/components/DS/`, `app/components/UI/`, `app/javascript/controllers/{select,multi_select,tag_select,tooltip,auto_submit_form,autocomplete,color_icon_picker,persisted_disclosure,dashboard_section,reports_section,account_data_refresh,frame_refresh,sync_toast}.js`, `app/javascript/utils/{collapsible_animation,dialog,reload_frame}.js`, `app/views/accounts/_accountable_group.html.erb`, `app/views/layouts/shared/_head.html.erb`, `app/views/layouts/application.html.erb`, `app/assets/tailwind/application.css`, layout principal y vistas de cuentas/transacciones.
 
-Los ajustes de **Money In / Out** y **Spending Trend** comparten `dashboard_display_month` y `dashboard_period_start_for` en `app/controllers/pages_controller.rb`. Sus vistas son `app/views/pages/dashboard/_money_flow.html.erb` y `_spending_trend.html.erb`; la regresión está cubierta en `test/controllers/pages_controller_test.rb`, incluido el caso 25 de agosto–24 de septiembre.
+Los períodos independientes de las cards se coordinan en `app/controllers/pages_controller.rb`, usan el parámetro propio `<widget>_period` y amplían `UI::PeriodPicker` para admitir nombres de parámetro configurables. Los ajustes de **Money In / Out** y **Spending Trend** comparten `dashboard_display_month` y `dashboard_period_start_for` en el mismo controlador. Sus vistas son `app/views/pages/dashboard/_money_flow.html.erb` y `_spending_trend.html.erb`; la regresión está cubierta en `test/controllers/pages_controller_test.rb`, incluido el caso 25 de agosto–24 de septiembre y la independencia/persistencia de los períodos por widget. `test/components/UI/period_picker_test.rb` cubre el parámetro configurable del selector.
 
 ## 10. Funcionalidad upstream incorporada en septiembre de 2026
 
@@ -450,9 +452,10 @@ git diff
 7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada. Al resolver conflictos, integrar primero la evolución upstream del subsistema y reaplicar después la frontera pequeña formada por `bills_frontend_enabled?`, los guards de controlador y `Insight.for_product_frontend`; no resolverlos eliminando código Bills ni conectando ambos modelos.
 8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores internos de transferencias que cruzan la frontera (`transfer_to_excluded`/`transfer_from_excluded`) y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
 9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
-10. En conflictos de identidad visual, conservar `custom_logo` separado de las fuentes automáticas y la personalización de comercios en el ámbito de la familia. Verificar tanto la precedencia y restauración del fallback como la autorización de Active Storage y todas las llamadas a `Merchant#display_logo_url(family:)`.
-11. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
-12. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
+10. En Inicio, mantener independientes los períodos de Flujo de caja, Salidas, Inversiones y Patrimonio neto. Verificar que cada selector persiste por usuario, actualiza sólo el cálculo de su card y conserva el estado de los demás widgets; no reintroducir el selector global.
+11. En conflictos de identidad visual, conservar `custom_logo` separado de las fuentes automáticas y la personalización de comercios en el ámbito de la familia. Verificar tanto la precedencia y restauración del fallback como la autorización de Active Storage y todas las llamadas a `Merchant#display_logo_url(family:)`.
+12. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
+13. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
 
 ## Comandos de auditoría
 

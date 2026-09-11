@@ -44,6 +44,7 @@ es:
       sections_aria_label: Secciones del panel
       drag_to_reorder: Arrastra para reordenar la sección
       toggle_section: Alternar visibilidad de la sección
+      widget_period_aria_label: "Período de %{widget}: %{period}"
       widget_size:
         label: Ajustar tamaño
         width_label: Ancho

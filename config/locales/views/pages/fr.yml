@@ -50,7 +50,7 @@ fr:
         filter_accounts_all: Tous les comptes
         income: Entrées
         month_picker_aria_label: Sélectionner un mois
-        period_scope_hint: Affiche les mois que vous sélectionnez ici — indépendant de la période du tableau de bord en haut.
+        period_scope_hint: Affiche les mois sélectionnés ici indépendamment des autres widgets du tableau de bord.
         search_accounts: Rechercher un compte
         title: Entrées / sorties d'argent
       net_worth_chart:

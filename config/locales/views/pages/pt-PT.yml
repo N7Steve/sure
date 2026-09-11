@@ -111,7 +111,7 @@ pt-PT:
         month_picker_aria_label: "Selecionar mês"
         filter_accounts: "Filtrar contas (%{count})"
         filter_accounts_all: "Todas as contas"
-        period_scope_hint: "Apresenta os meses selecionados aqui, independentemente do período definido no topo da visão geral."
+        period_scope_hint: "Apresenta os meses selecionados aqui, independentemente dos outros widgets da visão geral."
         search_accounts: "Procurar contas"
         apply: "Aplicar"
         balance: "Saldo de transações"

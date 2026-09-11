@@ -2,23 +2,33 @@ class UI::PeriodPicker < ApplicationComponent
   # Unified time-range selector shared by the dashboard and account charts.
   #
   # Renders a DS::Menu as a flat list of link items — one per Period. Each item
-  # is a GET link to `url` carrying `?period=<key>` (plus any `extra_params`),
-  # which re-renders `frame` (a Turbo Frame id) with the chosen period. When
-  # `frame` is nil the links fall back to a normal Turbo Drive visit.
+  # is a GET link to `url` carrying the configured query parameter (plus any
+  # `extra_params`), which re-renders `frame` (a Turbo Frame id) with the chosen
+  # period. When `frame` is nil the links fall back to a normal Turbo Drive visit.
   #
   # The selected period is marked with a check icon and `aria-current`, and the
   # trigger button shows its label.
   #
   # NOTE: `url` must be a path without a query string; pass query state via
-  # `extra_params` so the picker can compose `?period=…` cleanly.
-  attr_reader :selected_key, :url, :frame, :extra_params, :placement
+  # `extra_params` so the picker can compose its query string cleanly.
+  attr_reader :selected_key, :url, :frame, :extra_params, :placement, :param, :aria_label
 
-  def initialize(selected:, url:, frame: nil, extra_params: {}, placement: "bottom-end")
+  def initialize(
+    selected:,
+    url:,
+    frame: nil,
+    extra_params: {},
+    placement: "bottom-end",
+    param: :period,
+    aria_label: nil
+  )
     @selected_key = selected.respond_to?(:key) ? selected.key : selected.to_s
     @url = url
     @frame = frame
     @extra_params = (extra_params || {}).symbolize_keys
     @placement = placement
+    @param = param.to_sym
+    @aria_label = aria_label
   end
 
   def periods
@@ -34,7 +44,7 @@ class UI::PeriodPicker < ApplicationComponent
   end
 
   def href_for(key)
-    "#{url}?#{extra_params.merge(period: key).to_query}"
+    "#{url}?#{extra_params.merge(param => key).to_query}"
   end
 
   private

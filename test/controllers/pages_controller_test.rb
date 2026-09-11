@@ -14,6 +14,78 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
   end
 
+  test "dashboard renders independent period pickers inside period-aware widgets" do
+    get root_path, params: {
+      cashflow_sankey_period: "last_90_days",
+      outflows_donut_period: "last_7_days",
+      investment_summary_period: "current_year",
+      net_worth_chart_period: "last_5_years"
+    }
+
+    assert_response :ok
+
+    {
+      "cashflow_sankey" => "last_90_days",
+      "outflows_donut" => "last_7_days",
+      "investment_summary" => "current_year",
+      "net_worth_chart" => "last_5_years"
+    }.each do |section_key, period_key|
+      assert_select "section[data-section-key='#{section_key}']" do
+        assert_select "a[role='menuitemradio'][href*='#{section_key}_period=#{period_key}'][aria-checked='true']", count: 1
+      end
+    end
+
+    assert_select "turbo-frame#dashboard_sections > div.flex.items-center.justify-end.mb-4", count: 0
+  end
+
+  test "dashboard applies and persists each widget period independently" do
+    get root_path, params: {
+      cashflow_sankey_period: "last_90_days",
+      outflows_donut_period: "last_7_days",
+      investment_summary_period: "current_year",
+      net_worth_chart_period: "last_5_years"
+    }
+
+    assert_response :ok
+    assert_select "[data-controller='sankey-chart'][data-sankey-chart-start-date-value=?]", 90.days.ago.to_date.iso8601
+    assert_select "[data-controller='donut-chart'][data-donut-chart-start-date-value=?]", 7.days.ago.to_date.iso8601
+
+    @user.reload
+    assert_equal "last_90_days", @user.dashboard_widget_period("cashflow_sankey")
+    assert_equal "last_7_days", @user.dashboard_widget_period("outflows_donut")
+    assert_equal "current_year", @user.dashboard_widget_period("investment_summary")
+    assert_equal "last_5_years", @user.dashboard_widget_period("net_worth_chart")
+
+    get root_path
+
+    assert_response :ok
+    assert_select "section[data-section-key='net_worth_chart'] a[aria-checked='true'][href*='net_worth_chart_period=last_5_years']", count: 1
+  end
+
+  test "dashboard period links preserve every widget filter" do
+    account = @family.accounts.first
+
+    get root_path, params: {
+      cashflow_sankey_period: "last_90_days",
+      outflows_donut_period: "last_7_days",
+      investment_summary_period: "current_year",
+      net_worth_chart_period: "last_5_years",
+      money_flow_month: 1.month.ago.beginning_of_month.to_date.iso8601,
+      money_flow_account_ids: [ account.id ],
+      spending_month: 2.months.ago.beginning_of_month.to_date.iso8601
+    }
+
+    assert_response :ok
+    href = css_select("section[data-section-key='net_worth_chart'] a[role='menuitemradio']").first["href"]
+
+    assert_includes href, "cashflow_sankey_period=last_90_days"
+    assert_includes href, "outflows_donut_period=last_7_days"
+    assert_includes href, "investment_summary_period=current_year"
+    assert_includes href, "money_flow_account_ids%5B%5D=#{account.id}"
+    assert_includes href, "money_flow_month="
+    assert_includes href, "spending_month="
+  end
+
   test "inactive user's existing session is revoked" do
     session_record = @user.sessions.order(:created_at).last
     @user.update_column(:active, false)

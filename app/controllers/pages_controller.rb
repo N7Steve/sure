@@ -29,6 +29,7 @@ class PagesController < ApplicationController
   # Selectable height presets (px) for grow widgets.
   DASHBOARD_HEIGHT_PRESETS = { "compact" => 208, "auto" => 288, "tall" => 416 }.freeze
   DEFAULT_HEIGHT_PRESET = "auto"
+  DASHBOARD_PERIOD_WIDGETS = %w[cashflow_sankey outflows_donut investment_summary net_worth_chart].freeze
 
   skip_authentication only: %i[redis_configuration_error privacy terms]
   before_action :ensure_intro_guest!, only: :intro
@@ -42,16 +43,24 @@ class PagesController < ApplicationController
     @investment_statement = Current.family.investment_statement
     @accounts = Current.user.accessible_accounts.navigation_visible.with_attached_logo
 
-    family_currency = Current.family.currency
-
-    # Use IncomeStatement for all cashflow data (now includes categorized trades)
     income_statement = Current.family.income_statement
-    income_totals = income_statement.income_totals(period: @period)
-    expense_totals = income_statement.expense_totals(period: @period)
-    net_totals = income_statement.net_category_totals(period: @period)
+    @dashboard_periods = DASHBOARD_PERIOD_WIDGETS.index_with { |key| dashboard_period_for(key) }
+    persist_dashboard_widget_periods
 
-    @cashflow_sankey_data = build_cashflow_sankey_data(net_totals, income_totals, expense_totals, family_currency)
-    @outflows_data = build_outflows_donut_data(net_totals)
+    cashflow_period = @dashboard_periods.fetch("cashflow_sankey")
+    cashflow_income_totals = income_statement.income_totals(period: cashflow_period)
+    cashflow_expense_totals = income_statement.expense_totals(period: cashflow_period)
+    cashflow_net_totals = income_statement.net_category_totals(period: cashflow_period)
+
+    @cashflow_sankey_data = build_cashflow_sankey_data(
+      cashflow_net_totals,
+      cashflow_income_totals,
+      cashflow_expense_totals,
+      Current.family.currency
+    )
+    @outflows_data = build_outflows_donut_data(
+      income_statement.net_category_totals(period: @dashboard_periods.fetch("outflows_donut"))
+    )
     # Preview-gated: skip the query outright rather than loading rows the
     # section won't be built from.
     @feed_insights = preview_features_enabled? ? Current.family.insights.for_product_frontend.visible.ordered.limit(Insight::FEED_LIMIT) : Insight.none
@@ -67,6 +76,7 @@ class PagesController < ApplicationController
 
     @spending_trend_month = spending_trend_month_param
     @spending_trend_data = build_spending_trend_data(income_statement, @spending_trend_month)
+    @dashboard_query_params = dashboard_query_params
 
     @dashboard_sections = build_dashboard_sections
 
@@ -156,7 +166,8 @@ class PagesController < ApplicationController
           title: "pages.dashboard.cashflow_sankey.title",
           partial: "pages/dashboard/cashflow_sankey",
           layout: section_layout("cashflow_sankey"),
-          locals: { sankey_data: @cashflow_sankey_data, period: @period },
+          locals: { sankey_data: @cashflow_sankey_data, period: @dashboard_periods.fetch("cashflow_sankey") },
+          period: @dashboard_periods.fetch("cashflow_sankey"),
           visible: @accounts.any?,
           collapsible: true
         },
@@ -165,7 +176,13 @@ class PagesController < ApplicationController
           title: "pages.dashboard.money_flow.title",
           partial: "pages/dashboard/money_flow",
           layout: section_layout("money_flow"),
-          locals: { money_flow_data: @money_flow_data, accounts: @money_flow_accounts, accessible_account_ids: @money_flow_accessible_account_ids, col_span: section_layout("money_flow")[:col_span] },
+          locals: {
+            money_flow_data: @money_flow_data,
+            accounts: @money_flow_accounts,
+            accessible_account_ids: @money_flow_accessible_account_ids,
+            col_span: section_layout("money_flow")[:col_span],
+            dashboard_params: @dashboard_query_params
+          },
           visible: @accounts.any?,
           collapsible: true
         },
@@ -174,7 +191,7 @@ class PagesController < ApplicationController
           title: "pages.dashboard.spending_trend.title",
           partial: "pages/dashboard/spending_trend",
           layout: section_layout("spending_trend"),
-          locals: { spending_trend_data: @spending_trend_data },
+          locals: { spending_trend_data: @spending_trend_data, dashboard_params: @dashboard_query_params },
           visible: @accounts.any?,
           collapsible: true
         },
@@ -183,7 +200,8 @@ class PagesController < ApplicationController
           title: "pages.dashboard.outflows_donut.title",
           partial: "pages/dashboard/outflows_donut",
           layout: section_layout("outflows_donut"),
-          locals: { outflows_data: @outflows_data, period: @period },
+          locals: { outflows_data: @outflows_data, period: @dashboard_periods.fetch("outflows_donut") },
+          period: @dashboard_periods.fetch("outflows_donut"),
           visible: @accounts.any? && @outflows_data[:categories].present?,
           collapsible: true
         },
@@ -192,7 +210,8 @@ class PagesController < ApplicationController
           title: "pages.dashboard.investment_summary.title",
           partial: "pages/dashboard/investment_summary",
           layout: section_layout("investment_summary"),
-          locals: { investment_statement: @investment_statement, period: @period },
+          locals: { investment_statement: @investment_statement, period: @dashboard_periods.fetch("investment_summary") },
+          period: @dashboard_periods.fetch("investment_summary"),
           visible: @accounts.any? && @investment_statement.investment_accounts.any?,
           collapsible: true
         },
@@ -201,7 +220,8 @@ class PagesController < ApplicationController
           title: "pages.dashboard.net_worth_chart.title",
           partial: "pages/dashboard/net_worth_chart",
           layout: section_layout("net_worth_chart"),
-          locals: { balance_sheet: @balance_sheet, period: @period },
+          locals: { balance_sheet: @balance_sheet, period: @dashboard_periods.fetch("net_worth_chart") },
+          period: @dashboard_periods.fetch("net_worth_chart"),
           visible: @accounts.any?,
           collapsible: true
         },
@@ -253,6 +273,51 @@ class PagesController < ApplicationController
       end
 
       base.merge(col_span: col_span, height_preset: preset, height_px: DASHBOARD_HEIGHT_PRESETS.fetch(preset))
+    end
+
+    def dashboard_period_for(section_key)
+      requested_key = params[dashboard_period_param(section_key)]
+      saved_key = Current.user.dashboard_widget_period(section_key)
+      period_key = if Period.valid_key?(requested_key)
+        requested_key
+      elsif Period.valid_key?(saved_key)
+        saved_key
+      else
+        @period.key
+      end
+
+      case period_key
+      when "current_month"
+        Period.current_month_for(Current.family)
+      when "last_month"
+        Period.last_month_for(Current.family)
+      else
+        Period.from_key(period_key)
+      end
+    end
+
+    def persist_dashboard_widget_periods
+      selected = DASHBOARD_PERIOD_WIDGETS.each_with_object({}) do |section_key, periods|
+        period_key = params[dashboard_period_param(section_key)]
+        periods[section_key] = period_key if Period.valid_key?(period_key)
+      end
+      Current.user.update_dashboard_preferences("dashboard_widget_periods" => selected) if selected.any?
+    end
+
+    def dashboard_period_param(section_key)
+      "#{section_key}_period"
+    end
+
+    def dashboard_query_params
+      params = DASHBOARD_PERIOD_WIDGETS.index_with { |key| @dashboard_periods.fetch(key).key }
+        .transform_keys { |key| dashboard_period_param(key).to_sym }
+        .merge(
+          money_flow_month: @money_flow_data[:month].iso8601,
+          spending_month: @spending_trend_data[:month].iso8601
+        )
+
+      params[:money_flow_account_ids] = @money_flow_data[:account_ids] if @money_flow_data[:account_ids].present?
+      params
     end
 
     def github_provider

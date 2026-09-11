@@ -111,7 +111,7 @@ zh-TW:
         month_picker_aria_label: 選擇月份
         filter_accounts: 篩選帳戶 (%{count})
         filter_accounts_all: 所有帳戶
-        period_scope_hint: 顯示您在這裡選擇的月份，與上方儀表板的時間區間無關。
+        period_scope_hint: 顯示您在這裡選擇的月份，不受其他儀表板小工具影響。
         search_accounts: 搜尋帳戶
         apply: 套用
         balance: 交易餘額

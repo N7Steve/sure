@@ -79,7 +79,7 @@ de:
         filter_accounts_all: Alle Konten
         income: Einnahmen
         month_picker_aria_label: Monat wählen
-        period_scope_hint: Zeigt die Monate, die du hier wählst – unabhängig vom Zeitraum oben im Dashboard.
+        period_scope_hint: Zeigt die hier ausgewählten Monate unabhängig von den anderen Dashboard-Widgets.
         search_accounts: Konten suchen
         title: Geld rein / raus
       sections_aria_label: Dashboard-Bereiche

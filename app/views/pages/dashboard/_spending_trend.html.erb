@@ -1,4 +1,4 @@
-<%# locals: (spending_trend_data:) %>
+<%# locals: (spending_trend_data:, dashboard_params:) %>
 <%
   data = spending_trend_data
   period = data[:current_period]
@@ -30,7 +30,7 @@
           <% menu.with_item(
                variant: :link,
                text: I18n.l(month, format: :month_year).capitalize,
-               href: root_path({ spending_month: month.iso8601 }),
+               href: root_path(dashboard_params.merge(spending_month: month.iso8601)),
                frame: "dashboard_sections",
                selected: month == data[:month]
              ) %>

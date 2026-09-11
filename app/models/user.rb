@@ -503,6 +503,10 @@ class User < ApplicationRecord
     preferences&.dig("dashboard_section_layout", section_key, "col_span")
   end
 
+  def dashboard_widget_period(section_key)
+    preferences&.dig("dashboard_widget_periods", section_key)
+  end
+
   def update_dashboard_preferences(prefs)
     # Use pessimistic locking to ensure atomic read-modify-write
     # This prevents race conditions when multiple sections are collapsed quickly
