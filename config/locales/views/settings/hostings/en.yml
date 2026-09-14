@@ -27,7 +27,7 @@ en:
         property_valuation_providers: Property Valuation Providers
         sync_settings: Sync Settings
         invites: Invite Codes
-        title: Self-Hosting
+        title: External Services
         danger_zone: Danger Zone
         clear_cache: Clear data cache
         clear_cache_warning: Clearing the data cache will remove all exchange rates, security prices, account balances, and other data. This will not delete accounts, transactions, categories, or other user-owned data.

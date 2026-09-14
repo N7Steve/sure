@@ -1,5 +1,5 @@
 <%= content_for :page_title, t(".title") %>
-<%= settings_section title: t(".general") do %>
+<%= settings_section title: t(".general"), collapsible: true do %>
   <div class="space-y-6">
     <%= render "settings/hostings/ai_features_settings" %>
     <% if ai_features_enabled? %>
@@ -20,11 +20,11 @@
   </div>
 <% end %>
 <% if ai_features_enabled? %>
-  <%= settings_section title: t(".ai_assistant") do %>
+  <%= settings_section title: t(".ai_assistant"), collapsible: true do %>
     <%= render "settings/hostings/assistant_settings" %>
   <% end %>
 <% end %>
-<%= settings_section title: t(".financial_data_providers") do %>
+<%= settings_section title: t(".financial_data_providers"), collapsible: true do %>
   <div class="space-y-6">
     <%= render "settings/hostings/provider_selection" %>
     <% if @show_yahoo_finance_settings %>
@@ -47,20 +47,20 @@
     <% end %>
   </div>
 <% end %>
-<%= settings_section title: t(".property_valuation_providers") do %>
+<%= settings_section title: t(".property_valuation_providers"), collapsible: true do %>
   <div class="space-y-6">
     <%= render "settings/hostings/rentcast_settings" %>
     <%= render "settings/hostings/realie_settings" %>
   </div>
 <% end %>
-<%= settings_section title: t(".sync_settings") do %>
+<%= settings_section title: t(".sync_settings"), collapsible: true do %>
   <%= render "settings/hostings/sync_settings" %>
 <% end %>
 <% if Current.user.super_admin? %>
-  <%= settings_section title: t(".invites") do %>
+  <%= settings_section title: t(".invites"), collapsible: true do %>
     <%= render "settings/hostings/invite_code_settings" %>
   <% end %>
 <% end %>
-<%= settings_section title: t(".danger_zone") do %>
+<%= settings_section title: t(".danger_zone"), collapsible: true, open: false do %>
   <%= render "settings/hostings/danger_zone_settings" %>
 <% end %>

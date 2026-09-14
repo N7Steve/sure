@@ -44,7 +44,7 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 
 ## Puerta global de integraciones de IA
 
-El fork conserva el código upstream de IA para facilitar futuras integraciones, pero no lo ofrece como funcionalidad de producto por defecto. La única autoridad es `Setting.ai_features_enabled?`, un ajuste de instancia que se administra en **Autoalojamiento → Configuración general**. No crear puertas paralelas por controlador, proveedor o variable de entorno.
+El fork conserva el código upstream de IA para facilitar futuras integraciones, pero no lo ofrece como funcionalidad de producto por defecto. La única autoridad es `Setting.ai_features_enabled?`, un ajuste de instancia que se administra en **Servicios externos → Configuración general**. No crear puertas paralelas por controlador, proveedor o variable de entorno.
 
 - Con la puerta apagada se ocultan chat y barra lateral, configuración de proveedores/modelos, prompts, consumo LLM, MCP, importaciones documentales/PDF, acciones de reglas asistidas, enriquecimiento de comercios y diagnóstico de IA.
 - Los endpoints HTML, API y MCP responden como funcionalidad desactivada aunque se invoquen directamente. Los registros de proveedores LLM y vector store no entregan adaptadores, y los jobs que pudieran quedar en cola terminan sin llamar a servicios externos.

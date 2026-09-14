@@ -60,10 +60,10 @@ class SettingsTest < ApplicationSystemTestCase
     Provider::Registry.stubs(:get_provider).with(:realie).returns(nil)
     Provider::Registry.stubs(:get_provider).with(:github).returns(stub(fetch_latest_release_notes: nil))
     open_settings_from_sidebar
-    assert_selector "li", text: "Self-Hosting"
-    click_link "Self-Hosting", match: :first
+    assert_selector "li", text: "External Services"
+    click_link "External Services", match: :first
     assert_current_path settings_hosting_path
-    assert_selector "h1", text: "Self-Hosting"
+    assert_selector "h1", text: "External Services"
     find("select#setting_onboarding_state").select("Invite-only")
     within("select#setting_onboarding_state") do
       assert_selector "option[selected]", text: "Invite-only"

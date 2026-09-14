@@ -34,7 +34,7 @@ en:
     guides: Guides
     holdings: Holdings
     home: Home
-    hostings: Self-Hosting
+    hostings: External Services
     ibkr_items: Interactive Brokers
     impersonation_sessions: Impersonations
     imports: Imports
@@ -73,7 +73,7 @@ en:
     rules: Rules
     securities: Security
     security: Security
-    self_hosting: Self-Hosting
+    self_hosting: External Services
     sessions: Sign in
     simplefin_items: SimpleFIN
     snaptrade_items: SnapTrade

@@ -350,7 +350,7 @@ en:
       rules_label: Rules
       mcp_label: MCP
       security_label: Security
-      self_hosting_label: Self-Hosting
+      self_hosting_label: External Services
       sso_providers_label: SSO Providers
       statement_vault_label: Statement Vault
       system_health_label: System health

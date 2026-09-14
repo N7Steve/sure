@@ -292,7 +292,7 @@ es:
       rules_label: Reglas
       mcp_label: MCP
       security_label: Seguridad
-      self_hosting_label: Autoalojamiento
+      self_hosting_label: Servicios externos
       sso_providers_label: Proveedores SSO
       statement_vault_label: Archivo de extractos
       tags_label: Etiquetas

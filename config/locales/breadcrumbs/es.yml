@@ -32,7 +32,7 @@ es:
     guides: Guías
     holdings: Posiciones
     home: Inicio
-    hostings: Autoalojamiento
+    hostings: Servicios externos
     ibkr_items: Interactive Brokers
     impersonation_sessions: Suplantaciones
     imports: Importaciones
@@ -69,7 +69,7 @@ es:
     rules: Reglas
     securities: Seguridad
     security: Seguridad
-    self_hosting: Autoalojamiento
+    self_hosting: Servicios externos
     sessions: Iniciar sesión
     simplefin_items: SimpleFIN
     snaptrade_items: SnapTrade

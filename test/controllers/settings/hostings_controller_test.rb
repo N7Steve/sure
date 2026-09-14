@@ -67,6 +67,34 @@ class Settings::HostingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "AI gate can be enabled from the disabled state" do
+    Setting.ai_features_enabled = false
+
+    with_self_hosting do
+      patch settings_hosting_url, params: { setting: { ai_features_enabled: "1" } }
+
+      assert_redirected_to settings_hosting_url
+      assert Setting.ai_features_enabled?
+      follow_redirect!
+      assert_select "input[name='setting[ai_features_enabled]']:checked"
+      assert_select "input[name='setting[openai_access_token]']"
+    end
+  end
+
+  test "external services settings render as collapsible cards" do
+    with_self_hosting do
+      get settings_hosting_url(locale: :es)
+
+      assert_response :success
+      assert_includes response.body, "Servicios externos"
+      assert_select "details > summary h2", text: I18n.t("settings.hostings.show.general", locale: :es)
+      assert_select "details > summary h2", text: I18n.t("settings.hostings.show.financial_data_providers", locale: :es)
+      assert_select "details > summary h2", text: I18n.t("settings.hostings.show.property_valuation_providers", locale: :es)
+      assert_select "details > summary h2", text: I18n.t("settings.hostings.show.sync_settings", locale: :es)
+      assert_select "details:not([open]) > summary h2", text: I18n.t("settings.hostings.show.danger_zone", locale: :es)
+    end
+  end
+
   test "renders OpenAI model and timeout guidance in German" do
     sign_in users(:sure_support_staff)
 
