@@ -500,7 +500,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :ok
-    assert_select "#spending-trend-section"
+    assert_select "#spending-trend-section", count: 1
   end
 
   test "dashboard spending trend widget accumulates the selected month against the previous one" do

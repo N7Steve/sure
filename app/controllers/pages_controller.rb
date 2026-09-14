@@ -197,15 +197,6 @@ class PagesController < ApplicationController
           collapsible: true
         },
         {
-          key: "spending_trend",
-          title: "pages.dashboard.spending_trend.title",
-          partial: "pages/dashboard/spending_trend",
-          layout: section_layout("spending_trend"),
-          locals: { spending_trend_data: @spending_trend_data },
-          visible: @accounts.any?,
-          collapsible: true
-        },
-        {
           key: "outflows_donut",
           title: "pages.dashboard.outflows_donut.title",
           partial: "pages/dashboard/outflows_donut",
