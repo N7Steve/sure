@@ -37,6 +37,7 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 | UI/UX | Propia o adaptada | Vistas compactas, cuentas agrupadas, componentes interactivos y mejoras responsive |
 | Períodos mensuales del dashboard | Propia | Money In / Out y gasto acumulado deben respetar conjuntamente `family.month_start_day` |
 | Períodos independientes del dashboard | Propia | Cada widget que consume un período general conserva su propio selector y preferencia; no reintroducir un selector global |
+| Plan, presupuestos y objetivos | Upstream, ocultos | Conservar rutas y subsistemas, pero no reintroducirlos en la navegación principal del fork |
 | Sincronización y proveedores | Soporte del fork | Cambios que mantienen la coherencia de cuentas y sincronizaciones con las funciones anteriores |
 | Integraciones de IA | Upstream, desactivadas por defecto | Conservar los subsistemas, pero mantener todas sus superficies y ejecuciones tras `Setting.ai_features_enabled?` |
 | Gestión familiar y usuarios | Propia, todavía sin commit | Claridad de roles/alcance y borrado seguro de la última persona de una familia |

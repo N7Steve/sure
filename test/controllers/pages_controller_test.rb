@@ -14,6 +14,19 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
   end
 
+  test "global navigation hides budgets goals and the Plan hub" do
+    [ false, true ].each do |preview_enabled|
+      @user.update!(preferences: (@user.preferences || {}).merge("preview_features_enabled" => preview_enabled))
+
+      get root_path
+
+      assert_response :ok
+      assert_select "nav a[href=?]", plan_path, count: 0
+      assert_select "nav a[href=?]", budgets_path, count: 0
+      assert_select "nav a[href=?]", goals_path, count: 0
+    end
+  end
+
   test "dashboard renders the net worth chart as drag-selectable, opting it out of card drag-and-drop" do
     get root_path
 
