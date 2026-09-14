@@ -31,7 +31,7 @@ module SettingsHelper
         ]
       },
       {
-        header: t("settings.settings_nav.integrations_ai_section_title"),
+        header: t("settings.settings_nav.integrations_section_title"),
         items: [
           settings_nav_item(:api_keys_label, :settings_api_keys_path, "key", visible: admin_user?),
           settings_nav_item(:mcp_label, :settings_mcp_path, "plug", visible: ai_admin_user?),

@@ -20,7 +20,7 @@ class SettingsHelperTest < ActionView::TestCase
       "Personal & family",
       "Accounts & data",
       "Organization",
-      "Integrations & AI",
+      "Integrations",
       "Help"
     ], sections.pluck(:header)
 
@@ -40,7 +40,7 @@ class SettingsHelperTest < ActionView::TestCase
     sections = settings_nav_sections
     labels = sections.flat_map { |section| section[:items].pluck(:label) }
 
-    assert_not_includes sections.pluck(:header), "Integrations & AI"
+    assert_not_includes sections.pluck(:header), "Integrations"
     assert_not_includes sections.pluck(:header), "System"
     assert_not_includes labels, "Bank sync"
     assert_not_includes labels, "Imports"

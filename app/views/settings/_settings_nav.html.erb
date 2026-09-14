@@ -14,8 +14,8 @@
     <% settings_nav_sections.each do |section| %>
       <section class="space-y-2">
         <div class="flex items-center gap-2 px-3">
-          <h3 class="uppercase text-secondary font-medium text-xs"><%= section[:header] %></h3>
-          <%= render "shared/ruler", classes: "w-full" %>
+          <h3 class="shrink-0 whitespace-nowrap uppercase text-secondary font-medium text-xs"><%= section[:header] %></h3>
+          <%= render "shared/ruler", classes: "min-w-0 flex-1" %>
         </div>
         <ul class="space-y-1">
           <% section[:items].each do |item| %>
@@ -44,7 +44,7 @@
         ) %>
       </li>
       <% settings_nav_sections.each do |section| %>
-        <li class="flex items-center px-3 text-xs font-medium uppercase text-secondary">
+        <li class="flex shrink-0 items-center whitespace-nowrap px-3 text-xs font-medium uppercase text-secondary">
           <%= section[:header] %>
         </li>
         <% section[:items].each do |item| %>
