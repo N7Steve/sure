@@ -48,6 +48,7 @@ export default class extends Controller {
     const height = this.element.clientHeight;
     const {
       days = 30,
+      current_days: currentDays = days,
       axis_labels: axisLabels = [],
       current = [],
       previous = [],

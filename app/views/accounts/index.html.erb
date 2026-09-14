@@ -38,6 +38,10 @@
       <%= render @up_items.sort_by(&:created_at) %>
     <% end %>
 
+    <% if @monobank_items.any? %>
+      <%= render @monobank_items.sort_by(&:created_at) %>
+    <% end %>
+
     <% if @enable_banking_items.any? %>
       <%= render @enable_banking_items.sort_by(&:created_at) %>
     <% end %>
@@ -78,6 +82,14 @@
 
     <% if @kraken_items.any? %>
       <%= render @kraken_items.sort_by(&:created_at) %>
+    <% end %>
+
+    <% if @coinspot_items.any? %>
+      <%= render @coinspot_items.sort_by(&:created_at) %>
+    <% end %>
+
+    <% if @trading212_items.any? %>
+      <%= render @trading212_items %>
     <% end %>
 
     <% if @wise_items.any? %>

@@ -184,6 +184,16 @@ class FamilyMerchantsController < ApplicationController
       )
     end
 
+    def merchant_json(merchant)
+      merchant.as_json(only: %i[id name]).merge(
+        html: render_to_string(
+          partial: "DS/merchant_select/option",
+          formats: [ :html ],
+          locals: { merchant: merchant, selected: true, view_helpers: helpers }
+        )
+      )
+    end
+
     def all_family_merchants
       family_merchant_ids = Current.family.merchants.pluck(:id)
       provider_merchant_ids = Current.family.assigned_merchants.where(type: "ProviderMerchant").pluck(:id)

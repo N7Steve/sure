@@ -37,7 +37,7 @@ class TransactionsController < ApplicationController
     base_scope = @search.transactions_scope
                        .reverse_chronological
                        .includes(
-                         { entry: [:account, :scheduled_payment_entry] },
+                         { entry: [ :account, :scheduled_payment_entry ] },
                          :category, :merchant, :tags,
                          # Union of #2643 counterpart UI + Skylight category-menu N+1:
                          # - outflow rows need inflow_transaction (to_account) for both
@@ -522,7 +522,7 @@ class TransactionsController < ApplicationController
     # active status (AccountsController#toggle_active) doesn't touch `entries`
     # or `AccountShare`, so it wouldn't otherwise bust this cache.
     def uncategorized_count_cache_key
-      "transactions_uncategorized_count/v3/#{Current.family.id}/#{Current.user.id}/" \
+      "transactions_uncategorized_count/v4/#{Current.family.id}/#{Current.user.id}/" \
         "#{Current.family.entries_version}/#{Current.family.accounts_status_version}/#{Current.account_share_version}"
     end
 
@@ -772,10 +772,10 @@ class TransactionsController < ApplicationController
         base_accounts = Current.user.accessible_accounts.visible
 
         allowed_ids = if include_hidden
-                        base_accounts.pluck(:id).map(&:to_s)
-                      else
-                        base_accounts.default_transaction_visible.pluck(:id).map(&:to_s)
-                      end
+          base_accounts.pluck(:id).map(&:to_s)
+        else
+          base_accounts.default_transaction_visible.pluck(:id).map(&:to_s)
+        end
 
         params_account_ids = Array(cleaned_params[:account_ids]).map(&:to_s)
         valid_ids = params_account_ids & allowed_ids

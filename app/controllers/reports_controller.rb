@@ -136,7 +136,7 @@ class ReportsController < ApplicationController
 
       # Investment metrics
       @investment_metrics = build_investment_metrics
-      
+
       # Roboadvisor metrics
       @roboadvisor_metrics = build_roboadvisor_metrics
 
@@ -480,6 +480,7 @@ class ReportsController < ApplicationController
         {
           category_id: id,
           category_name: name,
+          category_filter_value: filter_value,
           category_color: color,
           category_icon: icon,
           type: type,
@@ -510,14 +511,14 @@ class ReportsController < ApplicationController
         kind = is_trade ? "trade" : entryable.kind
 
         type = if kind.in?(%w[transfer_to_excluded transfer_from_excluded])
-                 "transfer"
-               elsif (!is_trade && kind == "loan_payment")
-                 "expense"
-               elsif entry.amount > 0
-                 "expense"
-               else
-                 "income"
-               end
+          "transfer"
+        elsif !is_trade && kind == "loan_payment"
+          "expense"
+        elsif entry.amount > 0
+          "expense"
+        else
+          "income"
+        end
         begin
           converted_amount = Money.new(entry.amount.abs, entry.currency).exchange_to(family_currency).amount
         rescue Money::ConversionError
@@ -529,12 +530,12 @@ class ReportsController < ApplicationController
           if transfer && transfer.outflow_transaction && transfer.inflow_transaction
             outflow_acc = transfer.outflow_transaction.entry.account
             inflow_acc = transfer.inflow_transaction.entry.account
-            
+
             color_class = kind == "transfer_to_excluded" ? "text-destructive" : "text-success"
             name = "Transfer"
             transfer_id = "transfer_#{outflow_acc.id}_#{inflow_acc.id}"
             parent_key = [ transfer_id, type ]
-            
+
             grouped_data[parent_key] ||= init_category_group.call(transfer_id, name, "#9CA3AF", "arrow-right-left", type, color_class).merge(
               outflow_account: outflow_acc,
               inflow_account: inflow_acc
@@ -548,16 +549,16 @@ class ReportsController < ApplicationController
           # Uncategorized or Other Investments (for trades)
           if is_trade
             parent_key = [ :other_investments, type ]
-            grouped_data[parent_key] ||= init_category_group.call(:other_investments, Category.other_investments.name, Category.other_investments.color, Category.other_investments.lucide_icon, type)
+            grouped_data[parent_key] ||= init_category_group.call(:other_investments, Category.other_investments.name, Category.other_investments.color, Category.other_investments.lucide_icon, type, Category.other_investments.name)
           else
             parent_key = [ :uncategorized, type ]
-            grouped_data[parent_key] ||= init_category_group.call(:uncategorized, Category.uncategorized.name, Category.uncategorized.color, Category.uncategorized.lucide_icon, type)
+            grouped_data[parent_key] ||= init_category_group.call(:uncategorized, Category.uncategorized.name, Category.uncategorized.color, Category.uncategorized.lucide_icon, type, Category.uncategorized.filter_value)
           end
         elsif category.parent_id.present?
           # This is a subcategory - group under parent
           parent = category.parent
           parent_key = [ parent.id, type ]
-          grouped_data[parent_key] ||= init_category_group.call(parent.id, parent.name, parent.color || Category::UNCATEGORIZED_COLOR, parent.lucide_icon, type)
+          grouped_data[parent_key] ||= init_category_group.call(parent.id, parent.name, parent.color || Category::UNCATEGORIZED_COLOR, parent.lucide_icon, type, parent.filter_value)
 
           # Add to subcategory
           grouped_data[parent_key][:subcategories][category.id] ||= init_subcategory.call(category)
@@ -573,7 +574,7 @@ class ReportsController < ApplicationController
         else
           # This is a root category (no parent)
           parent_key = [ category.id, type ]
-          grouped_data[parent_key] ||= init_category_group.call(category.id, category.name, category.color || Category::UNCATEGORIZED_COLOR, category.lucide_icon, type)
+          grouped_data[parent_key] ||= init_category_group.call(category.id, category.name, category.color || Category::UNCATEGORIZED_COLOR, category.lucide_icon, type, category.filter_value)
         end
 
         grouped_data[parent_key][:count] += 1
@@ -914,20 +915,20 @@ class ReportsController < ApplicationController
         entry = transaction.entry
         is_expense = entry.amount > 0
         type = if transaction.kind.in?(%w[transfer_to_excluded transfer_from_excluded])
-                 "transfer"
-               elsif transaction.kind == "loan_payment"
-                 "expense"
-               elsif is_expense
-                 "expense"
-               else
-                 "income"
-               end
-               
+          "transfer"
+        elsif transaction.kind == "loan_payment"
+          "expense"
+        elsif is_expense
+          "expense"
+        else
+          "income"
+        end
+
         category_name = if transaction.kind.in?(%w[transfer_to_excluded transfer_from_excluded]) && transaction.transfer
-                          "#{transaction.transfer.outflow_transaction.entry.account.name} -> #{transaction.transfer.inflow_transaction.entry.account.name}"
-                        else
-                          transaction.category&.name || "Uncategorized"
-                        end
+          "#{transaction.transfer.outflow_transaction.entry.account.name} -> #{transaction.transfer.inflow_transaction.entry.account.name}"
+        else
+          transaction.category&.name || "Uncategorized"
+        end
         month_key = Current.family.custom_month_start_for(entry.date)
 
         # Convert to family currency
@@ -1296,5 +1297,4 @@ class ReportsController < ApplicationController
 
       true
     end
-
 end

@@ -178,7 +178,7 @@ export default class extends Controller {
 
     Turbo.visit(
       buildCategoryTransactionsUrl({
-        name: d.name,
+        filterValue: d.filter_value,
         startDate: this.startDateValue,
         endDate: this.endDateValue,
       }),
@@ -565,7 +565,13 @@ export default class extends Controller {
     return String(s).replace(
       /[&<>"']/g,
       (c) =>
-        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
     );
   }
 

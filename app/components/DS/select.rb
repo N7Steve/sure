@@ -73,6 +73,14 @@ module DS
       obj&.respond_to?(:parent_id) && obj.parent_id.present?
     end
 
+    # Returns true if the item represents a child/subcategory of another item
+    # in the list (i.e. has a parent). Used to visually indent hierarchical
+    # items such as categories with subcategories.
+    def child?(item)
+      obj = item[:object]
+      obj&.respond_to?(:parent_id) && obj.parent_id.present?
+    end
+
     private
 
       def normalize_menu_placement(value)

@@ -6,6 +6,7 @@
   has_data = data[:current].any? { |p| p[:value].positive? } || data[:previous].any? { |p| p[:value].positive? }
   chart_data = {
     days: data[:days],
+    current_days: data[:current_days],
     axis_labels: data[:axis_labels],
     current: data[:current],
     previous: data[:previous]

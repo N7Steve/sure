@@ -84,6 +84,7 @@ class TransfersController < ApplicationController
     @transfer.errors.add(:base, t(".stale_form"))
     @from_account_id = transfer_params[:from_account_id]
     set_accounts
+    @tags = Current.family.tags.alphabetically
     render :new, status: :unprocessable_entity
   end
 
@@ -365,5 +366,4 @@ class TransfersController < ApplicationController
         @transfer.fee_transactions << fee_tx
       end
     end
-
 end

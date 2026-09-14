@@ -11,6 +11,7 @@ class Investment < ApplicationRecord
   SUBTYPES = {
     # === United States ===
     "brokerage" => { short: "Brokerage", long: "Brokerage", region: "us", tax_treatment: :taxable },
+    "cash_management" => { short: "CMA", long: "Cash Management Account", region: "us", tax_treatment: :taxable },
     "401k" => { short: "401(k)", long: "401(k)", region: "us", tax_treatment: :tax_deferred },
     "roth_401k" => { short: "Roth 401(k)", long: "Roth 401(k)", region: "us", tax_treatment: :tax_exempt },
     "403b" => { short: "403(b)", long: "403(b)", region: "us", tax_treatment: :tax_deferred },
@@ -153,30 +154,30 @@ class Investment < ApplicationRecord
 
   private
 
-  def subtype_migrated_to_generic?
-    saved_change_to_subtype? && %w[roboadvisor managed_fund].include?(subtype)
-  end
+    def subtype_migrated_to_generic?
+      saved_change_to_subtype? && %w[roboadvisor managed_fund].include?(subtype)
+    end
 
-  def migrate_trades_to_transactions
-    # `account` returns the Account model because of the polymorphic has_one
-    return unless account
+    def migrate_trades_to_transactions
+      # `account` returns the Account model because of the polymorphic has_one
+      return unless account
 
-    account.entries.where(entryable_type: "Trade").find_each do |entry|
-      trade = entry.entryable
-      
-      Transaction.transaction do
-        # Create an equivalent Transaction, taking any useful categorization labels available
-        transaction = Transaction.create!(
-          category_id: trade.category_id,
-          investment_activity_label: trade.investment_activity_label
-        )
-        
-        # Repoint the common Entry to the generic new Transaction
-        entry.update!(entryable: transaction)
-        
-        # Purge the now defunct trade metrics (ticker, price, quantity)
-        trade.destroy!
+      account.entries.where(entryable_type: "Trade").find_each do |entry|
+        trade = entry.entryable
+
+        Transaction.transaction do
+          # Create an equivalent Transaction, taking any useful categorization labels available
+          transaction = Transaction.create!(
+            category_id: trade.category_id,
+            investment_activity_label: trade.investment_activity_label
+          )
+
+          # Repoint the common Entry to the generic new Transaction
+          entry.update!(entryable: transaction)
+
+          # Purge the now defunct trade metrics (ticker, price, quantity)
+          trade.destroy!
+        end
       end
     end
-  end
 end
