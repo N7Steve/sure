@@ -128,7 +128,7 @@ en:
           subtitle: AI identifies and enriches transaction data with merchant information
     payments:
       show:
-        page_title: Payments
+        page_title: Subscription
         subscription_subtitle: Update your credit card details
         subscription_title: Manage contributions
         currently_on_plan: "Currently on the"
@@ -268,7 +268,7 @@ en:
         sharing_policy_description: "Current default: %{policy}. This applies when new accounts or members are added."
         sharing_policy_manage: Change sharing preference
         last_name: Last Name
-        page_title: Profile Info
+        page_title: Profile & family
         pending: Pending
         profile_subtitle: Customize how you appear on %{product_name}
         profile_title: Personal
@@ -326,12 +326,18 @@ en:
       revoke:
         revoked: Connection revoked.
     settings_nav:
+      personal_family_section_title: Personal & family
+      accounts_data_section_title: Accounts & data
+      organization_section_title: Organization
+      integrations_ai_section_title: Integrations & AI
+      system_section_title: System
+      help_section_title: Help
       accounts_label: Accounts
       advanced_section_title: Advanced
       ai_prompts_label: AI Prompts
       background_jobs_label: Background jobs
       api_key_label: API Keys
-      payment_label: Payment
+      payment_label: Subscription
       categories_label: Categories
       feedback_label: Feedback
       general_section_title: General
@@ -344,13 +350,13 @@ en:
       guides_label: Guides
       other_section_title: More
       preferences_label: Preferences
-      profile_label: Profile Info
+      profile_label: Profile & family
       recurring_transactions_label: Recurring
       scheduled_payments_label: Scheduled Payments
       rules_label: Rules
       mcp_label: MCP
       security_label: Security
-      self_hosting_label: External Services
+      self_hosting_label: Instance settings
       sso_providers_label: SSO Providers
       statement_vault_label: Statement Vault
       system_health_label: System health

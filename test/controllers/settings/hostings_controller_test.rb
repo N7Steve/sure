@@ -86,7 +86,7 @@ class Settings::HostingsControllerTest < ActionDispatch::IntegrationTest
       get settings_hosting_url(locale: :es)
 
       assert_response :success
-      assert_includes response.body, "Servicios externos"
+      assert_includes response.body, "Configuración de instancia"
       assert_select "details > summary h2", text: I18n.t("settings.hostings.show.general", locale: :es)
       assert_select "details > summary h2", text: I18n.t("settings.hostings.show.financial_data_providers", locale: :es)
       assert_select "details > summary h2", text: I18n.t("settings.hostings.show.property_valuation_providers", locale: :es)

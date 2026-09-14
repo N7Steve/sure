@@ -26,7 +26,7 @@ es:
         property_valuation_providers: Proveedores de valoración de propiedades
         sync_settings: Ajustes de Sincronización
         invites: Códigos de Invitación
-        title: Servicios externos
+        title: Configuración de instancia
         danger_zone: Zona de Peligro
         clear_cache: Limpiar caché de datos
         clear_cache_warning: Limpiar la caché de datos eliminará todos los tipos de cambio, precios de valores, saldos de cuentas y otros datos temporales. Esto no eliminará cuentas, transacciones, categorías ni otros datos del usuario.

@@ -85,7 +85,7 @@ es:
           subtitle: La IA identifica y enriquece los datos de transacciones con información de comerciantes
     payments:
       show:
-        page_title: Pagos
+        page_title: Suscripción
         subscription_subtitle: Actualiza los detalles de tu tarjeta de crédito
         subscription_title: Gestionar contribuciones
         currently_on_plan: Actualmente en el plan
@@ -211,7 +211,7 @@ es:
         sharing_policy_description: "Configuración actual: %{policy}. Se aplicará al añadir cuentas o miembros nuevos."
         sharing_policy_manage: Cambiar preferencia de compartición
         last_name: Apellido
-        page_title: Información del Perfil
+        page_title: Perfil y familia
         pending: Pendiente
         profile_subtitle: Personaliza cómo apareces en %{product_name}
         profile_title: Personal
@@ -269,11 +269,17 @@ es:
       revoke:
         revoked: Conexión revocada.
     settings_nav:
+      personal_family_section_title: Personal y familia
+      accounts_data_section_title: Cuentas y datos
+      organization_section_title: Organización
+      integrations_ai_section_title: Integraciones e IA
+      system_section_title: Sistema
+      help_section_title: Ayuda
       accounts_label: Cuentas
       advanced_section_title: Avanzado
       ai_prompts_label: Indicaciones de IA
       api_key_label: Clave API
-      payment_label: Pago
+      payment_label: Suscripción
       categories_label: Categorías
       feedback_label: Comentarios
       general_section_title: General
@@ -286,13 +292,13 @@ es:
       guides_label: Guías
       other_section_title: Más
       preferences_label: Preferencias
-      profile_label: Información del Perfil
+      profile_label: Perfil y familia
       recurring_transactions_label: Recurrentes
       scheduled_payments_label: Pagos Programados
       rules_label: Reglas
       mcp_label: MCP
       security_label: Seguridad
-      self_hosting_label: Servicios externos
+      self_hosting_label: Configuración de instancia
       sso_providers_label: Proveedores SSO
       statement_vault_label: Archivo de extractos
       tags_label: Etiquetas

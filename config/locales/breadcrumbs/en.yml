@@ -34,7 +34,7 @@ en:
     guides: Guides
     holdings: Holdings
     home: Home
-    hostings: External Services
+    hostings: Instance settings
     ibkr_items: Interactive Brokers
     impersonation_sessions: Impersonations
     imports: Imports
@@ -62,8 +62,8 @@ en:
     plaid_items: Plaid
     plan: Plan
     preferences: Preferences
-    profile: Profile Info
-    profiles: Profile Info
+    profile: Profile & family
+    profiles: Profile & family
     properties: Properties
     providers: Providers
     recurring_transactions: Recurring
@@ -73,7 +73,7 @@ en:
     rules: Rules
     securities: Security
     security: Security
-    self_hosting: External Services
+    self_hosting: Instance settings
     sessions: Sign in
     simplefin_items: SimpleFIN
     snaptrade_items: SnapTrade

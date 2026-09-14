@@ -1,36 +1,74 @@
 module SettingsHelper
-  SETTINGS_ORDER = [
-    # General section
-    { name: -> { t("settings.settings_nav.accounts_label") }, path: :accounts_path },
-    { name: -> { t("settings.settings_nav.bank_sync_label") }, path: :settings_providers_path, condition: :admin_user? },
-    { name: -> { t("settings.settings_nav.preferences_label") }, path: :settings_preferences_path },
-    { name: -> { t("settings.settings_nav.appearance_label") }, path: :settings_appearance_path },
-    { name: -> { t("settings.settings_nav.profile_label") }, path: :settings_profile_path },
-    { name: -> { t("settings.settings_nav.security_label") }, path: :settings_security_path },
-    { name: -> { t("settings.settings_nav.payment_label") }, path: :settings_payment_path, condition: :not_self_hosted? },
-    # Transactions section
-    { name: -> { t("settings.settings_nav.categories_label") }, path: :categories_path },
-    { name: -> { t("settings.settings_nav.tags_label") }, path: :tags_path },
-    { name: -> { t("settings.settings_nav.rules_label") }, path: :rules_path },
-    { name: -> { t("settings.settings_nav.merchants_label") }, path: :family_merchants_path },
-    { name: -> { t("settings.settings_nav.recurring_transactions_label") }, path: :recurring_transactions_path, condition: :bills_frontend_enabled? },
-    { name: -> { t("settings.settings_nav.statement_vault_label") }, path: :account_statements_path, condition: :admin_user? },
-    { name: -> { t("settings.settings_nav.exports_label") }, path: :family_exports_path },
-    # Advanced section
-    { name: -> { t("settings.settings_nav.ai_prompts_label") }, path: :settings_ai_prompts_path, condition: :ai_admin_user? },
-    { name: -> { t("settings.settings_nav.llm_usage_label") }, path: :settings_llm_usage_path, condition: :ai_admin_user? },
-    { name: -> { t("settings.settings_nav.api_key_label") }, path: :settings_api_keys_path, condition: :admin_user? },
-    { name: -> { t("settings.settings_nav.self_hosting_label") }, path: :settings_hosting_path, condition: :self_hosted_and_admin? },
-    { name: -> { t("settings.settings_nav.imports_label") }, path: :imports_path, condition: :admin_user? },
-    # More section
-    { name: -> { t("settings.settings_nav.guides_label") }, path: :settings_guides_path },
-    { name: -> { t("settings.settings_nav.whats_new_label") }, path: :changelog_path },
-    { name: -> { t("settings.settings_nav.feedback_label") }, path: :feedback_path }
-  ]
+  def settings_nav_sections
+    sections = [
+      {
+        header: t("settings.settings_nav.personal_family_section_title"),
+        items: [
+          settings_nav_item(:profile_label, :settings_profile_path, "circle-user"),
+          settings_nav_item(:preferences_label, :settings_preferences_path, "bolt"),
+          settings_nav_item(:appearance_label, :settings_appearance_path, "palette"),
+          settings_nav_item(:security_label, :settings_security_path, "shield-check"),
+          settings_nav_item(:payment_label, :settings_payment_path, "circle-dollar-sign", visible: !self_hosted? && Current.family&.can_manage_subscription?)
+        ]
+      },
+      {
+        header: t("settings.settings_nav.accounts_data_section_title"),
+        items: [
+          settings_nav_item(:accounts_label, :accounts_path, "layers"),
+          settings_nav_item(:bank_sync_label, :settings_providers_path, "banknote", visible: admin_user?),
+          settings_nav_item(:imports_label, :imports_path, "download", visible: admin_user?),
+          settings_nav_item(:statement_vault_label, :account_statements_path, "archive", visible: admin_user?),
+          settings_nav_item(:exports_label, :family_exports_path, "upload")
+        ]
+      },
+      {
+        header: t("settings.settings_nav.organization_section_title"),
+        items: [
+          settings_nav_item(:categories_label, :categories_path, "shapes"),
+          settings_nav_item(:merchants_label, :family_merchants_path, "store"),
+          settings_nav_item(:tags_label, :tags_path, "tags"),
+          settings_nav_item(:rules_label, :rules_path, "git-branch")
+        ]
+      },
+      {
+        header: t("settings.settings_nav.integrations_ai_section_title"),
+        items: [
+          settings_nav_item(:api_keys_label, :settings_api_keys_path, "key", visible: admin_user?),
+          settings_nav_item(:mcp_label, :settings_mcp_path, "plug", visible: ai_admin_user?),
+          settings_nav_item(:ai_prompts_label, :settings_ai_prompts_path, "bot", visible: ai_admin_user?),
+          settings_nav_item(:llm_usage_label, :settings_llm_usage_path, "activity", visible: ai_admin_user?)
+        ]
+      },
+      {
+        header: t("settings.settings_nav.system_section_title"),
+        items: [
+          settings_nav_item(:users_label, :admin_users_path, "users", visible: super_admin_user?),
+          settings_nav_item(:sso_providers_label, :admin_sso_providers_path, "key-round", visible: super_admin_user?),
+          settings_nav_item(:self_hosting_label, :settings_hosting_path, "database", visible: self_hosted_and_admin?),
+          settings_nav_item(:system_health_label, :admin_system_health_path, "heart-pulse", visible: super_admin_user?),
+          settings_nav_item(:background_jobs_label, :settings_background_jobs_path, "list-checks", visible: super_admin_user?),
+          settings_nav_item(:debug_label, :settings_debug_path, "bug", visible: super_admin_user?)
+        ]
+      },
+      {
+        header: t("settings.settings_nav.help_section_title"),
+        items: [
+          settings_nav_item(:guides_label, :settings_guides_path, "book-open"),
+          settings_nav_item(:whats_new_label, :changelog_path, "box"),
+          settings_nav_item(:feedback_label, :feedback_path, "megaphone")
+        ]
+      }
+    ]
+
+    sections.filter_map do |section|
+      visible_items = section[:items].select { |item| item[:visible] }
+      section.merge(items: visible_items) if visible_items.any?
+    end
+  end
 
   def adjacent_setting(current_path, offset)
-    visible_settings = SETTINGS_ORDER.select { |setting| setting[:condition].nil? || send(setting[:condition]) }
-    current_index = visible_settings.index { |setting| send(setting[:path]) == current_path }
+    visible_settings = settings_nav_sections.flat_map { |section| section[:items] }
+    current_index = visible_settings.index { |setting| setting[:path] == current_path }
     return nil unless current_index
 
     adjacent_index = current_index + offset
@@ -39,9 +77,9 @@ module SettingsHelper
     adjacent = visible_settings[adjacent_index]
 
     render partial: "settings/settings_nav_link_large", locals: {
-      path: send(adjacent[:path]),
+      path: adjacent[:path],
       direction: offset > 0 ? "next" : "previous",
-      title: setting_name(adjacent)
+      title: adjacent[:label]
     }
   end
 
@@ -252,18 +290,22 @@ module SettingsHelper
       end
     end
 
-    def not_self_hosted?
-      !self_hosted?
+    def settings_nav_item(label_key, path_helper, icon_name, visible: true)
+      {
+        label: t("settings.settings_nav.#{label_key}"),
+        path: public_send(path_helper),
+        icon: icon_name,
+        visible: visible
+      }
     end
 
-    def setting_name(setting)
-      name = setting[:name]
-      name.respond_to?(:call) ? instance_exec(&name) : name
-    end
-
-    # Helper used by SETTINGS_ORDER conditions
+    # Visibility helpers shared by the sidebar and adjacent navigation.
     def admin_user?
       Current.user&.admin?
+    end
+
+    def super_admin_user?
+      Current.user&.super_admin?
     end
 
     def ai_admin_user?

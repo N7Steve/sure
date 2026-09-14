@@ -208,7 +208,7 @@ en:
               stale: Stale
             settings_origin:
               title: Which settings need a restart?
-              database_backed: "Provider, model, and API-key settings changed in Settings → External Services are stored in the database. rails-settings-cached invalidates the shared cache on write, so both web and worker resolve the new value for the next request or queued job -- no restart needed."
+              database_backed: "Provider, model, and API-key settings changed in Settings → Instance settings are stored in the database. rails-settings-cached invalidates the shared cache on write, so both web and worker resolve the new value for the next request or queued job -- no restart needed."
               env_backed: "Embedding configuration, and any value only set through an environment variable, is fixed when each container starts. Rails cannot change another container's environment, so changing these requires restarting or recreating both the web and worker services -- and any deployment tooling that only restarts one of them (partial rollout, an updated Secret without a pod restart) will not pick up the change."
           local_setup:
             title: Recommended local setup
