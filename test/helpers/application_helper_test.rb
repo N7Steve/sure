@@ -1,6 +1,10 @@
 require "test_helper"
 
 class ApplicationHelperTest < ActionView::TestCase
+  test "#plan_nav_item stays hidden in this fork" do
+    assert_nil plan_nav_item
+  end
+
   test "#icon normalizes icon names to lowercase" do
     capture = []
 
