@@ -12,6 +12,15 @@ class ChatsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "global AI gate blocks the chat and does not create records" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    assert_no_difference("Chat.count") do
+      post chats_url, params: { chat: { content: "Hello", ai_model: "gpt-4.1" } }
+    end
+    assert_response :forbidden
+  end
+
   test "gets new chat with a localized German default title" do
     @user.update!(locale: "de")
 

@@ -17,8 +17,8 @@ module SettingsHelper
     { name: -> { t("settings.settings_nav.statement_vault_label") }, path: :account_statements_path, condition: :admin_user? },
     { name: -> { t("settings.settings_nav.exports_label") }, path: :family_exports_path },
     # Advanced section
-    { name: -> { t("settings.settings_nav.ai_prompts_label") }, path: :settings_ai_prompts_path, condition: :admin_user? },
-    { name: -> { t("settings.settings_nav.llm_usage_label") }, path: :settings_llm_usage_path, condition: :admin_user? },
+    { name: -> { t("settings.settings_nav.ai_prompts_label") }, path: :settings_ai_prompts_path, condition: :ai_admin_user? },
+    { name: -> { t("settings.settings_nav.llm_usage_label") }, path: :settings_llm_usage_path, condition: :ai_admin_user? },
     { name: -> { t("settings.settings_nav.api_key_label") }, path: :settings_api_keys_path, condition: :admin_user? },
     { name: -> { t("settings.settings_nav.self_hosting_label") }, path: :settings_hosting_path, condition: :self_hosted_and_admin? },
     { name: -> { t("settings.settings_nav.imports_label") }, path: :imports_path, condition: :admin_user? },
@@ -264,6 +264,10 @@ module SettingsHelper
     # Helper used by SETTINGS_ORDER conditions
     def admin_user?
       Current.user&.admin?
+    end
+
+    def ai_admin_user?
+      ai_features_enabled? && admin_user?
     end
 
     def self_hosted_and_admin?

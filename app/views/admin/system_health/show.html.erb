@@ -1,21 +1,23 @@
 <%= content_for :page_title, t(".title") %>
 
 <%= render DS::Tabs.new(
-  active_tab: params[:tab].presence_in(%w[background_jobs ai]) || "background_jobs",
+  active_tab: params[:tab].presence_in(Setting.ai_features_enabled? ? %w[background_jobs ai] : %w[background_jobs]) || "background_jobs",
   url_param_key: "tab",
   navigate_on_change: true,
   testid: "system-health-tabs"
 ) do |tabs| %>
   <% tabs.with_nav do |nav| %>
     <% nav.with_btn(id: "background_jobs", label: t(".tabs.background_jobs")) %>
-    <% nav.with_btn(id: "ai", label: t(".tabs.ai")) %>
+    <% nav.with_btn(id: "ai", label: t(".tabs.ai")) if Setting.ai_features_enabled? %>
   <% end %>
 
   <% tabs.with_panel(tab_id: "background_jobs") do %>
     <%= render "background_jobs", health: @health %>
   <% end %>
 
-  <% tabs.with_panel(tab_id: "ai") do %>
-    <%= render "ai_status", ai_health: @ai_health, worker_ai_health_results: @worker_ai_health_results %>
+  <% if Setting.ai_features_enabled? %>
+    <% tabs.with_panel(tab_id: "ai") do %>
+      <%= render "ai_status", ai_health: @ai_health, worker_ai_health_results: @worker_ai_health_results %>
+    <% end %>
   <% end %>
 <% end %>

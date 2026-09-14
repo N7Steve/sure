@@ -2,6 +2,8 @@ class Settings::McpController < ApplicationController
   include OauthBase
   layout "settings"
 
+  guard_feature unless: -> { ai_features_enabled? }
+
   def show
     @breadcrumbs = [
       [ t("breadcrumbs.home"), root_path ],

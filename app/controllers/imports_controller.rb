@@ -75,6 +75,11 @@ class ImportsController < ApplicationController
   def create
     file = import_params[:import_file]
 
+    if file.present? && !ai_features_enabled? && (document_upload_request? || Import::ALLOWED_PDF_MIME_TYPES.include?(file.content_type))
+      head :forbidden
+      return
+    end
+
     if file.present? && document_upload_request?
       create_document_import(file)
       return

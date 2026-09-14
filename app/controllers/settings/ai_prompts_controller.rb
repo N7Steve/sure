@@ -1,6 +1,7 @@
 class Settings::AiPromptsController < ApplicationController
   layout "settings"
 
+  guard_feature unless: -> { ai_features_enabled? }
   before_action :require_admin!
 
   def show

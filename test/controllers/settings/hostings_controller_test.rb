@@ -30,6 +30,7 @@ class Settings::HostingsControllerTest < ActionDispatch::IntegrationTest
     %i[anthropic_access_token anthropic_base_url anthropic_model llm_provider twelve_data_api_key openai_access_token openai_request_timeout ai_response_timeout external_assistant_token rentcast_api_key realie_api_key].each do |key|
       Setting.public_send("#{key}=", nil)
     end
+    Setting.ai_features_enabled = true
   end
 
   test "cannot edit when self hosting is disabled" do
@@ -49,6 +50,20 @@ class Settings::HostingsControllerTest < ActionDispatch::IntegrationTest
     with_self_hosting do
       get settings_hosting_url
       assert_response :success
+    end
+  end
+
+  test "AI gate can be disabled and hides all AI configuration" do
+    with_self_hosting do
+      patch settings_hosting_url, params: { setting: { ai_features_enabled: "0" } }
+
+      assert_not Setting.ai_features_enabled?
+      follow_redirect!
+      assert_response :success
+      assert_select "input[name='setting[ai_features_enabled]']:not(:checked)"
+      assert_select "input[name='setting[openai_access_token]']", count: 0
+      assert_select "input[name='setting[anthropic_access_token]']", count: 0
+      assert_not_includes response.body, I18n.t("settings.hostings.show.ai_assistant")
     end
   end
 

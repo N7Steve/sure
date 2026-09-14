@@ -10,6 +10,15 @@ class McpControllerTest < ActionDispatch::IntegrationTest
 
   # -- Authentication --
 
+  test "global AI gate blocks MCP before authentication" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    post "/mcp", params: jsonrpc_request("initialize").to_json,
+         headers: { "Content-Type" => "application/json" }
+
+    assert_response :forbidden
+  end
+
   test "returns 401 without authorization header" do
     post "/mcp", params: jsonrpc_request("initialize").to_json,
          headers: { "Content-Type" => "application/json" }

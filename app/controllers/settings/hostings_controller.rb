@@ -12,7 +12,16 @@ class Settings::HostingsController < ApplicationController
     ai_response_timeout: Chat::MIN_RESPONSE_TIMEOUT.to_i
   }.freeze
 
+  AI_CONFIG_KEYS = %i[
+    openai_access_token openai_uri_base openai_model openai_json_mode
+    anthropic_access_token anthropic_base_url anthropic_model llm_provider
+    llm_context_window llm_max_response_tokens llm_max_items_per_call
+    openai_request_timeout ai_response_timeout external_assistant_url
+    external_assistant_token external_assistant_agent_id
+  ].freeze
+
   guard_feature unless: -> { self_hosted? }
+  guard_feature unless: -> { ai_features_enabled? }, only: :disconnect_external_assistant
 
   before_action :ensure_admin, only: [ :update, :clear_cache, :disconnect_external_assistant ]
   before_action :ensure_super_admin_for_onboarding, only: :update
@@ -57,6 +66,10 @@ class Settings::HostingsController < ApplicationController
   end
 
   def update
+    if hosting_params.key?(:ai_features_enabled)
+      Setting.ai_features_enabled = hosting_params[:ai_features_enabled] == "1"
+    end
+
     if hosting_params.key?(:onboarding_state)
       onboarding_state = hosting_params[:onboarding_state].to_s
       Setting.onboarding_state = onboarding_state
@@ -271,10 +284,13 @@ class Settings::HostingsController < ApplicationController
     # Strong parameters for the self-hosting settings form.
     def hosting_params
       return ActionController::Parameters.new unless params.key?(:setting)
-      params.require(:setting).permit(:onboarding_state, :require_email_confirmation, :invite_only_default_family_id, :brand_fetch_client_id, :brand_fetch_high_res_logos, :twelve_data_api_key, :tiingo_api_key, :eodhd_api_key, :alpha_vantage_api_key, :tinkoff_invest_api_key, :rentcast_api_key, :realie_api_key, :openai_access_token, :openai_uri_base, :openai_model, :openai_json_mode, :anthropic_access_token, :anthropic_base_url, :anthropic_model, :llm_provider, :llm_context_window, :llm_max_response_tokens, :llm_max_items_per_call, :openai_request_timeout, :ai_response_timeout, :exchange_rate_provider, :securities_provider, :syncs_include_pending, :auto_sync_enabled, :auto_sync_time, :external_assistant_url, :external_assistant_token, :external_assistant_agent_id, securities_providers: [])
+      permitted = params.require(:setting).permit(:ai_features_enabled, :onboarding_state, :require_email_confirmation, :invite_only_default_family_id, :brand_fetch_client_id, :brand_fetch_high_res_logos, :twelve_data_api_key, :tiingo_api_key, :eodhd_api_key, :alpha_vantage_api_key, :tinkoff_invest_api_key, :rentcast_api_key, :realie_api_key, :openai_access_token, :openai_uri_base, :openai_model, :openai_json_mode, :anthropic_access_token, :anthropic_base_url, :anthropic_model, :llm_provider, :llm_context_window, :llm_max_response_tokens, :llm_max_items_per_call, :openai_request_timeout, :ai_response_timeout, :exchange_rate_provider, :securities_provider, :syncs_include_pending, :auto_sync_enabled, :auto_sync_time, :external_assistant_url, :external_assistant_token, :external_assistant_agent_id, securities_providers: [])
+      permitted.except!(*AI_CONFIG_KEYS) unless Setting.ai_features_enabled?
+      permitted
     end
 
     def update_assistant_type
+      return unless Setting.ai_features_enabled?
       return unless params[:family].present? && params[:family][:assistant_type].present?
       return if ENV["ASSISTANT_TYPE"].present?
 

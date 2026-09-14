@@ -1,6 +1,13 @@
 require "test_helper"
 
 class VectorStore::RegistryTest < ActiveSupport::TestCase
+  test "adapter is unavailable while the global AI gate is disabled" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+    VectorStore::Registry.stubs(:openai_access_token).returns("sk-test")
+
+    assert_nil VectorStore::Registry.adapter
+  end
+
   test "adapter_name defaults to openai when access token present" do
     VectorStore::Registry.stubs(:openai_access_token).returns("sk-test")
     ClimateControl.modify(VECTOR_STORE_PROVIDER: nil) do

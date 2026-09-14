@@ -22,6 +22,8 @@ class WorkerAiHealthCheckJob < ApplicationJob
   queue_as :high_priority
 
   def perform
+    return unless Setting.ai_features_enabled?
+
     ai_health = AiHealth.new(run_probes: true, probe_cache: ActiveSupport::Cache::NullStore.new)
 
     snapshot = WorkerAiHealth::Snapshot.new(

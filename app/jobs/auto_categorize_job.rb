@@ -3,6 +3,8 @@ class AutoCategorizeJob < ApplicationJob
 
   def perform(family, transaction_ids: [], rule_run_id: nil)
     rule_run = RuleRun.find_by(id: rule_run_id) if rule_run_id.present?
+    return rule_run&.complete_job!(modified_count: 0) unless Setting.ai_features_enabled?
+
     modified_count = family.auto_categorize_transactions(transaction_ids)
 
     # If this job was part of a rule run, report back the modified count

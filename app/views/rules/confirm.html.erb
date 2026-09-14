@@ -13,7 +13,7 @@
       <%= t(".apply_notice_html", count: @rule.affected_resource_count, resource: @rule.resource_type.pluralize) %>
     </p>
 
-    <% if @rule.actions.any? { |a| a.action_type == "auto_categorize" } %>
+    <% if ai_features_enabled? && @rule.actions.any? { |a| a.action_type == "auto_categorize" } %>
       <% affected_count = @rule.affected_resource_count %>
       <div class="mb-4">
         <%= render DS::Alert.new(title: t(".ai_cost_title"), variant: :info) do %>

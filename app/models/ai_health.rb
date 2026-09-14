@@ -28,7 +28,7 @@ class AiHealth
   # verification (see WorkerAiHealthCheckJob) passes an isolated store so its
   # results can never be served back to a web request, and vice versa (#3169).
   def initialize(run_probes: true, force_probes: false, probe_cache: Rails.cache)
-    @run_probes = run_probes
+    @run_probes = Setting.ai_features_enabled? && run_probes
     @force_probes = force_probes
     @probe_cache = probe_cache
     load_llm_status

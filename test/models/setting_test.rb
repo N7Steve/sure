@@ -18,6 +18,14 @@ class SettingTest < ActiveSupport::TestCase
     end
   end
 
+  test "ai_features_enabled? only accepts a boolean true" do
+    Setting.stubs(:ai_features_enabled).returns(true)
+    assert Setting.ai_features_enabled?
+
+    Setting.stubs(:ai_features_enabled).returns("true")
+    assert_not Setting.ai_features_enabled?
+  end
+
   test "validate_openai_config! passes when neither uri base nor model are set" do
     assert_nothing_raised do
       Setting.validate_openai_config!(uri_base: "", model: "")

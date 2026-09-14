@@ -32,10 +32,11 @@ class PagesController < ApplicationController
   DASHBOARD_PERIOD_WIDGETS = %w[cashflow_sankey outflows_donut investment_summary net_worth_chart].freeze
 
   skip_authentication only: %i[redis_configuration_error privacy terms]
+  guard_feature unless: -> { ai_features_enabled? }, only: :intro
   before_action :ensure_intro_guest!, only: :intro
 
   def dashboard
-    if Current.user&.ui_layout_intro?
+    if ai_features_enabled? && Current.user&.ui_layout_intro?
       redirect_to chats_path and return
     end
 

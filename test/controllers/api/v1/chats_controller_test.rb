@@ -43,6 +43,13 @@ class Api::V1::ChatsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "feature_disabled", response_body["error"]
   end
 
+  test "global AI gate blocks the chat API" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    get "/api/v1/chats", headers: bearer_auth_header(@read_token)
+    assert_response :forbidden
+  end
+
   test "should list chats with read scope" do
     get "/api/v1/chats", headers: bearer_auth_header(@read_token)
     assert_response :success

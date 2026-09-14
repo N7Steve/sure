@@ -27,7 +27,7 @@
   <% end %>
 <% end %>
 
-<% unless Current.user.ui_layout_intro? %>
+<% unless ai_features_enabled? && Current.user.ui_layout_intro? %>
   <%= settings_section title: Current.family&.moniker == "Group" ? t(".group_title") : t(".household_title"), subtitle: t(".household_subtitle", moniker_plural: family_moniker_plural_downcase, moniker: family_moniker_downcase) do %>
     <div class="space-y-4">
       <%= styled_form_with model: Current.user, class: "space-y-4", data: { controller: "auto-submit-form" } do |form| %>

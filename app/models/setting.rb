@@ -4,6 +4,15 @@ class Setting < RailsSettings::Base
 
   cache_prefix { "v1" }
 
+  # Fork-wide kill switch for every AI surface and outbound AI call. It is
+  # deliberately instance-scoped and independent from provider credentials so
+  # upstream AI code can remain installed without becoming active by accident.
+  field :ai_features_enabled, type: :boolean, default: Rails.env.test?
+
+  def self.ai_features_enabled?
+    ai_features_enabled == true
+  end
+
   # Third-party API keys
   field :twelve_data_api_key, type: :string, default: ENV["TWELVE_DATA_API_KEY"]
   field :openai_access_token, type: :string, default: ENV["OPENAI_ACCESS_TOKEN"]

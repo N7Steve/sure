@@ -8,7 +8,7 @@
             transactions: @total_affected_count) %>
     </p>
 
-    <% if @rules.any? { |r| r.actions.any? { |a| a.action_type == "auto_categorize" } } %>
+    <% if ai_features_enabled? && @rules.any? { |r| r.actions.any? { |a| a.action_type == "auto_categorize" } } %>
       <div class="mb-4">
         <%= render DS::Alert.new(title: t("rules.apply_all.ai_cost_title"), variant: :info) do %>
           <% if @estimated_cost.present? %>

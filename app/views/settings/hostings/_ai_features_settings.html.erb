@@ -1,0 +1,15 @@
+<%= form_with url: settings_hosting_path, method: :patch,
+      data: { controller: "auto-submit-form" } do %>
+  <div class="flex items-center justify-between gap-4">
+    <div class="text-sm space-y-1">
+      <p class="text-primary font-medium"><%= t(".title") %></p>
+      <p class="text-secondary"><%= t(".description") %></p>
+    </div>
+    <%= render DS::Toggle.new(
+          id: "setting_ai_features_enabled",
+          name: "setting[ai_features_enabled]",
+          checked: Setting.ai_features_enabled?,
+          data: { auto_submit_form_target: "auto" }
+    ) %>
+  </div>
+<% end %>

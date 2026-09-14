@@ -1,6 +1,7 @@
 class RulesController < ApplicationController
   include StreamExtensions
 
+  guard_feature unless: -> { ai_features_enabled? }, only: :clear_ai_cache
   before_action :set_rule, only: [  :edit, :update, :destroy, :apply, :confirm ]
 
   def index

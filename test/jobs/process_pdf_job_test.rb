@@ -16,6 +16,16 @@ class ProcessPdfJobTest < ActiveJob::TestCase
     assert_equal "pending", transaction_import.reload.status
   end
 
+  test "global AI gate releases a queued processing claim without calling a provider" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+    @import.update!(status: :importing)
+    @import.expects(:process_with_ai).never
+
+    ProcessPdfJob.perform_now(@import)
+
+    assert_equal "pending", @import.reload.status
+  end
+
   test "skips if PDF not uploaded" do
     assert_not @import.pdf_uploaded?
     @import.update_columns(status: "importing", updated_at: 31.minutes.ago)

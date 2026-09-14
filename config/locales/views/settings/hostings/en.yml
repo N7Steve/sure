@@ -2,6 +2,9 @@
 en:
   settings:
     hostings:
+      ai_features_settings:
+        title: AI features
+        description: Show and enable chat, prompts, AI-assisted imports, usage tracking, health checks, and MCP access across this instance.
       invite_code_settings:
         description: Control how new people sign up for your instance of %{product}.
         email_confirmation_description: When enabled, users must confirm their email

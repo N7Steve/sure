@@ -20,12 +20,14 @@ class Provider::Anthropic < Provider
   end
 
   def self.configured?
-    ENV["ANTHROPIC_ACCESS_TOKEN"].present? ||
+    Setting.ai_features_enabled? && (ENV["ANTHROPIC_ACCESS_TOKEN"].present? ||
       ENV["ANTHROPIC_API_KEY"].present? ||
-      Setting.anthropic_access_token.present?
+      Setting.anthropic_access_token.present?)
   end
 
   def initialize(access_token, base_url: nil, model: nil)
+    raise Error, "AI features are disabled for this instance" unless Setting.ai_features_enabled?
+
     client_options = { api_key: access_token }
     client_options[:base_url] = base_url if base_url.present?
     client_options[:timeout] = ENV.fetch("ANTHROPIC_REQUEST_TIMEOUT", 600).to_i

@@ -1,6 +1,8 @@
 class OauthMetadataController < ApplicationController
   include OauthBase
 
+  guard_feature unless: -> { Setting.ai_features_enabled? }
+
   skip_authentication
   skip_before_action :verify_authenticity_token
   skip_before_action :require_onboarding_and_upgrade, raise: false

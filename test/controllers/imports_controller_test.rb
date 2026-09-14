@@ -26,6 +26,29 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#modal"
   end
 
+  test "global AI gate hides document imports" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    get new_import_url
+
+    assert_response :success
+    assert_select "input[name='import[type]'][value='DocumentImport']", count: 0
+  end
+
+  test "global AI gate blocks direct PDF uploads" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    assert_no_difference [ "AccountStatement.count", "Import.where(type: 'PdfImport').count" ] do
+      post imports_url, params: {
+        import: {
+          import_file: file_fixture_upload("imports/sample_bank_statement.pdf", "application/pdf")
+        }
+      }
+    end
+
+    assert_response :forbidden
+  end
+
   test "cancel marks a lost import as failed" do
     import = imports(:transaction)
     import.update_columns(status: "importing", updated_at: 2.hours.ago)

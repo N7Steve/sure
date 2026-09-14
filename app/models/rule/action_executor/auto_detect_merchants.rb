@@ -8,6 +8,8 @@ class Rule::ActionExecutor::AutoDetectMerchants < Rule::ActionExecutor
   end
 
   def execute(transaction_scope, value: nil, ignore_attribute_locks: false, rule_run: nil)
+    return 0 unless Setting.ai_features_enabled?
+
     enrichable_transactions = transaction_scope.enrichable(:merchant_id)
 
     if enrichable_transactions.empty?

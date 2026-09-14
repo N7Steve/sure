@@ -24,6 +24,8 @@ class Provider::Registry
     # one configured) keeps working. Returns nil when neither is configured —
     # callers guard on that.
     def preferred_llm_provider
+      return nil unless Setting.ai_features_enabled?
+
       order = Setting.llm_provider == "anthropic" ? %i[anthropic openai] : %i[openai anthropic]
       order.each do |name|
         provider = get_provider(name)
@@ -77,6 +79,8 @@ class Provider::Registry
       end
 
       def openai
+        return nil unless Setting.ai_features_enabled?
+
         access_token = ENV["OPENAI_ACCESS_TOKEN"].presence || Setting.openai_access_token
 
         return nil unless access_token.present?
@@ -93,6 +97,8 @@ class Provider::Registry
       end
 
       def anthropic
+        return nil unless Setting.ai_features_enabled?
+
         access_token = ENV["ANTHROPIC_ACCESS_TOKEN"].presence ||
                        ENV["ANTHROPIC_API_KEY"].presence ||
                        Setting.anthropic_access_token
@@ -206,7 +212,7 @@ class Provider::Registry
       when :securities
         %i[twelve_data yahoo_finance tiingo eodhd alpha_vantage mfapi binance_public moex_public tinkoff_invest]
       when :llm
-        %i[openai anthropic]
+        Setting.ai_features_enabled? ? %i[openai anthropic] : []
       when :property_valuations
         %i[rentcast realie]
       else

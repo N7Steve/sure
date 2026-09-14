@@ -68,6 +68,7 @@ class Insight::BodyWriter
     # and a cost cap in managed mode. Everyone else gets the template body.
     def provider
       return @provider if defined?(@provider)
+      return @provider = nil unless Setting.ai_features_enabled?
       return @provider = nil unless family.users.any?(&:ai_enabled?)
 
       @provider = Provider::Registry.preferred_llm_provider

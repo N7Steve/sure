@@ -12,6 +12,8 @@ class VectorStore::Registry
     # :pgvector, and anything else falls back to :openai when OpenAI
     # credentials are present.
     def adapter
+      return nil unless Setting.ai_features_enabled?
+
       name = adapter_name
       return nil unless name
 

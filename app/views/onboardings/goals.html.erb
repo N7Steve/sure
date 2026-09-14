@@ -31,10 +31,10 @@
              { icon: "pie-chart", label: t("onboardings.goals.budgeting"), value: "budgeting" },
              { icon: "users", label: t("onboardings.goals.partner"), value: "partner" },
              { icon: "area-chart", label: t("onboardings.goals.investments"), value: "investments" },
-             { icon: "bot", label: t("onboardings.goals.ai_insights"), value: "ai_insights" },
+             (ai_features_enabled? ? { icon: "bot", label: t("onboardings.goals.ai_insights"), value: "ai_insights" } : nil),
              { icon: "settings-2", label: t("onboardings.goals.optimization"), value: "optimization" },
              { icon: "frown", label: t("onboardings.goals.reduce_stress"), value: "reduce_stress" }
-           ].each do |goal| %>
+           ].compact.each do |goal| %>
           <label class="flex items-center gap-2.5 p-4 rounded-lg border border-tertiary cursor-pointer hover:bg-container transition-colors [&:has(input:checked)]:border-solid [&:has(input:checked)]:bg-container">
             <%= form.check_box :goals, { multiple: true, class: "sr-only" }, goal[:value], nil %>
             <%= icon goal[:icon] %>

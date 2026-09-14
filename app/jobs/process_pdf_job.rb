@@ -7,6 +7,7 @@ class ProcessPdfJob < ApplicationJob
 
   def perform(pdf_import)
     return unless pdf_import.is_a?(PdfImport)
+    return release_processing_claim(pdf_import) unless Setting.ai_features_enabled?
     return reset_processing_claim(pdf_import) unless pdf_import.pdf_uploaded?
     return if pdf_import.status.in?(%w[complete failed])
     return reset_processing_claim(pdf_import) if pdf_import.ai_processed? && (!pdf_import.statement_with_transactions? || pdf_import.rows_count > 0)
@@ -53,6 +54,10 @@ class ProcessPdfJob < ApplicationJob
   end
 
   private
+
+    def release_processing_claim(pdf_import)
+      pdf_import.with_lock { pdf_import.update!(status: :pending) if pdf_import.importing? }
+    end
 
     def sanitize_error_message(error)
       case error

@@ -1,6 +1,8 @@
 class OauthRegistrationController < ApplicationController
   LOOPBACK_HOSTS = [ "localhost", "127.0.0.1", "::1" ].freeze
 
+  guard_feature unless: -> { Setting.ai_features_enabled? }
+
   skip_authentication
   skip_before_action :verify_authenticity_token
   skip_before_action :require_onboarding_and_upgrade, raise: false

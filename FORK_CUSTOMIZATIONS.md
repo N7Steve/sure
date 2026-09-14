@@ -6,7 +6,7 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 ## Foto de referencia
 
-Inventario generado el **23 de agosto de 2026** y actualizado el **11 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo, la incorporación de logos personalizados para cuentas y comercios y la separación de períodos por widget en Inicio:
+Inventario generado el **23 de agosto de 2026** y actualizado el **14 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo, la incorporación de logos personalizados para cuentas y comercios, la separación de períodos por widget en Inicio y la incorporación de una puerta global para IA:
 
 | Concepto | Valor |
 | --- | --- |
@@ -38,8 +38,22 @@ El alcance histórico inicial de este documento era `upstream/main...a01ed5290`.
 | Períodos mensuales del dashboard | Propia | Money In / Out y gasto acumulado deben respetar conjuntamente `family.month_start_day` |
 | Períodos independientes del dashboard | Propia | Cada widget que consume un período general conserva su propio selector y preferencia; no reintroducir un selector global |
 | Sincronización y proveedores | Soporte del fork | Cambios que mantienen la coherencia de cuentas y sincronizaciones con las funciones anteriores |
+| Integraciones de IA | Upstream, desactivadas por defecto | Conservar los subsistemas, pero mantener todas sus superficies y ejecuciones tras `Setting.ai_features_enabled?` |
 | Gestión familiar y usuarios | Propia, todavía sin commit | Claridad de roles/alcance y borrado seguro de la última persona de una familia |
 | Workflows, scripts y documentos auxiliares | Revisar caso a caso | Están en el diff del fork, pero no todos son funcionalidad de producto |
+
+## Puerta global de integraciones de IA
+
+El fork conserva el código upstream de IA para facilitar futuras integraciones, pero no lo ofrece como funcionalidad de producto por defecto. La única autoridad es `Setting.ai_features_enabled?`, un ajuste de instancia que se administra en **Autoalojamiento → Configuración general**. No crear puertas paralelas por controlador, proveedor o variable de entorno.
+
+- Con la puerta apagada se ocultan chat y barra lateral, configuración de proveedores/modelos, prompts, consumo LLM, MCP, importaciones documentales/PDF, acciones de reglas asistidas, enriquecimiento de comercios y diagnóstico de IA.
+- Los endpoints HTML, API y MCP responden como funcionalidad desactivada aunque se invoquen directamente. Los registros de proveedores LLM y vector store no entregan adaptadores, y los jobs que pudieran quedar en cola terminan sin llamar a servicios externos.
+- Los insights deterministas permanecen activos; `Insight::BodyWriter` usa su plantilla local y nunca solicita una narración LLM mientras la puerta esté apagada.
+- Las credenciales y los subsistemas no se borran. Activar el interruptor restaura el comportamiento upstream existente y vuelve a aplicar el consentimiento individual `User#ai_enabled?` donde corresponda.
+- En producción y desarrollo el valor predeterminado es `false`. En test es `true` para mantener ejecutable la cobertura upstream; las regresiones específicas deben forzar `false` y comprobar la frontera real del fork.
+- Durante merges de upstream, toda nueva superficie que pueda enviar datos a un modelo, generar consumo, usar embeddings/vector stores o exponer herramientas MCP debe depender de esta misma puerta tanto en presentación como en servidor. Ocultar sólo el enlace no satisface el contrato.
+
+Puntos principales: `app/models/setting.rb`, `app/models/provider/registry.rb`, `app/models/vector_store/registry.rb`, `app/controllers/application_controller.rb`, controladores de chat/MCP/API/importaciones, jobs de IA, `app/views/layouts/application.html.erb`, `app/views/settings/hostings/` y las pruebas de la frontera.
 
 ## 1. Gestión familiar y de usuarios
 

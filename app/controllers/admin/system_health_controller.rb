@@ -10,7 +10,7 @@ module Admin
     def show
       SidekiqHealth.expire_cache!
       @health = SidekiqHealth.new
-      ai_tab = params[:tab] == "ai"
+      ai_tab = Setting.ai_features_enabled? && params[:tab] == "ai"
       @ai_health = AiHealth.new(
         run_probes: ai_tab,
         force_probes: ai_tab && params[:refresh_ai_health] == "1"
@@ -23,6 +23,8 @@ module Admin
     # in the AI status tab once whichever worker process dequeues it
     # finishes, typically within a few seconds.
     def verify_worker_ai
+      return head :forbidden unless Setting.ai_features_enabled?
+
       WorkerAiHealth.request_check!
       redirect_to admin_system_health_path(tab: "ai"), notice: t(".queued")
     end

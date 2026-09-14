@@ -191,10 +191,11 @@ class User < ApplicationRecord
   end
 
   def show_ai_sidebar?
-    show_ai_sidebar
+    Setting.ai_features_enabled? && show_ai_sidebar
   end
 
   def ai_available?
+    return false unless Setting.ai_features_enabled?
     return true unless Rails.application.config.app_mode.self_hosted?
 
     effective_type = ENV["ASSISTANT_TYPE"].presence || family&.assistant_type.presence || "builtin"

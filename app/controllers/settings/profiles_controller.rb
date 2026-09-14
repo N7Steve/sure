@@ -46,6 +46,6 @@ class Settings::ProfilesController < ApplicationController
   private
 
     def layout_for_settings_profile
-      Current.user&.ui_layout_intro? ? "application" : "settings"
+      (ai_features_enabled? && Current.user&.ui_layout_intro?) ? "application" : "settings"
     end
 end

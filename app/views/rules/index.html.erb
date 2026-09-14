@@ -2,17 +2,19 @@
 <%= content_for :page_actions do %>
   <% if @rules.any? %>
     <%= render DS::Menu.new do |menu| %>
-      <% menu.with_item(
-        variant: "button",
-        text: t("rules.clear_ai_cache.button"),
-        href: clear_ai_cache_rules_path,
-        icon: "refresh-cw",
-        method: :post,
-        confirm: CustomConfirm.new(
-          title: t("rules.clear_ai_cache.confirm_title"),
-          body: t("rules.clear_ai_cache.confirm_body"),
-          btn_text: t("rules.clear_ai_cache.confirm_button")
-        )) %>
+      <% if ai_features_enabled? %>
+        <% menu.with_item(
+          variant: "button",
+          text: t("rules.clear_ai_cache.button"),
+          href: clear_ai_cache_rules_path,
+          icon: "refresh-cw",
+          method: :post,
+          confirm: CustomConfirm.new(
+            title: t("rules.clear_ai_cache.confirm_title"),
+            body: t("rules.clear_ai_cache.confirm_body"),
+            btn_text: t("rules.clear_ai_cache.confirm_button")
+          )) %>
+      <% end %>
       <% menu.with_item(
         variant: "button",
         text: t(".delete_all_rules"),
@@ -38,7 +40,7 @@
   ) %>
 <% end %>
 
-<% if self_hosted? %>
+<% if ai_features_enabled? && self_hosted? %>
   <div class="flex items-center gap-2 mb-2 py-4">
     <%= icon("circle-alert", size: "sm") %>
     <p class="text-sm text-secondary">

@@ -1,6 +1,8 @@
 class ChatsController < ApplicationController
   include ActionView::RecordIdentifier
 
+  guard_feature unless: -> { Current.user.ai_enabled? }
+
   before_action :set_chat, only: [ :show, :edit, :update, :destroy ]
 
   def index

@@ -1,4 +1,6 @@
 class McpController < ApplicationController
+  guard_feature unless: -> { Setting.ai_features_enabled? }
+
   include OauthBase
 
   PROTOCOL_VERSION = "2025-06-18"

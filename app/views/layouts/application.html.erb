@@ -1,4 +1,4 @@
-<% intro_mode = Current.user&.ui_layout_intro? %>
+<% intro_mode = ai_features_enabled? && Current.user&.ui_layout_intro? %>
 <% home_path = intro_mode ? chats_path : root_path %>
 <% mobile_nav_items = if intro_mode
   [
@@ -12,7 +12,7 @@ else
     { name: t("scheduled_payments.agenda.title"), path: scheduled_payments_path, icon: "calendar-days", icon_custom: false, active: page_active?(scheduled_payments_path) },
     { name: t(".nav.reports"), path: reports_path, icon: "chart-bar", icon_custom: false, active: page_active?(reports_path) },
     plan_nav_item,
-    { name: t(".nav.assistant"), path: chats_path, icon: "icon-assistant", icon_custom: true, active: page_active?(chats_path), mobile_only: true }
+    (ai_features_enabled? ? { name: t(".nav.assistant"), path: chats_path, icon: "icon-assistant", icon_custom: true, active: page_active?(chats_path), mobile_only: true } : nil)
   ].compact
 end %>
 
@@ -218,7 +218,9 @@ end %>
               <%= icon("eye", size: "sm", class: "hidden", data: { privacy_mode_target: "iconOn" }) %>
             </button>
 
-            <%= icon("panel-right", as_button: true, data: { action: "app-layout#toggleRightSidebar" }) %>
+            <% if ai_features_enabled? %>
+              <%= icon("panel-right", as_button: true, data: { action: "app-layout#toggleRightSidebar" }) %>
+            <% end %>
           </div>
         </div>
       <% end %>
@@ -231,27 +233,29 @@ end %>
     <% end %>
 
     <%# DESKTOP - Right sidebar %>
-    <%= tag.div class: class_names(
+    <% if ai_features_enabled? %>
+      <%= tag.div class: class_names(
           "hidden lg:block relative h-full shrink-0 motion-safe:transition-[width,opacity,border-color] motion-safe:duration-200 motion-safe:ease-out border-divider",
           Current.user.show_ai_sidebar? ? [expanded_sidebar_class, "border-l"] : [collapsed_sidebar_class, "border-l-0"],
         ),
         style: "max-width: var(--right-sidebar-width, 400px)",
         inert: !Current.user.show_ai_sidebar?,
         data: { app_layout_target: "rightSidebar", sidebar_resize_target: "rightSidebar" } do %>
-      <%= render "layouts/shared/sidebar_resize_handle", side: "right" %>
-      <%= tag.div id: "chat-container", class: "relative h-full px-4 overflow-y-auto", data: { controller: "chat hotkey", chat_response_timeout_value: Chat.response_timeout_ms, turbo_permanent: true } do %>
-        <div class="flex flex-col h-full justify-between shrink-0">
-          <%= turbo_frame_tag chat_frame, src: chat_view_path(@chat), loading: "lazy", class: "h-full" do %>
-            <div class="flex justify-center items-center h-full">
-              <%= icon("loader-circle", class: "animate-spin") %>
+        <%= render "layouts/shared/sidebar_resize_handle", side: "right" %>
+        <%= tag.div id: "chat-container", class: "relative h-full px-4 overflow-y-auto", data: { controller: "chat hotkey", chat_response_timeout_value: Chat.response_timeout_ms, turbo_permanent: true } do %>
+          <div class="flex flex-col h-full justify-between shrink-0">
+            <%= turbo_frame_tag chat_frame, src: chat_view_path(@chat), loading: "lazy", class: "h-full" do %>
+              <div class="flex justify-center items-center h-full">
+                <%= icon("loader-circle", class: "animate-spin") %>
+              </div>
+            <% end %>
+          </div>
+
+          <% unless Current.user.ai_enabled? %>
+            <div class="absolute backdrop-blur-lg inset-0 h-full w-full flex flex-col justify-center items-center px-4">
+              <%= render "chats/ai_consent" %>
             </div>
           <% end %>
-        </div>
-
-        <% unless Current.user.ai_enabled? %>
-          <div class="absolute backdrop-blur-lg inset-0 h-full w-full flex flex-col justify-center items-center px-4">
-            <%= render "chats/ai_consent" %>
-          </div>
         <% end %>
       <% end %>
     <% end %>

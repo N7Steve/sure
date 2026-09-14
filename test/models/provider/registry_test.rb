@@ -1,6 +1,14 @@
 require "test_helper"
 
 class Provider::RegistryTest < ActiveSupport::TestCase
+  test "the global gate prevents resolving any LLM provider" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    assert_nil Provider::Registry.preferred_llm_provider
+    assert_nil Provider::Registry.get_provider(:openai)
+    assert_equal [], Provider::Registry.for_concept(:llm).providers
+  end
+
   test "providers filters out nil values when provider is not configured" do
     # Ensure no LLM provider is configured
     ClimateControl.modify(

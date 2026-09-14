@@ -17,7 +17,7 @@ class Provider::Openai < Provider
   end
 
   def self.configured?
-    ENV["OPENAI_ACCESS_TOKEN"].present? || Setting.openai_access_token.present?
+    Setting.ai_features_enabled? && (ENV["OPENAI_ACCESS_TOKEN"].present? || Setting.openai_access_token.present?)
   end
 
   # Effective per-request HTTP timeout for OpenAI-compatible calls.
@@ -64,6 +64,8 @@ class Provider::Openai < Provider
   # @param model [String, nil] default model; required when uri_base is set
   # @return [void]
   def initialize(access_token, uri_base: nil, model: nil)
+    raise Error, "AI features are disabled for this instance" unless Setting.ai_features_enabled?
+
     client_options = { access_token: access_token }
     llm_uri_base = uri_base.presence
     llm_model = model.presence

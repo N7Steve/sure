@@ -1,4 +1,5 @@
 class FamilyMerchantsController < ApplicationController
+  guard_feature unless: -> { ai_features_enabled? }, only: :enhance
   before_action :set_merchant, only: %i[edit update destroy]
 
   def index

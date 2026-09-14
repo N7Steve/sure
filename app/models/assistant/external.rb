@@ -8,7 +8,7 @@ class Assistant::External < Assistant::Base
     end
 
     def configured?
-      config.url.present? && config.token.present?
+      Setting.ai_features_enabled? && config.url.present? && config.token.present?
     end
 
     def available_for?(user)
@@ -36,6 +36,8 @@ class Assistant::External < Assistant::Base
   def respond_to(message, assistant_message: nil)
     response_completed = false
     assistant_message ||= AssistantMessage.new(chat: chat, content: "", ai_model: "external-agent")
+
+    raise Assistant::Error, "AI features are disabled for this instance" unless Setting.ai_features_enabled?
 
     unless self.class.configured?
       raise Assistant::Error,

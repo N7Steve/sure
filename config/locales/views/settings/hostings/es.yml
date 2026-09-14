@@ -2,6 +2,9 @@
 es:
   settings:
     hostings:
+      ai_features_settings:
+        title: Funciones de IA
+        description: Muestra y habilita el chat, los prompts, las importaciones asistidas, el consumo, las comprobaciones de salud y el acceso MCP en toda la instancia.
       invite_code_settings:
         description: Controla cómo se registran nuevas personas en tu instancia de %{product}.
         email_confirmation_description: Cuando está habilitado, los usuarios deben confirmar su dirección de correo electrónico al cambiarla o registrarse.

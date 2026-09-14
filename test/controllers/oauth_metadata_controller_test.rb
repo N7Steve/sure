@@ -15,6 +15,16 @@ class OauthMetadataControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ @base ], json["authorization_servers"]
   end
 
+  test "metadata endpoints are unavailable while the global AI gate is disabled" do
+    Setting.stubs(:ai_features_enabled?).returns(false)
+
+    get "/.well-known/oauth-protected-resource"
+    assert_response :forbidden
+
+    get "/.well-known/oauth-authorization-server"
+    assert_response :forbidden
+  end
+
   test "authorization_server returns RFC 8414 metadata" do
     get "/.well-known/oauth-authorization-server"
 

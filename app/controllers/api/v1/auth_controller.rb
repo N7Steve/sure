@@ -269,7 +269,7 @@ module Api
       def enable_ai
         user = current_resource_owner
 
-        unless user.ai_available?
+        unless Setting.ai_features_enabled? && user.ai_available?
           render json: { error: "AI is not available for your account" }, status: :forbidden
           return
         end

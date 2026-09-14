@@ -9,6 +9,8 @@
 class VectorStore::Openai < VectorStore::Base
   # Builds a vector-store client with the same OpenAI request timeout as chat and batch calls.
   def initialize(access_token:, uri_base: nil)
+    raise VectorStore::ConfigurationError, "AI features are disabled for this instance" unless Setting.ai_features_enabled?
+
     client_options = { access_token: access_token }
     client_options[:uri_base] = uri_base if uri_base.present?
     client_options[:request_timeout] = Provider::Openai.request_timeout
