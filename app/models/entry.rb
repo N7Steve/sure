@@ -44,6 +44,13 @@ class Entry < ApplicationRecord
     joins(:account).where(accounts: { status: [ "draft", "active" ] })
   }
 
+  scope :excluding_transfer_transactions, -> {
+    where.not(
+      entryable_type: "Transaction",
+      entryable_id: Transaction.where(kind: Transaction::TRANSFER_KINDS).select(:id)
+    )
+  }
+
   scope :chronological, -> {
     order(
       date: :asc,

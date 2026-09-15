@@ -11,7 +11,8 @@ class TransfersController < ApplicationController
 
   def new
     @transfer = Transfer.new
-    @from_account_id = params[:from_account_id]
+    apply_duplicate_attributes!
+    @from_account_id ||= params[:from_account_id]
   end
 
   def show
@@ -35,6 +36,8 @@ class TransfersController < ApplicationController
     # Validate user has write access to both accounts
     source_account = accessible_accounts.find(transfer_params[:from_account_id])
     destination_account = accessible_accounts.find(transfer_params[:to_account_id])
+    @from_account_id = source_account.id
+    @to_account_id = destination_account.id
 
     return unless require_account_permission!(source_account, redirect_path: transactions_path)
     return unless require_account_permission!(destination_account, redirect_path: transactions_path)
@@ -255,6 +258,33 @@ class TransfersController < ApplicationController
     def set_new_transfer_form_options
       @categories = Current.family.categories.alphabetically_by_hierarchy.to_a
       @tags = Current.family.tags.alphabetically.to_a
+    end
+
+    def duplicate_source
+      return @duplicate_source if defined?(@duplicate_source)
+      return @duplicate_source = nil if params[:duplicate_transfer_id].blank?
+
+      accessible_transaction_ids = Current.family.transactions
+        .joins(entry: :account)
+        .merge(Account.accessible_by(Current.user))
+        .select(:id)
+
+      @duplicate_source = Transfer
+        .where(inflow_transaction_id: accessible_transaction_ids)
+        .where(outflow_transaction_id: accessible_transaction_ids)
+        .find_by(id: params[:duplicate_transfer_id])
+    end
+
+    def apply_duplicate_attributes!
+      return unless duplicate_source
+
+      @from_account_id = duplicate_source.from_account.id
+      @to_account_id = duplicate_source.to_account.id
+      @transfer.assign_attributes(
+        amount: duplicate_source.outflow_transaction.entry.amount.abs,
+        category_id: duplicate_source.outflow_transaction.category_id,
+        tag_ids: duplicate_source.outflow_transaction.tag_ids
+      )
     end
 
     def transfer_update_params

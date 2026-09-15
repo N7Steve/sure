@@ -6,7 +6,7 @@ class Transactions::BulkUpdatesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "bulk update" do
-    transactions = @user.family.entries.transactions
+    transactions = @user.family.entries.transactions.excluding_transfer_transactions
 
     assert_difference [ "Entry.count", "Transaction.count" ], 0 do
       post transactions_bulk_update_url, params: {
@@ -31,6 +31,29 @@ class Transactions::BulkUpdatesControllerTest < ActionDispatch::IntegrationTest
       assert_equal "Updated note", transaction.notes
       assert_equal [ Tag.first.id, Tag.second.id ], transaction.entryable.tag_ids.sort
     end
+  end
+
+  test "bulk update does not modify one leg of a transfer" do
+    transfer = transfers(:one)
+    outflow_entry = transfer.outflow_transaction.entry
+    inflow_entry = transfer.inflow_transaction.entry
+    original_attributes = [ outflow_entry, inflow_entry ].map do |entry|
+      entry.attributes.slice("date", "name", "notes")
+    end
+
+    post transactions_bulk_update_url, params: {
+      bulk_update: {
+        entry_ids: [ outflow_entry.id ],
+        date: Date.current,
+        name: "Unsafe partial update",
+        notes: "Unsafe partial update"
+      }
+    }
+
+    current_attributes = [ outflow_entry.reload, inflow_entry.reload ].map do |entry|
+      entry.attributes.slice("date", "name", "notes")
+    end
+    assert_equal original_attributes, current_attributes
   end
 
   test "bulk update preloads transaction records" do

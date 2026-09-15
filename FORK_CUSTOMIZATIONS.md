@@ -4,6 +4,14 @@ Este documento identifica la funcionalidad propia de este fork frente al reposit
 
 > Este inventario describe diferencias funcionales, no implica que debamos conservar ciegamente cada línea. Si `upstream` incorpora una solución equivalente, se debe comparar el comportamiento y retirar la duplicación de forma consciente.
 
+## Restricción operativa del entorno local
+
+En este entorno de desarrollo **no se deben intentar ejecutar Rails ni herramientas que dependan del bundle de Ruby**. Esto incluye `bin/rails`, pruebas Minitest o RSpec, tareas Rake, RuboCop, Brakeman, migraciones, consola, servidor y comandos equivalentes. El bundle local no es ejecutable de forma fiable y esos intentos sólo producen fallos de dependencias conocidos.
+
+- Añadir o actualizar pruebas cuando el cambio lo requiera, pero dejarlas pendientes de ejecución.
+- Limitar la validación local a revisiones estáticas que no carguen Rails ni Bundler, como inspección del diff, `git diff --check` y comprobaciones de sintaxis aisladas cuando sean compatibles.
+- Indicar expresamente al entregar cada cambio qué validaciones quedaron pendientes. Las pruebas Rails y el resto de comprobaciones dependientes del bundle deben ejecutarse posteriormente en CI o en un entorno compatible, salvo que el usuario revoque explícitamente esta restricción.
+
 ## Foto de referencia
 
 Inventario generado el **23 de agosto de 2026** y actualizado el **14 de septiembre de 2026** tras la integración de `upstream`, la consolidación de Agenda como producto principal, la estabilización de la navegación Turbo, la incorporación de logos personalizados para cuentas y comercios, la separación de períodos por widget en Inicio y la incorporación de una puerta global para IA:
@@ -285,7 +293,7 @@ Archivos principales: `categories_controller.rb`, `category/dropdowns_controller
 
 - Índice y controlador ampliados para CRUD, filtros, preferencias de vista y conversión a operaciones de inversión.
 - Vista compacta persistente y alternador compacta/detallada. El estado pertenece al usuario y se guarda como el booleano `preferences["transactions_compact_view"]`; `User#transactions_compact_view?` lo lee y `User#update_transactions_preferences` debe conservar las demás claves del JSON al actualizarlo. El alternador usa `PATCH /transactions/toggle_compact_view`. Estos puntos forman parte de la feature y no deben eliminarse como preferencias de secciones obsoletas durante una integración con upstream.
-- Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría; no deben moverse al disclosure de detalles.
+- Creación manual y formulario reorganizado con descripción, cuenta, categoría, comercio, etiquetas, notas, naturaleza y datos de inversión. En la modal de nueva transacción, comercio y etiquetas permanecen siempre visibles inmediatamente debajo de categoría y aparecen una sola vez. El disclosure **Detalles** contiene únicamente el campo de notas; no se deben duplicar allí comercio ni etiquetas.
 - En creación y edición, **importe y fecha comparten una única fila de dos columnas** para reducir la altura del formulario. En el detalle editable, naturaleza permanece en su propia fila; las transferencias conservan la fecha en una fila independiente porque no muestran el campo de importe ordinario.
 - Autocompletado de descripciones por cuenta mediante `Transactions::DescriptionsController` y Stimulus.
 - Búsqueda por comercio y filtros por cuentas, categorías, comercios, tipos, etiquetas, estado, fechas e importe.
@@ -305,6 +313,7 @@ Archivos principales: `transactions_controller.rb`, `transactions/bulk_deletions
 - Clases especiales para transferencias que cruzan la frontera financiera y aportaciones a inversiones.
 - Conversión de transacciones a trades y restauración/retracción donde aplica.
 - División (`splitting`) de transacciones con selector de categoría, bloqueo de hijos/padres y vistas coherentes.
+- Las transferencias pueden seleccionarse individualmente desde el listado y duplicarse mediante el menú contextual. El duplicado abre el formulario de transferencia con ambas cuentas, importe, categoría y etiquetas precompletados, la fecha actual como en el duplicado de una transacción normal y siempre que el usuario tenga acceso a las dos cuentas. La edición y el borrado masivos permanecen ocultos si la selección contiene una transferencia: esas acciones trabajan con entradas individuales y aplicarlas a una sola pata rompería la coherencia del par; el borrado completo sigue pasando por `TransfersController#destroy`.
 - Migración correctiva bidireccional para transferencias ya existentes.
 
 Puntos principales: `transfer.rb`, `transfer/creator.rb`, `transaction/transferable.rb`, `transfers_controller.rb`, `transfer_matches_controller.rb`, `splits_controller.rb`, vistas `transfers/` y `splits/`, y pruebas de transferencia/división.
@@ -469,7 +478,7 @@ git diff
 9. Probar Money In / Out y Spending Trend con `month_start_day = 25`, incluyendo selector, etiquetas, fechas inicial/final y corte del período activo en hoy.
 10. En Inicio, mantener independientes los períodos de Flujo de caja, Salidas, Inversiones y Patrimonio neto. Verificar que cada selector persiste por usuario, actualiza sólo el cálculo de su card y conserva el estado de los demás widgets; no reintroducir el selector global.
 11. En conflictos de identidad visual, conservar `custom_logo` separado de las fuentes automáticas y la personalización de comercios en el ámbito de la familia. Verificar tanto la precedencia y restauración del fallback como la autorización de Active Storage y todas las llamadas a `Merchant#display_logo_url(family:)`.
-12. Ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado; después ejecutar `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
+12. En este entorno local, no intentar ejecutar Rails, pruebas ni ninguna comprobación dependiente del bundle, conforme a la restricción operativa de este documento. Dejar esas validaciones pendientes para CI o un entorno compatible; allí se deben ejecutar, como mínimo, las pruebas enfocadas de cada bloque afectado y después `bin/rails test`, `bin/rubocop`, `npm run lint` y `npm run format` según corresponda.
 13. Actualizar este archivo en el mismo commit que añada, retire o sustituya una personalización del fork.
 
 ## Comandos de auditoría

@@ -9,6 +9,7 @@ export default class extends Controller {
     "selectionBarText",
     "bulkEditDrawerHeader",
     "duplicateLink",
+    "bulkActions",
   ];
   static values = {
     singularLabel: String,
@@ -141,19 +142,22 @@ export default class extends Controller {
 
     if (this.hasDuplicateLinkTarget) {
       const selectedRow = this._selectedRow();
-      const canDuplicate =
-        count === 1 && selectedRow?.dataset.entryType === "Transaction";
+      const duplicateUrl = selectedRow?.dataset.duplicateUrl;
+      const canDuplicate = count === 1 && duplicateUrl;
 
       this.duplicateLinkTarget.classList.toggle("hidden", !canDuplicate);
 
       if (canDuplicate) {
-        const url = new URL(
-          this.duplicateLinkTarget.href,
-          window.location.origin,
-        );
-        url.searchParams.set("duplicate_entry_id", this.selectedIdsValue[0]);
-        this.duplicateLinkTarget.href = url.toString();
+        this.duplicateLinkTarget.href = duplicateUrl;
       }
+    }
+
+    if (this.hasBulkActionsTarget) {
+      const selectedRows = this._selectedRows();
+      const canUseBulkActions =
+        selectedRows.length === count &&
+        selectedRows.every((row) => row.dataset.bulkActions !== "false");
+      this.bulkActionsTarget.classList.toggle("hidden", !canUseBulkActions);
     }
   }
 
@@ -168,8 +172,12 @@ export default class extends Controller {
   _selectedRow() {
     if (this.selectedIdsValue.length !== 1) return null;
 
-    return this.rowTargets.find(
-      (row) => row.dataset.id === this.selectedIdsValue[0],
+    return this._selectedRows()[0];
+  }
+
+  _selectedRows() {
+    return this.rowTargets.filter((row) =>
+      this.selectedIdsValue.includes(row.dataset.id),
     );
   }
 

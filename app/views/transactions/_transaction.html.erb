@@ -8,6 +8,11 @@
    else
      in_split_group ? entry_path(entry, grouped: true) : entry_path(entry)
    end %>
+<% duplicate_path = if transaction.transfer.present?
+     new_transfer_path(duplicate_transfer_id: transaction.transfer.id)
+   else
+     new_transaction_path(duplicate_entry_id: entry.id)
+   end %>
 
 <%= turbo_frame_tag dom_id(entry) do %>
   <%= turbo_frame_tag dom_id(transaction) do %>
@@ -17,11 +22,13 @@
 
       <div class="pr-4 lg:pr-10 flex items-center gap-3 lg:gap-4 col-span-8 xl:col-span-5 min-w-0">
         <%= check_box_tag dom_id(entry, "selection"),
-            disabled: transaction.transfer.present? || entry.from_scheduled_payment?,
+            disabled: entry.from_scheduled_payment?,
             class: "checkbox checkbox--light hidden lg:block",
             data: {
               id: entry.id,
               entry_type: entry.entryable_type,
+              duplicate_url: duplicate_path,
+              bulk_actions: transaction.transfer.blank?,
               "bulk-select-target": "row",
               action: "bulk-select#toggleRowSelection",
               checkbox_toggle_target: "selectionEntry"

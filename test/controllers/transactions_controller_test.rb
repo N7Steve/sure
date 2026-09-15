@@ -136,12 +136,41 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dialog[data-action~='submit->DS--dialog#closeBeforeSubmit']"
   end
 
+  test "new transaction details contain notes without duplicate merchant or tags" do
+    get new_transaction_url, headers: { "Turbo-Frame" => "modal" }
+
+    assert_response :success
+    assert_select "details" do
+      assert_select "textarea[name='entry[notes]']", count: 1
+      assert_select "[name='entry[entryable_attributes][merchant_id]']", count: 0
+      assert_select "[name='entry[entryable_attributes][tag_ids][]']", count: 0
+    end
+    assert_select "[name='entry[entryable_attributes][merchant_id]']", count: 1
+    assert_select "[name='entry[entryable_attributes][tag_ids][]']", count: 1
+  end
+
   test "transactions index exposes a family-scoped refresh frame" do
     get transactions_url
 
     assert_response :success
     assert_select 'turbo-frame#transactions-page-data[data-sync-refresh="family"][target="_top"]'
     assert_select "#transactions-page-refresh-trigger"
+  end
+
+  test "transfer rows can be selected for duplication without exposing unsafe bulk actions" do
+    transfer_entry = entries(:transfer_out)
+
+    get transactions_url
+
+    assert_response :success
+    checkbox_id = ActionView::RecordIdentifier.dom_id(transfer_entry, "selection")
+    assert_select "input##{checkbox_id}" do |checkboxes|
+      checkbox = checkboxes.first
+      assert_nil checkbox["disabled"]
+      assert_equal new_transfer_path(duplicate_transfer_id: transfers(:one).id),
+                   checkbox["data-duplicate-url"]
+      assert_equal "false", checkbox["data-bulk-actions"]
+    end
   end
 
   test "turbo create from transactions reloads only transaction data" do

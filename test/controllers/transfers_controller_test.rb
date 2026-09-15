@@ -19,6 +19,30 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "new with duplicate_transfer_id pre-fills the transfer form" do
+    transfer = transfers(:one)
+    transfer.outflow_transaction.update!(category: categories(:food_and_drink), tag_ids: [ tags(:one).id ])
+
+    get new_transfer_url(duplicate_transfer_id: transfer.id)
+
+    assert_response :success
+    assert_select "input[name='transfer[from_account_id]'][value=?]", transfer.from_account.id
+    assert_select "input[name='transfer[to_account_id]'][value=?]", transfer.to_account.id
+    assert_select "input[name='transfer[date]'][value=?]", Date.current.iso8601
+    assert_select "input[name='transfer[amount]'][value=?]", transfer.outflow_transaction.entry.amount.abs.to_s
+    assert_select "input[name='transfer[category_id]'][value=?]", categories(:food_and_drink).id
+    assert_select "[role='option'][data-tag-id='#{tags(:one).id}'][aria-selected='true']"
+  end
+
+  test "new with invalid duplicate_transfer_id renders an empty form" do
+    get new_transfer_url(duplicate_transfer_id: SecureRandom.uuid)
+
+    assert_response :success
+    assert_select "input[name='transfer[amount]']" do |elements|
+      assert elements.first["value"].blank?
+    end
+  end
+
   test "excludes disabled accounts from the new transfer form" do
     disabled_account = accounts(:depository)
     disabled_account.update!(status: "disabled")
