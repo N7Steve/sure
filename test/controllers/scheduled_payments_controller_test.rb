@@ -52,6 +52,18 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.projected_savings_explanation")
   end
 
+  test "forecast selector offers aggregate wealth" do
+    get scheduled_payments_url(view: "forecast", account_id: "wealth", horizon: 12)
+
+    assert_response :success
+    assert_select "h2", text: I18n.t("scheduled_payments.agenda.forecast.wealth_title")
+    assert_select "select[name=account_id] option[selected][value=wealth]",
+      text: I18n.t("scheduled_payments.agenda.forecast.wealth")
+    assert_select "[data-controller=forecast-chart]", count: 1
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.historical_wealth_growth")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.horizons.12")
+  end
+
   test "forecast excludes accounts outside finances" do
     outside_account = @family.accounts.create!(
       name: "Outside cash",

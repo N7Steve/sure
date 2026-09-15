@@ -15,7 +15,11 @@ en:
       forecast:
         title: Balance forecast
         subtitle: Explore how the cash balance of one account could evolve.
+        wealth_title: Wealth forecast
+        wealth_subtitle: Explore how the combined value of all your assets could evolve.
+        target: Forecast target
         account: Cash account
+        wealth: Wealth
         empty_title: No cash accounts available
         empty_description: Add or share an active cash account to generate a balance forecast.
         horizon_label: Forecast horizon
@@ -26,6 +30,7 @@ en:
           "12": 1 year
           "36": 3 years
         projected_balance: Normal projected balance
+        projected_wealth: Normal projected wealth
         ending_on: "At %{date}"
         scenarios_label: Forecast scenarios
         scenarios:
@@ -33,27 +38,42 @@ en:
           normal: Normal
           optimistic: Optimistic
         chart_label: "Projected balance for %{account}: pessimistic, normal and optimistic scenarios"
+        wealth_chart_label: "Projected wealth: pessimistic, normal and optimistic scenarios"
         current_balance: Current balance
+        current_wealth: Current wealth
         projected_savings: Projected monthly savings
+        projected_wealth_growth: Projected monthly wealth growth
         historical_savings: Unscheduled monthly trend
+        historical_wealth_growth: Historical saving and growth
         scheduled_average: Scheduled monthly change
         metrics_method_title: How these figures are calculated
         projected_savings_explanation: The average monthly balance growth in the normal scenario. It is calculated by subtracting the current balance from the final projected balance and dividing the result by the selected number of months. It therefore combines Agenda with the unscheduled trend.
+        projected_wealth_growth_explanation: The average monthly wealth growth in the normal scenario. It combines Agenda with the weighted historical trend, including unscheduled saving and asset appreciation.
         historical_savings_explanation: The average monthly effect of transactions not explained by Agenda. It uses up to 12 complete months, weights recent months more heavily and limits outliers. One-time movements, internal transfers, pending transactions and split parents are excluded.
+        historical_wealth_growth_explanation: The robust monthly change in the combined value of your assets. It combines unscheduled saving and appreciation, uses up to five years and gives progressively more weight to recent months. One-time movements keep only one quarter of their effect.
         scheduled_average_explanation: The net monthly effect of Agenda on this account. All scheduled income is added and expenses are subtracted; transfers subtract from the source and add to the destination. The resulting total is divided by the selected number of months.
+        wealth_scheduled_average_explanation: The net monthly effect of Agenda on wealth. Income is added and expenses are subtracted; transfers between your included assets are neutral and only count when they cross the included-assets boundary.
         limited_history:
           one: Only one complete month of usable history is available. The forecast will rely mainly on Agenda.
           other: Only %{count} complete months of usable history are available. The forecast will rely mainly on Agenda.
         conversion_warning:
           one: One scheduled transfer was omitted because no exchange rate was available.
           other: "%{count} scheduled transfers were omitted because no exchange rate was available."
+        wealth_conversion_warning:
+          one: One historical or scheduled movement could not be adjusted because no exchange rate was available.
+          other: "%{count} historical or scheduled movements could not be adjusted because no exchange rate was available."
         method_title: How this forecast is calculated
         method_agenda: Agenda movements are the source of truth and are applied on their exact future dates. They are not estimated again from history.
+        wealth_method_agenda: Agenda income and expenses are applied on their exact dates and removed from the historical trend to avoid double counting. Transfers between included assets do not change wealth.
         method_history: The remaining historical cash flow uses up to 12 complete months, gives more weight to recent months and limits the effect of outliers. Transfers, pending transactions, split parents and one-time movements are excluded.
+        wealth_method_history: The remaining trend uses up to 60 months of aggregate asset values, weights recent months exponentially and limits outliers. One-time movements are dampened to 25% rather than projected in full.
         method_scenarios: The normal scenario uses the robust historical trend. Optimistic and pessimistic scenarios use its variability; estimated Agenda amounts also vary by 15%.
         one_time_ignored:
           one: One historical one-time movement was ignored.
           other: "%{count} historical one-time movements were ignored."
+        one_time_weighted:
+          one: One historical one-time movement was detected and reduced to 25% weight.
+          other: "%{count} historical one-time movements were detected and reduced to 25% weight."
       metrics:
         active: Active schedules
         remaining: Left to pay this month

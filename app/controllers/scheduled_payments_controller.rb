@@ -242,6 +242,9 @@ class ScheduledPaymentsController < ApplicationController
   def prepare_forecast
     @forecast_accounts = Current.family.accounts.accessible_by(Current.user).default_transaction_visible
       .where(accountable_type: "Depository").alphabetically.to_a
+    wealth_available = Current.family.accounts.visible.included_in_reports
+      .included_in_finances_for(Current.user).assets.exists?
+    @wealth_forecast = params[:account_id] == "wealth" || (@forecast_accounts.empty? && wealth_available)
     requested_account = @forecast_accounts.find do |account|
       account.id.to_s == params[:account_id].to_s
     end
@@ -249,7 +252,17 @@ class ScheduledPaymentsController < ApplicationController
     default_account = @forecast_accounts.find do |account|
       account.id == default_account_id
     end
-    @forecast_account = requested_account || default_account || @forecast_accounts.first
+    @forecast_account = requested_account || default_account || @forecast_accounts.first unless @wealth_forecast
+
+    if @wealth_forecast
+      @forecast = ScheduledPayment::WealthForecast.new(
+        family: Current.family,
+        user: Current.user,
+        horizon_months: params[:horizon]
+      )
+      return
+    end
+
     return unless @forecast_account
 
     @forecast = ScheduledPayment::Forecast.new(

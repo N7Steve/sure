@@ -1,24 +1,27 @@
 <section class="space-y-4" aria-labelledby="agenda-forecast-title">
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
-      <h2 id="agenda-forecast-title" class="text-base font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.title") %></h2>
-      <p class="mt-1 text-sm text-secondary"><%= t("scheduled_payments.agenda.forecast.subtitle") %></p>
+      <h2 id="agenda-forecast-title" class="text-base font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_title" : "title"}") %></h2>
+      <p class="mt-1 text-sm text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_subtitle" : "subtitle"}") %></p>
     </div>
 
-    <% if @forecast_account %>
+    <% if @forecast %>
       <%= form_with url: scheduled_payments_path, method: :get, data: { controller: "auto-submit-form" } do |form| %>
         <%= form.hidden_field :view, value: "forecast" %>
         <%= form.hidden_field :horizon, value: @forecast.horizon_months %>
-        <%= form.label :account_id, t("scheduled_payments.agenda.forecast.account"), class: "sr-only" %>
+        <%= form.label :account_id, t("scheduled_payments.agenda.forecast.target"), class: "sr-only" %>
         <%= form.select :account_id,
-              options_from_collection_for_select(@forecast_accounts, :id, :name, @forecast_account.id), {},
+              options_for_select(
+                [[t("scheduled_payments.agenda.forecast.wealth"), "wealth"]] + @forecast_accounts.map { |account| [account.name, account.id] },
+                @wealth_forecast ? "wealth" : @forecast_account.id
+              ), {},
               class: "bg-container border border-secondary rounded-lg text-sm pr-8 cursor-pointer text-primary focus:outline-hidden focus:ring-0",
               autocomplete: "off", data: { "auto-submit-form-target": "auto" } %>
       <% end %>
     <% end %>
   </div>
 
-  <% if @forecast_account.nil? %>
+  <% if @forecast.nil? %>
     <%= render DS::Card.new(class: "items-center py-10 text-center") do %>
       <div class="text-secondary"><%= icon("landmark", size: "lg") %></div>
       <p class="mt-3 font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.empty_title") %></p>
@@ -31,7 +34,7 @@
         <% ScheduledPayment::Forecast::HORIZONS.each do |months| %>
           <% control.with_segment(t("scheduled_payments.agenda.forecast.horizons.#{months}"),
                active: @forecast.horizon_months == months,
-               href: scheduled_payments_path(view: "forecast", account_id: @forecast_account.id, horizon: months),
+               href: scheduled_payments_path(view: "forecast", account_id: (@wealth_forecast ? "wealth" : @forecast_account.id), horizon: months),
                class: "whitespace-nowrap") %>
         <% end %>
       <% end %>
@@ -45,14 +48,14 @@
 
     <% if @forecast.conversion_failures.positive? %>
       <%= render DS::Alert.new(variant: :warning) do %>
-        <p><%= t("scheduled_payments.agenda.forecast.conversion_warning", count: @forecast.conversion_failures) %></p>
+        <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_conversion_warning" : "conversion_warning"}", count: @forecast.conversion_failures) %></p>
       <% end %>
     <% end %>
 
     <%= render DS::Card.new(class: "gap-5") do %>
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p class="text-sm text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_balance") %></p>
+          <p class="text-sm text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "projected_wealth" : "projected_balance"}") %></p>
           <p class="mt-1 text-2xl font-medium text-primary privacy-sensitive"><%= format_money(@forecast.ending_balance(:normal)) %></p>
           <p class="mt-1 text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.ending_on", date: l(@forecast.end_date, format: :long)) %></p>
         </div>
@@ -70,7 +73,7 @@
       <div class="h-72 min-h-64">
         <div class="relative h-full w-full privacy-sensitive"
              role="img"
-             aria-label="<%= t("scheduled_payments.agenda.forecast.chart_label", account: @forecast_account.name) %>"
+             aria-label="<%= @wealth_forecast ? t("scheduled_payments.agenda.forecast.wealth_chart_label") : t("scheduled_payments.agenda.forecast.chart_label", account: @forecast_account.name) %>"
              data-controller="forecast-chart"
              data-forecast-chart-data-value="<%= json_escape(forecast_chart_data.to_json) %>"></div>
       </div>
@@ -78,15 +81,15 @@
 
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <%= render DS::Card.new(class: "gap-1") do %>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.current_balance") %></p>
+        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "current_wealth" : "current_balance"}") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.current_balance) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_savings") %></p>
+        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "projected_wealth_growth" : "projected_savings"}") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.projected_monthly_savings) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.historical_savings") %></p>
+        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth" : "historical_savings"}") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.historical_monthly_savings) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
@@ -98,27 +101,27 @@
     <%= render DS::Disclosure.new(title: t("scheduled_payments.agenda.forecast.metrics_method_title"), align: "left") do %>
       <dl class="space-y-3 text-sm">
         <div>
-          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.projected_savings") %></dt>
-          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.projected_savings_explanation") %></dd>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "projected_wealth_growth" : "projected_savings"}") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "projected_wealth_growth_explanation" : "projected_savings_explanation"}") %></dd>
         </div>
         <div>
-          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.historical_savings") %></dt>
-          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.historical_savings_explanation") %></dd>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth" : "historical_savings"}") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth_explanation" : "historical_savings_explanation"}") %></dd>
         </div>
         <div>
           <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.scheduled_average") %></dt>
-          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.scheduled_average_explanation") %></dd>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_scheduled_average_explanation" : "scheduled_average_explanation"}") %></dd>
         </div>
       </dl>
     <% end %>
 
     <%= render DS::Disclosure.new(title: t("scheduled_payments.agenda.forecast.method_title"), align: "left") do %>
       <div class="space-y-2 text-sm text-secondary">
-        <p><%= t("scheduled_payments.agenda.forecast.method_agenda") %></p>
-        <p><%= t("scheduled_payments.agenda.forecast.method_history") %></p>
+        <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_method_agenda" : "method_agenda"}") %></p>
+        <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_method_history" : "method_history"}") %></p>
         <p><%= t("scheduled_payments.agenda.forecast.method_scenarios") %></p>
         <% if @forecast.ignored_one_time_count.positive? %>
-          <p><%= t("scheduled_payments.agenda.forecast.one_time_ignored", count: @forecast.ignored_one_time_count) %></p>
+          <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "one_time_weighted" : "one_time_ignored"}", count: @forecast.ignored_one_time_count) %></p>
         <% end %>
       </div>
     <% end %>
