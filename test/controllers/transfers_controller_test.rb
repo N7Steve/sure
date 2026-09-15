@@ -11,6 +11,11 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "input[type='hidden'][name='transfer[from_account_id]']", count: 1
     assert_select "input[type='hidden'][name='transfer[to_account_id]']", count: 1
+    assert_select "div.grid.grid-cols-2" do
+      assert_select "input[name='transfer[amount]']", count: 1
+      assert_select "input[name='transfer[date]']", count: 1
+    end
+    assert_select "input[name='transfer[name]']", count: 1
     assert_select "[data-controller='category-select']" do
       assert_select "input[type='hidden'][name='transfer[category_id]']", count: 1
       assert_select "[role='option'][data-category-id='#{categories(:subcategory).id}']" do
@@ -22,6 +27,8 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
   test "new with duplicate_transfer_id pre-fills the transfer form" do
     transfer = transfers(:one)
     transfer.outflow_transaction.update!(category: categories(:food_and_drink), tag_ids: [ tags(:one).id ])
+    transfer.outflow_transaction.entry.update!(name: "Monthly savings")
+    transfer.inflow_transaction.entry.update!(name: "Monthly savings")
 
     get new_transfer_url(duplicate_transfer_id: transfer.id)
 
@@ -30,6 +37,7 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='transfer[to_account_id]'][value=?]", transfer.to_account.id
     assert_select "input[name='transfer[date]'][value=?]", Date.current.iso8601
     assert_select "input[name='transfer[amount]'][value=?]", transfer.outflow_transaction.entry.amount.abs.to_s
+    assert_select "input[name='transfer[name]'][value=?]", "Monthly savings"
     assert_select "input[name='transfer[category_id]'][value=?]", categories(:food_and_drink).id
     assert_select "[role='option'][data-tag-id='#{tags(:one).id}'][aria-selected='true']"
   end
@@ -71,11 +79,15 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
           to_account_id: accounts(:credit_card).id,
           date: Date.current,
           amount: 100,
-          name: "Test Transfer"
+          name: "Monthly savings"
         }
       }
       assert_enqueued_with job: SyncJob
     end
+
+    transfer = Transfer.order(:created_at).last
+    assert_equal "Monthly savings", transfer.outflow_transaction.entry.name
+    assert_equal "Monthly savings", transfer.inflow_transaction.entry.name
   end
 
   test "resubmitting the same idempotency key does not create a duplicate transfer" do

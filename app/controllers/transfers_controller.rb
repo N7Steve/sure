@@ -48,6 +48,7 @@ class TransfersController < ApplicationController
       destination_account_id: destination_account.id,
       date: transfer_params[:date].present? ? Date.parse(transfer_params[:date]) : Date.current,
       amount: transfer_params[:amount].to_d,
+      name: transfer_params[:name],
       exchange_rate: transfer_params[:exchange_rate].presence&.to_d,
       category_id: transfer_params[:category_id],
       source_fee_amount: transfer_params[:source_fee_amount],
@@ -282,6 +283,7 @@ class TransfersController < ApplicationController
       @to_account_id = duplicate_source.to_account.id
       @transfer.assign_attributes(
         amount: duplicate_source.outflow_transaction.entry.amount.abs,
+        name: duplicate_source.name,
         category_id: duplicate_source.outflow_transaction.category_id,
         tag_ids: duplicate_source.outflow_transaction.tag_ids
       )

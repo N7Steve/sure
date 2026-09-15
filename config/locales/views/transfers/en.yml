@@ -20,6 +20,8 @@ en:
       expense: Expense
       from: From
       income: Income
+      name: Name (optional)
+      name_placeholder: Use the default transfer name
       select_account: Select account
       source_amount: Source amount
       submit: Create transfer

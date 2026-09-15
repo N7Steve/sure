@@ -17,6 +17,8 @@ es:
       expense: Gasto
       from: Desde
       income: Ingreso
+      name: Nombre (opcional)
+      name_placeholder: Usar el nombre predeterminado de la transferencia
       select_account: Seleccionar cuenta
       source_amount: Importe de origen
       submit: Crear transferencia

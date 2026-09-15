@@ -157,7 +157,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#transactions-page-refresh-trigger"
   end
 
-  test "transfer rows can be selected for duplication without exposing unsafe bulk actions" do
+  test "transfer rows can be selected for duplication and deletion without exposing unsafe bulk editing" do
     transfer_entry = entries(:transfer_out)
 
     get transactions_url
@@ -169,8 +169,10 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
       assert_nil checkbox["disabled"]
       assert_equal new_transfer_path(duplicate_transfer_id: transfers(:one).id),
                    checkbox["data-duplicate-url"]
-      assert_equal "false", checkbox["data-bulk-actions"]
+      assert_equal "false", checkbox["data-bulk-edit"]
     end
+    assert_select "[data-bulk-select-target='bulkEditAction']"
+    assert_select "form[action='#{transactions_bulk_deletion_path}']"
   end
 
   test "turbo create from transactions reloads only transaction data" do

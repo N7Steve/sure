@@ -9,7 +9,7 @@ export default class extends Controller {
     "selectionBarText",
     "bulkEditDrawerHeader",
     "duplicateLink",
-    "bulkActions",
+    "bulkEditAction",
   ];
   static values = {
     singularLabel: String,
@@ -152,12 +152,12 @@ export default class extends Controller {
       }
     }
 
-    if (this.hasBulkActionsTarget) {
+    if (this.hasBulkEditActionTarget) {
       const selectedRows = this._selectedRows();
-      const canUseBulkActions =
+      const canBulkEdit =
         selectedRows.length === count &&
-        selectedRows.every((row) => row.dataset.bulkActions !== "false");
-      this.bulkActionsTarget.classList.toggle("hidden", !canUseBulkActions);
+        selectedRows.every((row) => row.dataset.bulkEdit !== "false");
+      this.bulkEditActionTarget.classList.toggle("hidden", !canBulkEdit);
     }
   }
 

@@ -1,16 +1,17 @@
 class Transfer::Creator
   # Raised when the submitted idempotency key already belongs to an entry,
   # but that entry's transfer doesn't match the current request (different
-  # destination/amount/date) — i.e. a stale key from a cached form rather
+  # destination/amount/date/name) — i.e. a stale key from a cached form rather
   # than a genuine double-submit. See #find_existing_transfer.
   StaleIdempotencyKeyError = Class.new(StandardError)
 
-  def initialize(family:, source_account_id:, destination_account_id:, date:, amount:, exchange_rate: nil, category_id: nil, source_fee_amount: nil, destination_fee_amount: nil, tag_ids: nil, idempotency_key: nil)
+  def initialize(family:, source_account_id:, destination_account_id:, date:, amount:, name: nil, exchange_rate: nil, category_id: nil, source_fee_amount: nil, destination_fee_amount: nil, tag_ids: nil, idempotency_key: nil)
     @family = family
     @source_account = family.accounts.find(source_account_id) # early throw if not found
     @destination_account = family.accounts.find(destination_account_id) # early throw if not found
     @date = date
     @amount = amount.to_d
+    @name = name.presence
     @category_id = category_id
     @source_fee_amount = source_fee_amount.to_d
     @destination_fee_amount = destination_fee_amount.to_d
@@ -90,13 +91,13 @@ class Transfer::Creator
   end
 
   private
-    attr_reader :family, :source_account, :destination_account, :date, :amount, :exchange_rate, :category_id, :source_fee_amount, :destination_fee_amount, :tag_ids, :idempotency_key
+    attr_reader :family, :source_account, :destination_account, :date, :amount, :name, :exchange_rate, :category_id, :source_fee_amount, :destination_fee_amount, :tag_ids, :idempotency_key
 
     # Scoped to source_account + idempotency_key so it only ever finds a
     # transfer this same key could plausibly refer to, but the key alone
     # isn't enough: a stale hidden field (Turbo Drive cache, reopened
     # dialog) can resubmit an old key for a request that's since changed
-    # destination/amount/date. Verifying those fields against the request
+    # destination/amount/date/name. Verifying those fields against the request
     # keeps a genuinely different transfer from being silently discarded
     # in favor of returning the old one.
     def find_existing_transfer
@@ -125,11 +126,13 @@ class Transfer::Creator
       inflow_entry = transfer.inflow_transaction.entry
 
       outflow_entry.account_id == source_account.id &&
-        inflow_entry.account_id == destination_account.id &&
-        outflow_entry.date == date &&
-        outflow_entry.amount == amount &&
-        inflow_entry.amount == inflow_converted_amount * -1 &&
-        transfer.derived_source_fee_amount == source_fee_amount &&
+      inflow_entry.account_id == destination_account.id &&
+      outflow_entry.date == date &&
+      outflow_entry.amount == amount &&
+      inflow_entry.amount == inflow_converted_amount * -1 &&
+      outflow_entry.name == outflow_name &&
+      inflow_entry.name == inflow_name &&
+      transfer.derived_source_fee_amount == source_fee_amount &&
         transfer.derived_destination_fee_amount == destination_fee_amount
     rescue Money::ConversionError
       false
@@ -162,7 +165,6 @@ class Transfer::Creator
     end
 
     def outflow_transaction
-      name = "#{name_prefix} to #{destination_account.name}"
       kind = outflow_transaction_kind
       resolved_category = if kind == "investment_contribution"
         investment_contributions_category
@@ -177,7 +179,7 @@ class Transfer::Creator
           amount: amount,
           currency: source_account.currency,
           date: date,
-          name: name,
+          name: outflow_name,
           user_modified: true,
           **entry_idempotency_attrs(leg: :outflow)
         )
@@ -189,7 +191,6 @@ class Transfer::Creator
     end
 
     def inflow_transaction
-      name = "#{name_prefix} from #{source_account.name}"
       resolved_category = family.categories.find_by(id: category_id) if category_id.present?
       net_inflow = inflow_converted_amount
 
@@ -200,7 +201,7 @@ class Transfer::Creator
           amount: net_inflow * -1,
           currency: destination_account.currency,
           date: date,
-          name: name,
+          name: inflow_name,
           user_modified: true,
           **entry_idempotency_attrs(leg: :inflow)
         )
@@ -268,5 +269,13 @@ class Transfer::Creator
       else
         "Transfer"
       end
+    end
+
+    def outflow_name
+      name || "#{name_prefix} to #{destination_account.name}"
+    end
+
+    def inflow_name
+      name || "#{name_prefix} from #{source_account.name}"
     end
 end

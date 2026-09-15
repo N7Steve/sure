@@ -37,9 +37,28 @@
     <%= f.collection_select :from_account_id, @accounts, :id, :name, { prompt: t(".select_account"), label: t(".from"), selected: @from_account_id, variant: :logo }, { required: true, data: { transfer_form_target: "fromAccount", action: "change->transfer-form#checkCurrencyDifference" } } %>
     <%= f.collection_select :to_account_id, @accounts, :id, :name, { prompt: t(".select_account"), label: t(".to"), selected: @to_account_id, variant: :logo }, { required: true, data: { transfer_form_target: "toAccount", action: "change->transfer-form#checkCurrencyDifference" } } %>
 
-    <%= f.date_field :date, value: transfer.inflow_transaction&.entry&.date || Date.current, label: t(".date"), required: true, max: Date.current, data: { transfer_form_target: "date", action: "change->transfer-form#checkCurrencyDifference" } %>
+    <div class="grid grid-cols-2 gap-2">
+      <%= f.number_field :amount,
+            label: t(".source_amount"),
+            required: true,
+            min: 0,
+            placeholder: "100",
+            step: 0.00000001,
+            container_class: "min-w-0",
+            data: { transfer_form_target: "amount", action: "input->transfer-form#onSourceAmountChange" } %>
 
-    <%= f.number_field :amount, label: t(".source_amount"), required: true, min: 0, placeholder: "100", step: 0.00000001, data: { transfer_form_target: "amount", action: "input->transfer-form#onSourceAmountChange" } %>
+      <%= f.date_field :date,
+            value: transfer.inflow_transaction&.entry&.date || Date.current,
+            label: t(".date"),
+            required: true,
+            max: Date.current,
+            container_class: "min-w-0",
+            data: { transfer_form_target: "date", action: "change->transfer-form#checkCurrencyDifference" } %>
+    </div>
+
+    <%= f.text_field :name,
+          label: t(".name"),
+          placeholder: t(".name_placeholder") %>
 
     <%= render DS::CategorySelect.new(
           form: f,

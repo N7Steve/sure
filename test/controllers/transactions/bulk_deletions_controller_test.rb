@@ -22,18 +22,21 @@ class Transactions::BulkDeletionsControllerTest < ActionDispatch::IntegrationTes
     assert_equal "#{delete_count} transactions deleted", flash[:notice]
   end
 
-  test "bulk delete does not destroy one leg of a transfer" do
+  test "bulk delete removes the complete transfer when one displayed leg is selected" do
     transfer = transfers(:one)
     entry_ids = [ transfer.outflow_transaction.entry.id, transfer.inflow_transaction.entry.id ]
 
-    assert_no_difference [ "Transfer.count", "Transaction.count", "Entry.count" ] do
-      post transactions_bulk_deletion_url, params: {
-        bulk_delete: { entry_ids: [ entry_ids.first ] }
-      }
+    assert_difference "Transfer.count", -1 do
+      assert_difference [ "Transaction.count", "Entry.count" ], -2 do
+        post transactions_bulk_deletion_url, params: {
+          bulk_delete: { entry_ids: [ entry_ids.first ] }
+        }
+      end
     end
 
-    assert Transfer.exists?(transfer.id)
-    assert_equal entry_ids.sort, Entry.where(id: entry_ids).pluck(:id).sort
+    assert_not Transfer.exists?(transfer.id)
+    assert_empty Entry.where(id: entry_ids)
+    assert_equal "1 transaction deleted", flash[:notice]
   end
 
   test "bulk delete skips entries linked to scheduled payments" do

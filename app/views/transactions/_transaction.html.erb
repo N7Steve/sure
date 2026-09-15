@@ -28,7 +28,7 @@
               id: entry.id,
               entry_type: entry.entryable_type,
               duplicate_url: duplicate_path,
-              bulk_actions: transaction.transfer.blank?,
+              bulk_edit: transaction.transfer.blank?,
               "bulk-select-target": "row",
               action: "bulk-select#toggleRowSelection",
               checkbox_toggle_target: "selectionEntry"

@@ -5,6 +5,7 @@ class Transfer < ApplicationRecord
   has_many :fee_transactions, class_name: "Transaction", dependent: :destroy
 
   attr_accessor :source_fee_amount, :destination_fee_amount, :tag_ids
+  attr_writer :name
 
   enum :status, { pending: "pending", confirmed: "confirmed" }
 
@@ -75,6 +76,8 @@ class Transfer < ApplicationRecord
   end
 
   def name
+    return @name if @name.present?
+
     outflow_name = outflow_transaction&.entry&.name
     return outflow_name if outflow_name.present?
 
