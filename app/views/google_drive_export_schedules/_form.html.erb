@@ -5,7 +5,15 @@
   ) %>
 
   <% dialog.with_body do %>
-    <%= form_with model: @schedule, class: "space-y-5" do |form| %>
+    <%= form_with model: @schedule,
+                  class: "space-y-5",
+                  data: {
+                    controller: "google-drive-export-form",
+                    google_drive_export_form_timezone_template_value: t(
+                      "google_drive_export_schedules.form.browser_timezone",
+                      timezone: "__TIMEZONE__"
+                    )
+                  } do |form| %>
       <% if @schedule.errors.any? %>
         <%= render DS::Alert.new(
           title: t("google_drive_export_schedules.form.validation_error"),
@@ -29,7 +37,6 @@
 
       <fieldset class="space-y-2">
         <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.accounts") %></legend>
-        <p class="text-xs text-secondary"><%= t("google_drive_export_schedules.form.accounts_help") %></p>
         <div class="grid max-h-48 grid-cols-1 gap-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2 sm:grid-cols-2">
           <% selected_account_ids = @schedule.selected_account_ids.map(&:to_s) %>
           <% @accounts.each do |account| %>
@@ -50,82 +57,76 @@
           <%= form.select :date_range,
                           GoogleDriveExportSchedule.date_ranges.keys.map { |value| [t("google_drive_export_schedules.form.date_ranges.#{value}"), value] },
                           {},
-                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                          data: {
+                            google_drive_export_form_target: "dateRange",
+                            action: "change->google-drive-export-form#toggleDateRangeFields"
+                          } %>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1">
-            <%= form.label :fixed_start_date, t("google_drive_export_schedules.form.fixed_start_date"), class: "text-sm font-medium text-primary" %>
-            <%= form.date_field :fixed_start_date, class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
-          </div>
-          <div class="space-y-1">
-            <%= form.label :rolling_days, t("google_drive_export_schedules.form.rolling_days"), class: "text-sm font-medium text-primary" %>
-            <%= form.number_field :rolling_days, min: 1, max: 3650, class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
-          </div>
+
+        <div class="space-y-1 <%= "hidden" unless @schedule.date_range_fixed_start? %>"
+             data-google-drive-export-form-target="dateRangeField"
+             data-date-range="fixed_start">
+          <%= form.label :fixed_start_date, t("google_drive_export_schedules.form.fixed_start_date"), class: "text-sm font-medium text-primary" %>
+          <%= form.date_field :fixed_start_date,
+                              class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                              data: { conditional_required: true } %>
+        </div>
+
+        <div class="space-y-1 <%= "hidden" unless @schedule.date_range_rolling_days? %>"
+             data-google-drive-export-form-target="dateRangeField"
+             data-date-range="rolling_days">
+          <%= form.label :rolling_days, t("google_drive_export_schedules.form.rolling_days"), class: "text-sm font-medium text-primary" %>
+          <%= form.number_field :rolling_days,
+                                min: 1,
+                                max: 3650,
+                                class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                                data: { conditional_required: true } %>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <fieldset class="space-y-2">
-          <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_categories") %></legend>
-          <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
-            <% selected_category_ids = @schedule.excluded_category_ids.map(&:to_s) %>
-            <% @categories.each do |category| %>
-              <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
-                <%= check_box_tag "google_drive_export_schedule[filters][excluded_category_ids][]",
-                                  category.id,
-                                  selected_category_ids.include?(category.id.to_s),
-                                  class: "checkbox" %>
-                <span><%= category.parent ? "#{category.parent.name} / #{category.name}" : category.name %></span>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset class="space-y-2">
-          <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_tags") %></legend>
-          <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
-            <% selected_tag_ids = @schedule.excluded_tag_ids.map(&:to_s) %>
-            <% @tags.each do |tag| %>
-              <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
-                <%= check_box_tag "google_drive_export_schedule[filters][excluded_tag_ids][]",
-                                  tag.id,
-                                  selected_tag_ids.include?(tag.id.to_s),
-                                  class: "checkbox" %>
-                <span><%= tag.name %></span>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div class="space-y-1">
           <%= form.label :frequency, t("google_drive_export_schedules.form.frequency"), class: "text-sm font-medium text-primary" %>
           <%= form.select :frequency,
                           GoogleDriveExportSchedule.frequencies.keys.map { |value| [t("family_exports.google_drive.frequencies.#{value}"), value] },
                           {},
-                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                          data: {
+                            google_drive_export_form_target: "frequency",
+                            action: "change->google-drive-export-form#toggleFrequencyFields"
+                          } %>
         </div>
         <div class="space-y-1">
           <%= form.label :run_at, t("google_drive_export_schedules.form.run_at"), class: "text-sm font-medium text-primary" %>
           <%= form.time_field :run_at, required: true, class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
         </div>
-        <div class="space-y-1">
+        <div class="space-y-1 <%= "hidden" unless @schedule.weekly? %>"
+             data-google-drive-export-form-target="frequencyField"
+             data-frequency="weekly">
           <%= form.label :weekday, t("google_drive_export_schedules.form.weekday"), class: "text-sm font-medium text-primary" %>
           <%= form.select :weekday,
                           I18n.t("date.day_names").each_with_index.map { |day, index| [day, index] },
                           {},
-                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+                          class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                          data: { conditional_required: true } %>
         </div>
-        <div class="space-y-1">
+        <div class="space-y-1 <%= "hidden" unless @schedule.monthly? %>"
+             data-google-drive-export-form-target="frequencyField"
+             data-frequency="monthly">
           <%= form.label :day_of_month, t("google_drive_export_schedules.form.day_of_month"), class: "text-sm font-medium text-primary" %>
-          <%= form.number_field :day_of_month, min: 1, max: 31, class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
-        </div>
-        <div class="space-y-1">
-          <%= form.label :timezone, t("google_drive_export_schedules.form.timezone"), class: "text-sm font-medium text-primary" %>
-          <%= form.select :timezone, timezone_options, {}, class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+          <%= form.number_field :day_of_month,
+                                min: 1,
+                                max: 31,
+                                class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                                data: { conditional_required: true } %>
         </div>
       </div>
+
+      <%= form.hidden_field :timezone, data: { google_drive_export_form_target: "timezoneInput" } %>
+      <p class="text-xs text-secondary" data-google-drive-export-form-target="timezoneLabel">
+        <%= t("google_drive_export_schedules.form.browser_timezone", timezone: @schedule.timezone) %>
+      </p>
 
       <% if @schedule.persisted? %>
         <div class="space-y-1">
@@ -137,11 +138,50 @@
         </div>
       <% end %>
 
-      <%= render DS::Alert.new(
-        title: t("google_drive_export_schedules.form.overwrite_title"),
-        message: t("google_drive_export_schedules.form.overwrite_description"),
-        variant: :warning
-      ) %>
+      <%= render DS::Disclosure.new(
+        title: t("google_drive_export_schedules.form.optional_filters"),
+        align: "left",
+        open: @schedule.excluded_category_ids.any? || @schedule.excluded_tag_ids.any?
+      ) do %>
+        <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_categories") %></legend>
+            <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
+              <% selected_category_ids = @schedule.excluded_category_ids.map(&:to_s) %>
+              <% @categories.each do |category| %>
+                <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
+                  <%= check_box_tag "google_drive_export_schedule[filters][excluded_category_ids][]",
+                                    category.id,
+                                    selected_category_ids.include?(category.id.to_s),
+                                    class: "checkbox" %>
+                  <span><%= category.parent ? "#{category.parent.name} / #{category.name}" : category.name %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_tags") %></legend>
+            <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
+              <% selected_tag_ids = @schedule.excluded_tag_ids.map(&:to_s) %>
+              <% @tags.each do |tag| %>
+                <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
+                  <%= check_box_tag "google_drive_export_schedule[filters][excluded_tag_ids][]",
+                                    tag.id,
+                                    selected_tag_ids.include?(tag.id.to_s),
+                                    class: "checkbox" %>
+                  <span><%= tag.name %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+        </div>
+      <% end %>
+
+      <p class="flex items-start gap-2 text-xs text-secondary">
+        <%= icon("info", size: "sm") %>
+        <span><%= t("google_drive_export_schedules.form.overwrite_description") %></span>
+      </p>
 
       <div class="flex gap-3">
         <%= render DS::Button.new(

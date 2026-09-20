@@ -1,14 +1,12 @@
-<div class="mb-6 space-y-4">
+<div class="mb-6">
   <%= render DS::Card.new(class: "gap-4") do %>
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div class="flex items-start gap-3">
         <div class="rounded-lg bg-container-inset p-2 text-secondary"><%= icon("cloud") %></div>
         <div class="space-y-1">
           <h2 class="font-medium text-primary"><%= t("family_exports.google_drive.title") %></h2>
           <% if @google_drive_connection %>
-            <p class="text-sm text-secondary">
-              <%= t("family_exports.google_drive.connected_as", email: @google_drive_connection.email) %>
-            </p>
+            <p class="text-sm text-secondary"><%= @google_drive_connection.email %></p>
           <% else %>
             <p class="text-sm text-secondary"><%= t("family_exports.google_drive.description") %></p>
           <% end %>
@@ -62,76 +60,82 @@
     <% end %>
 
     <% if @google_drive_export_schedules.any? %>
-      <div class="rounded-xl bg-container-inset p-1">
-        <div class="divide-y divide-divider">
-          <% @google_drive_export_schedules.each do |schedule| %>
-            <% target = schedule.targets.find { |candidate| candidate.logical_key == "transactions" } %>
-            <div class="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-              <div class="min-w-0 space-y-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <p class="font-medium text-primary"><%= schedule.name %></p>
-                  <%= render "shared/badge",
-                             color: schedule.active? ? "success" : (schedule.needs_attention? ? "error" : nil) do %>
-                    <%= t("family_exports.google_drive.statuses.#{schedule.status}") %>
-                  <% end %>
-                </div>
-                <p class="text-xs text-secondary">
-                  <%= t("family_exports.google_drive.schedule_summary",
-                        frequency: t("family_exports.google_drive.frequencies.#{schedule.frequency}"),
-                        time: schedule.run_at.strftime("%H:%M"),
-                        timezone: schedule.timezone) %>
-                </p>
-                <% if schedule.last_error_code.present? %>
-                  <p class="text-xs text-destructive">
-                    <%= t("family_exports.google_drive.errors.#{schedule.last_error_code}",
-                          default: t("family_exports.google_drive.errors.export_failed")) %>
-                  </p>
-                <% elsif schedule.last_success_at.present? %>
-                  <p class="text-xs text-secondary">
-                    <%= t("family_exports.google_drive.last_success",
-                          date: l(schedule.last_success_at, format: :long)) %>
-                  </p>
-                <% else %>
-                  <p class="text-xs text-secondary"><%= t("family_exports.google_drive.waiting_first_run") %></p>
+      <div class="divide-y divide-divider border-t border-primary">
+        <% @google_drive_export_schedules.each do |schedule| %>
+          <% target = schedule.targets.find { |candidate| candidate.logical_key == "transactions" } %>
+          <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="truncate font-medium text-primary"><%= schedule.name %></p>
+                <%= render "shared/badge",
+                           color: schedule.active? ? "success" : (schedule.needs_attention? ? "error" : nil) do %>
+                  <%= t("family_exports.google_drive.statuses.#{schedule.status}") %>
                 <% end %>
               </div>
-
-              <div class="flex flex-wrap items-center gap-2">
-                <% if target&.web_view_link.present? %>
-                  <%= render DS::Link.new(
-                    text: t("family_exports.google_drive.open_file"),
-                    icon: "external-link",
-                    href: target.web_view_link,
-                    variant: :outline,
-                    target: "_blank"
-                  ) %>
+              <p class="text-xs text-secondary">
+                <%= t("family_exports.google_drive.timings.#{schedule.frequency}",
+                      time: schedule.run_at.strftime("%H:%M"),
+                      weekday: schedule.weekday.present? ? I18n.t("date.day_names")[schedule.weekday] : nil,
+                      day: schedule.day_of_month) %>
+                <span aria-hidden="true">·</span>
+                <% if schedule.last_success_at.present? %>
+                  <%= t("family_exports.google_drive.updated_at",
+                        date: l(schedule.last_success_at, format: :short)) %>
+                <% else %>
+                  <%= t("family_exports.google_drive.waiting_first_run") %>
                 <% end %>
+              </p>
+              <% if schedule.last_error_code.present? %>
+                <p class="text-xs text-destructive">
+                  <%= t("family_exports.google_drive.errors.#{schedule.last_error_code}",
+                        default: t("family_exports.google_drive.errors.export_failed")) %>
+                </p>
+              <% end %>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+              <% if target&.web_view_link.present? %>
                 <%= render DS::Link.new(
+                  text: t("family_exports.google_drive.open_file"),
+                  icon: "external-link",
+                  href: target.web_view_link,
+                  variant: :outline,
+                  target: "_blank"
+                ) %>
+              <% end %>
+              <%= render DS::Menu.new do |menu| %>
+                <% menu.with_item(
+                  variant: "button",
                   text: t("family_exports.google_drive.run_now"),
                   icon: "play",
                   href: run_now_google_drive_export_schedule_path(schedule),
-                  method: :post,
-                  variant: :outline
+                  method: :post
                 ) %>
-                <%= render DS::Link.new(
+                <% menu.with_item(
+                  variant: "link",
                   text: t("family_exports.google_drive.edit"),
                   icon: "pencil",
                   href: edit_google_drive_export_schedule_path(schedule),
-                  variant: :outline,
                   frame: :modal
                 ) %>
-                <%= render DS::Link.new(
+                <% menu.with_item(variant: "divider") %>
+                <% menu.with_item(
+                  variant: "button",
                   text: t("family_exports.google_drive.delete"),
+                  icon: "trash-2",
                   href: google_drive_export_schedule_path(schedule),
                   method: :delete,
-                  variant: :outline_destructive,
-                  data: { turbo_confirm: t("family_exports.google_drive.delete_confirmation") }
+                  confirm: t("family_exports.google_drive.delete_confirmation")
                 ) %>
-              </div>
+              <% end %>
             </div>
-          <% end %>
-        </div>
+          </div>
+        <% end %>
       </div>
+    <% elsif @google_drive_connection&.connected? %>
+      <p class="border-t border-primary pt-4 text-sm text-secondary">
+        <%= t("family_exports.google_drive.empty") %>
+      </p>
     <% end %>
   <% end %>
 </div>

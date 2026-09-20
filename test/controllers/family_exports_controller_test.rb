@@ -147,7 +147,7 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Exporting...", response.body
     assert_select "h2", text: "Full backup"
     assert_select "h2", text: "Custom transaction export"
-    assert_select "h2", text: "Automatic Google Drive exports"
+    assert_select "h2", text: "Cloud exports"
     assert_select "form[action='#{connect_google_drive_connection_path}'][method='post'][data-turbo='false']" do
       assert_select "button", text: "Connect Google Drive"
     end

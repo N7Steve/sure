@@ -18,14 +18,13 @@ es:
     run_now:
       success: Exportación añadida a la cola.
     form:
-      new_title: Nueva exportación a Google Drive
-      edit_title: Editar exportación a Google Drive
-      subtitle: Mantén un único CSV actualizado automáticamente con las transacciones que elijas.
+      new_title: Nueva exportación
+      edit_title: Editar exportación
+      subtitle: Elige los datos y cuándo actualizar el archivo.
       validation_error: Revisa la configuración de la exportación
       name: Nombre
       filename: Nombre del archivo en Google Drive
       accounts: Cuentas que se incluirán
-      accounts_help: El proceso comprueba de nuevo tus permisos antes de cada exportación.
       date_range: Intervalo de fechas
       date_ranges:
         all_history: Todo el historial
@@ -40,25 +39,24 @@ es:
       run_at: Hora
       weekday: Día de la semana
       day_of_month: Día del mes
-      timezone: Zona horaria
+      browser_timezone: "Zona horaria del dispositivo: %{timezone}"
       status: Estado
-      overwrite_title: Este archivo se gestiona automáticamente
-      overwrite_description: Cada ejecución reemplaza el contenido del archivo. Puedes renombrarlo o moverlo en Drive, pero no lo uses para cambios manuales que quieras conservar.
+      optional_filters: Excluir categorías o etiquetas
+      overwrite_description: Cada ejecución sustituye el contenido del archivo, pero conserva su enlace de Drive.
       cancel: Cancelar
       save: Guardar exportación
   family_exports:
     google_drive:
-      title: Exportaciones automáticas a Google Drive
-      description: Conecta tu cuenta personal de Google y mantén un CSV de transacciones actualizado según una programación.
+      title: Exportaciones cloud
+      description: Guarda tus datos periódicamente en Google Drive.
       connected_as: "Conectado como %{email}"
       connect: Conectar Google Drive
       reconnect: Reconectar Google Drive
       disconnect: Desconectar
       disconnect_confirmation: ¿Desconectar Google Drive? Se eliminarán las programaciones automáticas, pero se conservarán los archivos de Drive.
-      new_schedule: Nueva exportación automática
+      new_schedule: Nueva exportación
       reauthorization_title: Es necesario volver a conectar Google Drive
       reauthorization_description: Google ha rechazado la autorización guardada. Vuelve a conectar la cuenta para reanudar las exportaciones.
-      schedule_summary: "%{frequency} a las %{time} (%{timezone})"
       frequencies:
         daily: Diariamente
         weekly: Semanalmente
@@ -67,8 +65,13 @@ es:
         active: Activa
         paused: Pausada
         needs_attention: Requiere atención
-      last_success: "Última exportación correcta: %{date}"
-      waiting_first_run: Esperando la primera exportación.
+      timings:
+        daily: "Cada día · %{time}"
+        weekly: "Cada %{weekday} · %{time}"
+        monthly: "Día %{day} de cada mes · %{time}"
+      updated_at: "Actualizado %{date}"
+      waiting_first_run: Primera ejecución pendiente
+      empty: Todavía no has configurado ninguna exportación.
       open_file: Abrir archivo
       run_now: Ejecutar ahora
       edit: Editar

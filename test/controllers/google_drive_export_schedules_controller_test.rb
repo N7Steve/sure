@@ -66,4 +66,15 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to family_exports_path
   end
+
+  test "new form exposes only conditional controls and stores timezone in a hidden field" do
+    get new_google_drive_export_schedule_path
+
+    assert_response :success
+    assert_select "form[data-controller='google-drive-export-form']"
+    assert_select "[data-google-drive-export-form-target='dateRangeField'].hidden", count: 2
+    assert_select "[data-google-drive-export-form-target='frequencyField'].hidden", count: 2
+    assert_select "input[type='hidden'][name='google_drive_export_schedule[timezone]']", count: 1
+    assert_select "select[name='google_drive_export_schedule[timezone]']", count: 0
+  end
 end

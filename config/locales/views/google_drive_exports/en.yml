@@ -18,14 +18,13 @@ en:
     run_now:
       success: Export queued.
     form:
-      new_title: New Google Drive export
-      edit_title: Edit Google Drive export
-      subtitle: Keep one CSV file updated automatically with the transactions you choose.
+      new_title: New export
+      edit_title: Edit export
+      subtitle: Choose the data and when to update the file.
       validation_error: Check the export settings
       name: Name
       filename: Google Drive file name
       accounts: Accounts to include
-      accounts_help: The job checks your access again before every export.
       date_range: Date range
       date_ranges:
         all_history: All history
@@ -40,25 +39,24 @@ en:
       run_at: Time
       weekday: Weekday
       day_of_month: Day of month
-      timezone: Time zone
+      browser_timezone: "Device time zone: %{timezone}"
       status: Status
-      overwrite_title: This is an automatically managed file
-      overwrite_description: Every run replaces the file contents. Rename or move it in Drive if you want, but do not use it for manual edits you need to preserve.
+      optional_filters: Exclude categories or tags
+      overwrite_description: Each run replaces the file contents while keeping its Drive link unchanged.
       cancel: Cancel
       save: Save export
   family_exports:
     google_drive:
-      title: Automatic Google Drive exports
-      description: Connect your personal Google account and keep a transaction CSV updated on a schedule.
+      title: Cloud exports
+      description: Save your data to Google Drive on a schedule.
       connected_as: "Connected as %{email}"
       connect: Connect Google Drive
       reconnect: Reconnect Google Drive
       disconnect: Disconnect
       disconnect_confirmation: Disconnect Google Drive? Automatic schedules will be removed, but existing Drive files will be kept.
-      new_schedule: New automatic export
+      new_schedule: New export
       reauthorization_title: Google Drive needs to be reconnected
       reauthorization_description: Google rejected the saved authorization. Reconnect to resume automatic exports.
-      schedule_summary: "%{frequency} at %{time} (%{timezone})"
       frequencies:
         daily: Daily
         weekly: Weekly
@@ -67,8 +65,13 @@ en:
         active: Active
         paused: Paused
         needs_attention: Needs attention
-      last_success: "Last successful export: %{date}"
-      waiting_first_run: Waiting for the first export.
+      timings:
+        daily: "Every day · %{time}"
+        weekly: "Every %{weekday} · %{time}"
+        monthly: "Day %{day} of each month · %{time}"
+      updated_at: "Updated %{date}"
+      waiting_first_run: First run pending
+      empty: No exports configured yet.
       open_file: Open file
       run_now: Run now
       edit: Edit
