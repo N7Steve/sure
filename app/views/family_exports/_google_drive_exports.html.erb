@@ -32,22 +32,22 @@
             data: { turbo_confirm: t("family_exports.google_drive.disconnect_confirmation") }
           ) %>
         <% elsif @google_drive_connection&.requires_reauthorization? %>
-          <%= render DS::Link.new(
+          <%= render DS::Button.new(
             text: t("family_exports.google_drive.reconnect"),
             icon: "refresh-cw",
             href: connect_google_drive_connection_path,
             method: :post,
             variant: :primary,
-            data: { turbo_frame: "_top" }
+            form: { data: { turbo: false } }
           ) %>
         <% else %>
-          <%= render DS::Link.new(
+          <%= render DS::Button.new(
             text: t("family_exports.google_drive.connect"),
             icon: "plug",
             href: connect_google_drive_connection_path,
             method: :post,
             variant: :primary,
-            data: { turbo_frame: "_top" }
+            form: { data: { turbo: false } }
           ) %>
         <% end %>
       </div>

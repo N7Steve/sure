@@ -148,6 +148,28 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "Full backup"
     assert_select "h2", text: "Custom transaction export"
     assert_select "h2", text: "Automatic Google Drive exports"
+    assert_select "form[action='#{connect_google_drive_connection_path}'][method='post'][data-turbo='false']" do
+      assert_select "button", text: "Connect Google Drive"
+    end
+  end
+
+  test "Drive reconnect uses a non-Turbo form" do
+    GoogleDriveConnection.create!(
+      family: @family,
+      user: @admin,
+      google_subject: "reauthorization-test",
+      email: "drive@example.com",
+      refresh_token: "refresh-token",
+      status: :requires_reauthorization,
+      connected_at: Time.current
+    )
+
+    get family_exports_path
+
+    assert_response :success
+    assert_select "form[action='#{connect_google_drive_connection_path}'][method='post'][data-turbo='false']" do
+      assert_select "button", text: "Reconnect Google Drive"
+    end
   end
 
   test "member only sees their own custom transaction exports" do
