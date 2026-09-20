@@ -322,6 +322,17 @@ Rails.application.routes.draw do
     end
   end
 
+  resource :google_drive_connection, only: :destroy do
+    post :connect
+    get :callback
+  end
+
+  resources :google_drive_export_schedules, except: [ :index, :show ] do
+    member do
+      post :run_now
+    end
+  end
+
   resources :syncs, only: [] do
     member do
       post :cancel

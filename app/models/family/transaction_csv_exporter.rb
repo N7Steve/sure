@@ -6,17 +6,22 @@ class Family::TransactionCsvExporter
   UTF_8_BOM = "\uFEFF"
   SEMICOLON_LANGUAGES = %w[ca de es fr hu it nb nl pl pt ro ru tr uk vi].freeze
   HEADERS = %w[source_account destination_account merchant title amount date category tags].freeze
+  DRIVE_HEADERS = %w[
+    entry_id transaction_id source_account_id source_account destination_account_id
+    destination_account merchant title amount currency date category tags updated_at
+  ].freeze
 
-  def initialize(family_export)
+  def initialize(family_export, schema: :manual)
     @family_export = family_export
     @family = family_export.family
     @user = family_export.requested_by
+    @schema = schema
   end
 
   def generate
     count = 0
     csv_data = CSV.generate(col_sep: column_separator) do |csv|
-      csv << HEADERS
+      csv << headers
 
       transactions.each do |transaction|
         csv << serialize(transaction)
@@ -28,7 +33,11 @@ class Family::TransactionCsvExporter
   end
 
   private
-    attr_reader :family_export, :family, :user
+    attr_reader :family_export, :family, :user, :schema
+
+    def headers
+      schema == :drive ? DRIVE_HEADERS : HEADERS
+    end
 
     def transactions
       @transactions ||= begin
@@ -38,7 +47,7 @@ class Family::TransactionCsvExporter
           .merge(Entry.excluding_split_parents)
           .where(entries: {
             account_id: accessible_selected_account_ids,
-            date: family_export.start_date..family_export.end_date
+            date: export_start_date..export_end_date
           })
 
         scope = exclude_categories(scope)
@@ -69,6 +78,18 @@ class Family::TransactionCsvExporter
       end
     end
 
+    def export_start_date
+      return family_export.export_start_date if family_export.respond_to?(:export_start_date)
+
+      family_export.start_date
+    end
+
+    def export_end_date
+      return family_export.export_end_date if family_export.respond_to?(:export_end_date)
+
+      family_export.end_date
+    end
+
     def exclude_categories(scope)
       selected_ids = family.categories.where(id: family_export.excluded_category_ids).pluck(:id)
       return scope if selected_ids.empty?
@@ -97,6 +118,8 @@ class Family::TransactionCsvExporter
       entry = transaction.entry
       transfer = transaction.transfer
 
+      return serialize_for_drive(transaction, entry, transfer) if schema == :drive
+
       [
         spreadsheet_safe(account_name(transfer&.from_account || entry.account)),
         spreadsheet_safe(account_name(transfer&.to_account)),
@@ -109,10 +132,36 @@ class Family::TransactionCsvExporter
       ]
     end
 
+    def serialize_for_drive(transaction, entry, transfer)
+      source_account = transfer&.from_account || entry.account
+      destination_account = transfer&.to_account
+
+      [
+        entry.id,
+        transaction.id,
+        accessible_account_id(source_account),
+        spreadsheet_safe(account_name(source_account)),
+        accessible_account_id(destination_account),
+        spreadsheet_safe(account_name(destination_account)),
+        spreadsheet_safe(transaction.merchant&.name),
+        spreadsheet_safe(entry.name),
+        amount_value(entry.amount),
+        entry.currency,
+        entry.date&.iso8601,
+        spreadsheet_safe(category_name(transaction.category)),
+        spreadsheet_safe(transaction.tags.map(&:name).sort.join(", ")),
+        entry.updated_at&.iso8601
+      ]
+    end
+
     def account_name(account)
       return if account.blank? || !accessible_account_ids.include?(account.id)
 
       account.name
+    end
+
+    def accessible_account_id(account)
+      account.id if account.present? && accessible_account_ids.include?(account.id)
     end
 
     def accessible_account_ids

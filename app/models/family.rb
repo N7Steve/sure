@@ -40,6 +40,8 @@ class Family < ApplicationRecord
   has_many :import_sessions, dependent: :destroy
   has_many :import_source_mappings, dependent: :destroy
   has_many :family_exports, dependent: :destroy
+  has_many :google_drive_connections, dependent: :destroy
+  has_many :google_drive_export_schedules, dependent: :destroy
   has_many :account_statements, dependent: :destroy
 
   has_many :entries, through: :accounts

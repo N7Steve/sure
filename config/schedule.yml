@@ -61,6 +61,12 @@ generate_scheduled_payments:
   queue: "scheduled"
   description: "Generates pending scheduled payments due up to today"
 
+dispatch_google_drive_exports:
+  cron: "*/10 * * * *" # every 10 minutes; each schedule retains its own local time and timezone
+  class: "DispatchGoogleDriveExportsJob"
+  queue: "scheduled"
+  description: "Queues due Google Drive financial exports"
+
 generate_recurring_occurrences:
   cron: "30 5 * * *" # daily at 5:30 AM UTC, before insights so generators see fresh occurrences
   class: "GenerateRecurringOccurrencesJob"

@@ -12,3 +12,10 @@ Rails.application.config.filter_parameters += [
   :device_code, :user_code, :verification_uri_complete,
   :bank_username, :bank_password, :security_answers, :captcha_input
 ]
+
+# OAuth authorization codes are short-lived bearer credentials. Filter only a
+# parameter whose complete key is `code`; adding `:code` above would also hide
+# unrelated fields such as country_code and institution_code.
+Rails.application.config.filter_parameters << lambda do |key, value|
+  value.replace("[FILTERED]") if key.to_s == "code" && value.respond_to?(:replace)
+end

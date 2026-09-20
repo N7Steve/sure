@@ -1,0 +1,91 @@
+---
+en:
+  google_drive_connections:
+    not_configured: Google Drive exports are not configured on this Sure installation.
+    state_mismatch: The Google authorization session expired or could not be verified. Please try again.
+    access_denied: Google Drive access was not granted.
+    connection_failed: Google Drive could not be connected. Please try again.
+    connected: "Google Drive connected as %{email}."
+    disconnected: Google Drive disconnected. Existing files were not deleted.
+  google_drive_export_schedules:
+    connection_required: Connect Google Drive before configuring an automatic export.
+    create:
+      success: Automatic export saved. The first export has been queued.
+    update:
+      success: Automatic export updated.
+    destroy:
+      success: Automatic export deleted. Its Google Drive file was not deleted.
+    run_now:
+      success: Export queued.
+    form:
+      new_title: New Google Drive export
+      edit_title: Edit Google Drive export
+      subtitle: Keep one CSV file updated automatically with the transactions you choose.
+      validation_error: Check the export settings
+      name: Name
+      filename: Google Drive file name
+      accounts: Accounts to include
+      accounts_help: The job checks your access again before every export.
+      date_range: Date range
+      date_ranges:
+        all_history: All history
+        fixed_start: From a fixed date
+        rolling_days: Rolling number of days
+        current_year: Current year
+      fixed_start_date: Start date
+      rolling_days: Days
+      excluded_categories: Categories to exclude
+      excluded_tags: Tags to exclude
+      frequency: Frequency
+      run_at: Time
+      weekday: Weekday
+      day_of_month: Day of month
+      timezone: Time zone
+      status: Status
+      overwrite_title: This is an automatically managed file
+      overwrite_description: Every run replaces the file contents. Rename or move it in Drive if you want, but do not use it for manual edits you need to preserve.
+      cancel: Cancel
+      save: Save export
+  family_exports:
+    google_drive:
+      title: Automatic Google Drive exports
+      description: Connect your personal Google account and keep a transaction CSV updated on a schedule.
+      connected_as: "Connected as %{email}"
+      connect: Connect Google Drive
+      reconnect: Reconnect Google Drive
+      disconnect: Disconnect
+      disconnect_confirmation: Disconnect Google Drive? Automatic schedules will be removed, but existing Drive files will be kept.
+      new_schedule: New automatic export
+      reauthorization_title: Google Drive needs to be reconnected
+      reauthorization_description: Google rejected the saved authorization. Reconnect to resume automatic exports.
+      schedule_summary: "%{frequency} at %{time} (%{timezone})"
+      frequencies:
+        daily: Daily
+        weekly: Weekly
+        monthly: Monthly
+      statuses:
+        active: Active
+        paused: Paused
+        needs_attention: Needs attention
+      last_success: "Last successful export: %{date}"
+      waiting_first_run: Waiting for the first export.
+      open_file: Open file
+      run_now: Run now
+      edit: Edit
+      delete: Delete
+      delete_confirmation: Delete this automatic export? The existing Google Drive file will be kept.
+      errors:
+        reauthorization_required: Reconnect Google Drive to resume this export.
+        file_missing: The linked file was deleted, moved to trash, or is no longer accessible.
+        permission_denied: Google no longer allows this application to update the file.
+        access_changed: Your account access changed. Review the selected accounts.
+        transient_error: Google Drive is temporarily unavailable. Sure will retry the job.
+        export_failed: The export failed. Review the settings and try again.
+  activerecord:
+    errors:
+      models:
+        google_drive_export_schedule:
+          attributes:
+            filters:
+              accounts_required: Select at least one account
+              invalid_accounts: includes an account you cannot access

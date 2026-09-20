@@ -47,6 +47,11 @@ class FamilyExportsController < ApplicationController
 
   def index
     @pagy, @exports = pagy(visible_exports.ordered, limit: safe_per_page)
+    @google_drive_connection = Current.user.google_drive_connection
+    @google_drive_export_schedules = Current.user.google_drive_export_schedules
+      .where(family: Current.family)
+      .includes(:targets)
+      .order(created_at: :desc)
     @breadcrumbs = [
       [ t("breadcrumbs.home"), root_path ],
       [ t("breadcrumbs.exports"), family_exports_path ]

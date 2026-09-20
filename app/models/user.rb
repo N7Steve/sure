@@ -26,6 +26,8 @@ class User < ApplicationRecord
   has_many :chats, dependent: :destroy
   has_many :api_keys, dependent: :destroy
   has_many :requested_family_exports, class_name: "FamilyExport", foreign_key: :requested_by_id, dependent: :nullify
+  has_one :google_drive_connection, dependent: :destroy
+  has_many :google_drive_export_schedules, dependent: :destroy
   has_many :push_subscriptions, dependent: :destroy
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mobile_devices, dependent: :destroy

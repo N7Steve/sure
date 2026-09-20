@@ -147,6 +147,7 @@ class FamilyExportsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Exporting...", response.body
     assert_select "h2", text: "Full backup"
     assert_select "h2", text: "Custom transaction export"
+    assert_select "h2", text: "Automatic Google Drive exports"
   end
 
   test "member only sees their own custom transaction exports" do

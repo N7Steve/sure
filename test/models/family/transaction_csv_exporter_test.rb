@@ -114,9 +114,33 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     assert_equal @other_account.name, row["destination_account"]
   end
 
+  test "drive schema includes stable identifiers currency and update time" do
+    entry = create_transaction(
+      account: @account,
+      name: "Drive transaction",
+      amount: 42.5,
+      date: Date.new(2026, 2, 15)
+    )
+
+    result = Family::TransactionCsvExporter.new(export_record, schema: :drive).generate
+    data = result.io.string.delete_prefix(Family::TransactionCsvExporter::UTF_8_BOM)
+    row = CSV.parse(data, headers: true, col_sep: ";").first
+
+    assert_equal Family::TransactionCsvExporter::DRIVE_HEADERS, row.headers
+    assert_equal entry.entryable.id, row["transaction_id"]
+    assert_equal entry.id, row["entry_id"]
+    assert_equal @account.id, row["source_account_id"]
+    assert_equal entry.currency, row["currency"]
+    assert_equal entry.updated_at.iso8601, row["updated_at"]
+  end
+
   private
     def exporter
-      export = @family.family_exports.new(
+      Family::TransactionCsvExporter.new(export_record)
+    end
+
+    def export_record
+      @family.family_exports.new(
         export_type: :transactions_csv,
         requested_by: @user,
         start_date: Date.new(2026, 2, 1),
@@ -127,8 +151,6 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
           excluded_tag_ids: [ @excluded_tag.id ]
         }
       )
-
-      Family::TransactionCsvExporter.new(export)
     end
 
     def parse_csv(result)

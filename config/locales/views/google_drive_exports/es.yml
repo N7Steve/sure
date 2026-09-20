@@ -1,0 +1,91 @@
+---
+es:
+  google_drive_connections:
+    not_configured: Las exportaciones a Google Drive no están configuradas en esta instalación de Sure.
+    state_mismatch: La sesión de autorización de Google ha caducado o no se ha podido verificar. Inténtalo de nuevo.
+    access_denied: No se ha concedido acceso a Google Drive.
+    connection_failed: No se ha podido conectar Google Drive. Inténtalo de nuevo.
+    connected: "Google Drive conectado como %{email}."
+    disconnected: Google Drive desconectado. Los archivos existentes no se han eliminado.
+  google_drive_export_schedules:
+    connection_required: Conecta Google Drive antes de configurar una exportación automática.
+    create:
+      success: Exportación automática guardada. La primera exportación está en cola.
+    update:
+      success: Exportación automática actualizada.
+    destroy:
+      success: Exportación automática eliminada. Su archivo de Google Drive no se ha eliminado.
+    run_now:
+      success: Exportación añadida a la cola.
+    form:
+      new_title: Nueva exportación a Google Drive
+      edit_title: Editar exportación a Google Drive
+      subtitle: Mantén un único CSV actualizado automáticamente con las transacciones que elijas.
+      validation_error: Revisa la configuración de la exportación
+      name: Nombre
+      filename: Nombre del archivo en Google Drive
+      accounts: Cuentas que se incluirán
+      accounts_help: El proceso comprueba de nuevo tus permisos antes de cada exportación.
+      date_range: Intervalo de fechas
+      date_ranges:
+        all_history: Todo el historial
+        fixed_start: Desde una fecha fija
+        rolling_days: Número móvil de días
+        current_year: Año actual
+      fixed_start_date: Fecha inicial
+      rolling_days: Días
+      excluded_categories: Categorías que se excluirán
+      excluded_tags: Etiquetas que se excluirán
+      frequency: Frecuencia
+      run_at: Hora
+      weekday: Día de la semana
+      day_of_month: Día del mes
+      timezone: Zona horaria
+      status: Estado
+      overwrite_title: Este archivo se gestiona automáticamente
+      overwrite_description: Cada ejecución reemplaza el contenido del archivo. Puedes renombrarlo o moverlo en Drive, pero no lo uses para cambios manuales que quieras conservar.
+      cancel: Cancelar
+      save: Guardar exportación
+  family_exports:
+    google_drive:
+      title: Exportaciones automáticas a Google Drive
+      description: Conecta tu cuenta personal de Google y mantén un CSV de transacciones actualizado según una programación.
+      connected_as: "Conectado como %{email}"
+      connect: Conectar Google Drive
+      reconnect: Reconectar Google Drive
+      disconnect: Desconectar
+      disconnect_confirmation: ¿Desconectar Google Drive? Se eliminarán las programaciones automáticas, pero se conservarán los archivos de Drive.
+      new_schedule: Nueva exportación automática
+      reauthorization_title: Es necesario volver a conectar Google Drive
+      reauthorization_description: Google ha rechazado la autorización guardada. Vuelve a conectar la cuenta para reanudar las exportaciones.
+      schedule_summary: "%{frequency} a las %{time} (%{timezone})"
+      frequencies:
+        daily: Diariamente
+        weekly: Semanalmente
+        monthly: Mensualmente
+      statuses:
+        active: Activa
+        paused: Pausada
+        needs_attention: Requiere atención
+      last_success: "Última exportación correcta: %{date}"
+      waiting_first_run: Esperando la primera exportación.
+      open_file: Abrir archivo
+      run_now: Ejecutar ahora
+      edit: Editar
+      delete: Eliminar
+      delete_confirmation: ¿Eliminar esta exportación automática? El archivo existente de Google Drive se conservará.
+      errors:
+        reauthorization_required: Vuelve a conectar Google Drive para reanudar esta exportación.
+        file_missing: El archivo enlazado se ha eliminado, está en la papelera o ya no es accesible.
+        permission_denied: Google ya no permite que esta aplicación actualice el archivo.
+        access_changed: Han cambiado tus permisos de acceso. Revisa las cuentas seleccionadas.
+        transient_error: Google Drive no está disponible temporalmente. Sure reintentará el proceso.
+        export_failed: La exportación ha fallado. Revisa la configuración e inténtalo de nuevo.
+  activerecord:
+    errors:
+      models:
+        google_drive_export_schedule:
+          attributes:
+            filters:
+              accounts_required: Selecciona al menos una cuenta
+              invalid_accounts: incluye una cuenta a la que no tienes acceso

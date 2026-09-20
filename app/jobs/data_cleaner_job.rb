@@ -4,6 +4,7 @@ class DataCleanerJob < ApplicationJob
   def perform
     clean_old_merchant_associations
     clean_expired_archived_exports
+    clean_old_google_drive_export_runs
   end
 
   private
@@ -20,5 +21,11 @@ class DataCleanerJob < ApplicationJob
       deleted_count = ArchivedExport.expired.destroy_all.count
 
       Rails.logger.info("DataCleanerJob: Deleted #{deleted_count} expired archived exports") if deleted_count > 0
+    end
+
+    def clean_old_google_drive_export_runs
+      deleted_count = GoogleDriveExportRun.where(created_at: ...90.days.ago).delete_all
+
+      Rails.logger.info("DataCleanerJob: Deleted #{deleted_count} old Google Drive export runs") if deleted_count > 0
     end
 end

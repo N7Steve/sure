@@ -6,6 +6,7 @@ class Family::FinancialDataReset
   COUNT_KEYS = %i[
     account_statements
     family_exports
+    google_drive_export_schedules
     imports
     import_sessions
     import_source_mappings
@@ -147,6 +148,7 @@ class Family::FinancialDataReset
       scope(:merchant_customizations).destroy_all
       scope(:account_statements).destroy_all
       scope(:family_exports).destroy_all
+      scope(:google_drive_export_schedules).destroy_all
       scope(:imports).destroy_all
       scope(:import_sessions).destroy_all
       scope(:entries).destroy_all
@@ -263,6 +265,7 @@ class Family::FinancialDataReset
         {
           account_statements: AccountStatement.where(family_id: family.id),
           family_exports: FamilyExport.where(family_id: family.id),
+          google_drive_export_schedules: GoogleDriveExportSchedule.where(family_id: family.id),
           imports: import_scope,
           import_sessions: import_session_scope,
           import_source_mappings: ImportSourceMapping.where(family_id: family.id),

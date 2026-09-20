@@ -1,6 +1,8 @@
 <%= content_for :page_title, t(".title") %>
 
 <%= settings_section do %>
+  <%= render "google_drive_exports" %>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     <% if Current.user.admin? %>
       <%= render DS::Card.new(class: "gap-4") do %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -953,6 +953,82 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_000000) do
     t.check_constraint "state::text = ANY (ARRAY['active'::character varying::text, 'paused'::character varying::text, 'completed'::character varying::text, 'archived'::character varying::text])", name: "chk_savings_goals_state_enum"
     t.check_constraint "target_amount > 0::numeric", name: "chk_savings_goals_target_amount_positive"
     t.check_constraint "target_mode::text = ANY (ARRAY['fixed'::character varying::text, 'months_of_expenses'::character varying::text])", name: "chk_goals_target_mode_enum"
+  end
+
+  create_table "google_drive_connections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "access_token"
+    t.datetime "connected_at", null: false
+    t.datetime "created_at", null: false
+    t.text "email", null: false
+    t.uuid "family_id", null: false
+    t.text "google_subject", null: false
+    t.text "refresh_token", null: false
+    t.string "scopes", default: "", null: false
+    t.string "status", default: "connected", null: false
+    t.datetime "token_expires_at"
+    t.datetime "updated_at", null: false
+    t.uuid "user_id", null: false
+    t.index ["family_id", "google_subject"], name: "index_google_drive_connections_on_family_id_and_google_subject"
+    t.index ["family_id"], name: "index_google_drive_connections_on_family_id"
+    t.index ["user_id"], name: "index_google_drive_connections_on_user_id", unique: true
+  end
+
+  create_table "google_drive_export_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "error_code"
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.uuid "google_drive_export_schedule_id", null: false
+    t.uuid "google_drive_export_target_id"
+    t.integer "record_count"
+    t.string "result"
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.string "triggered_by", default: "scheduled", null: false
+    t.datetime "updated_at", null: false
+    t.index ["google_drive_export_schedule_id"], name: "idx_drive_export_runs_schedule"
+    t.index ["google_drive_export_target_id"], name: "idx_drive_export_runs_target"
+  end
+
+  create_table "google_drive_export_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "date_range", default: "all_history", null: false
+    t.integer "day_of_month"
+    t.string "filename", default: "sure-transactions.csv", null: false
+    t.jsonb "filters", default: {}, null: false
+    t.date "fixed_start_date"
+    t.string "frequency", default: "daily", null: false
+    t.uuid "family_id", null: false
+    t.uuid "google_drive_connection_id", null: false
+    t.string "last_error_code"
+    t.datetime "last_run_at"
+    t.datetime "last_success_at"
+    t.string "name", default: "Sure transactions", null: false
+    t.datetime "next_run_at", null: false
+    t.integer "rolling_days"
+    t.time "run_at", default: "06:00:00", null: false
+    t.string "status", default: "active", null: false
+    t.string "timezone", default: "UTC", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "user_id", null: false
+    t.integer "weekday"
+    t.index ["family_id"], name: "index_google_drive_export_schedules_on_family_id"
+    t.index ["google_drive_connection_id"], name: "idx_drive_export_schedules_connection"
+    t.index ["status", "next_run_at"], name: "idx_drive_export_schedules_due"
+    t.index ["user_id"], name: "index_google_drive_export_schedules_on_user_id"
+  end
+
+  create_table "google_drive_export_targets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "content_digest"
+    t.datetime "created_at", null: false
+    t.uuid "google_drive_export_schedule_id", null: false
+    t.datetime "last_uploaded_at"
+    t.string "logical_key", default: "transactions", null: false
+    t.string "provider_file_id"
+    t.datetime "updated_at", null: false
+    t.string "web_view_link"
+    t.index ["google_drive_export_schedule_id", "logical_key"], name: "idx_drive_export_targets_logical_key", unique: true
+    t.index ["google_drive_export_schedule_id"], name: "idx_drive_export_targets_schedule"
   end
 
   create_table "holdings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2802,6 +2878,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_000000) do
   add_foreign_key "goal_pledges", "goals", on_delete: :cascade
   add_foreign_key "goal_pledges", "transactions", column: "matched_transaction_id", on_delete: :nullify
   add_foreign_key "goals", "families", on_delete: :cascade
+  add_foreign_key "google_drive_connections", "families", on_delete: :cascade
+  add_foreign_key "google_drive_connections", "users", on_delete: :cascade
+  add_foreign_key "google_drive_export_runs", "google_drive_export_schedules", on_delete: :cascade
+  add_foreign_key "google_drive_export_runs", "google_drive_export_targets", on_delete: :nullify
+  add_foreign_key "google_drive_export_schedules", "families", on_delete: :cascade
+  add_foreign_key "google_drive_export_schedules", "google_drive_connections", on_delete: :cascade
+  add_foreign_key "google_drive_export_schedules", "users", on_delete: :cascade
+  add_foreign_key "google_drive_export_targets", "google_drive_export_schedules", on_delete: :cascade
   add_foreign_key "holdings", "account_providers"
   add_foreign_key "holdings", "accounts", on_delete: :cascade
   add_foreign_key "holdings", "securities"

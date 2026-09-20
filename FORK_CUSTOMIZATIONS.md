@@ -327,8 +327,24 @@ Funcionalidad propia incorporada en agosto de 2026:
 - Generación asíncrona y descarga desde la UI.
 - Endpoint API adaptado a las nuevas opciones.
 - `Family::TransactionCsvExporter` dedicado y probado.
+- Exportaciones automáticas de transacciones a Google Drive por usuario, con OAuth
+  independiente del inicio de sesión, filtros persistentes y frecuencia diaria,
+  semanal o mensual en la zona horaria de la familia.
+- El primer envío crea un CSV y guarda su `fileId`; los siguientes reemplazan el
+  contenido del mismo archivo. Renombrarlo o moverlo conserva el enlace. Si se
+  elimina, se envía a la papelera o pierde permisos, la programación requiere
+  atención y no crea silenciosamente otro archivo con una referencia distinta.
+- Los tokens de Drive y la identidad conectada usan Active Record Encryption cuando
+  está configurado. Cada ejecución revalida la pertenencia familiar y el acceso del
+  usuario a todas las cuentas seleccionadas.
 
-Archivos principales: `family_exports_controller.rb`, `api/v1/family_exports_controller.rb`, `family_export.rb`, `family/transaction_csv_exporter.rb`, `family_data_export_job.rb`, vistas/locales de `family_exports` y sus pruebas.
+Archivos principales: `family_exports_controller.rb`, `api/v1/family_exports_controller.rb`,
+`google_drive_connections_controller.rb`, `google_drive_export_schedules_controller.rb`,
+`family_export.rb`, `google_drive_{connection,export_schedule,export_target,export_run}.rb`,
+`google_drive/client.rb`, `family/transaction_csv_exporter.rb`,
+`{family_data_export,google_drive_export,dispatch_google_drive_exports}_job.rb`,
+vistas/locales de exportaciones y sus pruebas. La configuración operativa está en
+`docs/hosting/google-drive-exports.md`.
 
 ## 9. UI y experiencia de uso
 
@@ -426,6 +442,7 @@ El orden y el efecto sobre datos deben preservarse:
 | `20260910120000_add_cashflow_boundary_to_accounts.rb` | Introduce “fuera de mis finanzas”, migra el antiguo `accounts.excluded` y exige exclusión de informes |
 | `20260910130000_remove_excluded_from_accounts.rb` | Retira la columna de compatibilidad `accounts.excluded` tras completar la migración |
 | `20260910140000_create_merchant_customizations.rb` | Crea personalizaciones de comercio aisladas por familia, con unicidad por `(family_id, merchant_id)`; los adjuntos usan las tablas existentes de Active Storage |
+| `20260920120000_create_google_drive_exports.rb` | Añade conexiones OAuth personales, programaciones, destinos remotos estables e historial de ejecuciones para Google Drive |
 
 `db/schema.rb` debe reflejar el resultado acumulado; no resolver sus conflictos de forma aislada sin comprobar estas migraciones.
 
@@ -444,7 +461,7 @@ Las 230 rutas del inventario original se agrupaban así. Tras la integración sq
 - `app/views/`: cuentas, comercios, informes, inversiones, transacciones, transferencias, pagos programados, exportaciones y ajustes generales de UI.
 - `config/locales/`: traducciones de todas las áreas anteriores.
 - `config/routes.rb`, `config/schedule.yml`, `config/initializers/{sidekiq,active_storage_authorization}.rb`: rutas, ejecución periódica y autorización de adjuntos.
-- `db/migrate/` y `db/schema.rb`: las trece migraciones enumeradas y su esquema resultante.
+- `db/migrate/` y `db/schema.rb`: las catorce migraciones enumeradas y su esquema resultante.
 - `test/`: cobertura de pagos programados, cuentas, comercios personalizados, autorización de Active Storage, transferencias, transacciones, exportaciones, Syncable y componentes DS.
 - Raíz/scripts/docs: `Gemfile`, `README.md`, `informe_scheduled_payments.md`, `rollback-instructions.md`, `conflicts.txt`, `script.rb` y `script/debug_subtypes.rb`.
 
@@ -471,7 +488,7 @@ git diff
 2. Revisar este inventario por área funcional, no sólo por archivo: upstream puede mover o renombrar el código.
 3. En conflictos de cuentas, preservar la separación entre tratamiento financiero (`exclude_from_reports`/`cashflow_boundary`), presentación (`archived`) y ciclo de vida (`status`). No reintroducir `accounts.excluded`; no confundirlo con `entries.excluded`.
 4. En conflictos de transacciones/transferencias, comprobar también pagos programados, informes y exportaciones; comparten modelos y controladores.
-5. No aceptar automáticamente el `db/schema.rb`: validar primero las trece migraciones propias.
+5. No aceptar automáticamente el `db/schema.rb`: validar primero las catorce migraciones propias.
 6. Si upstream incorpora una función equivalente, decidir expresamente si migrar a ella y añadir pruebas de regresión antes de retirar la implementación del fork.
 7. Mantener Bills oculto en toda la interfaz, también con Preview Features. Conservar su implementación únicamente como referencia interna y portar funciones útiles hacia Pagos programados de forma selectiva y probada. Al resolver conflictos, integrar primero la evolución upstream del subsistema y reaplicar después la frontera pequeña formada por `bills_frontend_enabled?`, los guards de controlador y `Insight.for_product_frontend`; no resolverlos eliminando código Bills ni conectando ambos modelos.
 8. En cambios de `IncomeStatement::Totals`, verificar los dos indicadores internos de transferencias que cruzan la frontera (`transfer_to_excluded`/`transfer_from_excluded`) y versionar la clave de caché si cambia cualquier `Data.define` cacheado.
