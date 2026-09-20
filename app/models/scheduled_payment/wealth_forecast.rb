@@ -2,7 +2,6 @@ class ScheduledPayment::WealthForecast
   HORIZONS = ScheduledPayment::Forecast::HORIZONS
   HISTORY_MONTHS = 60
   ESTIMATE_VARIANCE = ScheduledPayment::Forecast::ESTIMATE_VARIANCE
-  ONE_TIME_WEIGHT = BigDecimal("0.25")
   RECENCY_DECAY = BigDecimal("0.97")
 
   Scenario = Data.define(:key, :monthly_residual)
@@ -140,7 +139,7 @@ class ScheduledPayment::WealthForecast
           entry.entryable.kind == "one_time" && !explained_by_schedule?(entry)
         end.sum { |entry| entry_delta(entry) }
 
-        raw_change - scheduled_change - exceptional_change * (BigDecimal("1") - ONE_TIME_WEIGHT)
+        raw_change - scheduled_change - exceptional_change
       end
     end
 

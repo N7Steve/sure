@@ -121,7 +121,7 @@
         <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_method_history" : "method_history"}") %></p>
         <p><%= t("scheduled_payments.agenda.forecast.method_scenarios") %></p>
         <% if @forecast.ignored_one_time_count.positive? %>
-          <p><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "one_time_weighted" : "one_time_ignored"}", count: @forecast.ignored_one_time_count) %></p>
+          <p><%= t("scheduled_payments.agenda.forecast.one_time_ignored", count: @forecast.ignored_one_time_count) %></p>
         <% end %>
       </div>
     <% end %>

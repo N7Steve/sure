@@ -58,7 +58,7 @@ class ScheduledPayment::WealthForecastTest < ActiveSupport::TestCase
     assert_equal 0, forecast.scheduled_monthly_change.amount
   end
 
-  test "one-time transactions retain only a quarter of their historical effect" do
+  test "one-time transactions do not affect the historical trend" do
     transaction = Transaction.create!(kind: "one_time")
     accounts(:depository).entries.create!(
       date: Date.new(2026, 2, 15),
@@ -75,8 +75,28 @@ class ScheduledPayment::WealthForecastTest < ActiveSupport::TestCase
     forecast.stubs(:historical_series).returns(series)
     forecast.stubs(:first_balance_date).returns(Date.new(2026, 1, 1))
 
-    assert_equal(-250, forecast.historical_monthly_savings.amount)
+    assert_equal 0, forecast.historical_monthly_savings.amount
     assert_equal 1, forecast.ignored_one_time_count
+  end
+
+  test "known one-time Agenda expenses are applied in full" do
+    ScheduledPayment.create!(
+      family: @family,
+      account: accounts(:depository),
+      title: "Loan cancellation",
+      amount: 4_000,
+      currency: @family.currency,
+      frequency: "once",
+      start_date: Date.current + 4.days,
+      next_run_date: Date.current + 4.days,
+      status: "active",
+      payment_type: "expense"
+    )
+    forecast = build_forecast(horizon: 1)
+    forecast.stubs(:historical_monthly_changes).returns([])
+
+    assert_equal(-4_000, forecast.scheduled_monthly_change.amount)
+    assert_equal forecast.current_balance.amount - 4_000, forecast.ending_balance(:normal).amount
   end
 
   test "Agenda income changes wealth and estimated amounts widen scenarios" do
