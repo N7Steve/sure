@@ -24,6 +24,13 @@ es:
       validation_error: Revisa la configuración de la exportación
       name: Nombre
       filename: Nombre del archivo en Google Drive
+      export_format: Formato del archivo
+      export_formats:
+        clean: Limpio y legible
+        detailed: Detallado (incluye identificadores)
+      optional_columns: Columnas opcionales
+      include_category: Categoría
+      include_tags: Etiquetas
       accounts: Cuentas que se incluirán
       date_range: Intervalo de fechas
       date_ranges:

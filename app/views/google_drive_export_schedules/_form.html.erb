@@ -35,6 +35,44 @@
         </div>
       </div>
 
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="space-y-1">
+          <%= label_tag "google_drive_export_schedule_filters_export_format",
+                        t("google_drive_export_schedules.form.export_format"),
+                        class: "text-sm font-medium text-primary" %>
+          <%= select_tag "google_drive_export_schedule[filters][export_format]",
+                         options_for_select(
+                           GoogleDriveExportSchedule::EXPORT_FORMATS.map { |value| [t("google_drive_export_schedules.form.export_formats.#{value}"), value] },
+                           @schedule.export_format
+                         ),
+                         id: "google_drive_export_schedule_filters_export_format",
+                         class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+        </div>
+
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.optional_columns") %></legend>
+          <div class="flex min-h-10 flex-wrap items-center gap-x-5 gap-y-2">
+            <%= hidden_field_tag "google_drive_export_schedule[filters][include_category]", "0", id: nil %>
+            <label class="flex items-center gap-2 text-sm text-primary">
+              <%= check_box_tag "google_drive_export_schedule[filters][include_category]",
+                                "1",
+                                @schedule.include_category_column?,
+                                class: "checkbox" %>
+              <span><%= t("google_drive_export_schedules.form.include_category") %></span>
+            </label>
+
+            <%= hidden_field_tag "google_drive_export_schedule[filters][include_tags]", "0", id: nil %>
+            <label class="flex items-center gap-2 text-sm text-primary">
+              <%= check_box_tag "google_drive_export_schedule[filters][include_tags]",
+                                "1",
+                                @schedule.include_tags_column?,
+                                class: "checkbox" %>
+              <span><%= t("google_drive_export_schedules.form.include_tags") %></span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
       <fieldset class="space-y-2">
         <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.accounts") %></legend>
         <div class="grid max-h-48 grid-cols-1 gap-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2 sm:grid-cols-2">

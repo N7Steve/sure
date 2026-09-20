@@ -10,6 +10,9 @@ class Family::TransactionCsvExporter
     entry_id transaction_id source_account_id source_account destination_account_id
     destination_account merchant title amount currency date category tags updated_at
   ].freeze
+  DRIVE_CLEAN_HEADERS = %w[
+    source_account destination_account merchant title amount currency date category tags
+  ].freeze
 
   def initialize(family_export, schema: :manual)
     @family_export = family_export
@@ -36,7 +39,12 @@ class Family::TransactionCsvExporter
     attr_reader :family_export, :family, :user, :schema
 
     def headers
-      schema == :drive ? DRIVE_HEADERS : HEADERS
+      return HEADERS unless schema == :drive
+
+      selected_headers = drive_detailed? ? DRIVE_HEADERS : DRIVE_CLEAN_HEADERS
+      selected_headers = selected_headers.reject { |header| header == "category" } unless include_category_column?
+      selected_headers = selected_headers.reject { |header| header == "tags" } unless include_tags_column?
+      selected_headers
     end
 
     def transactions
@@ -136,22 +144,42 @@ class Family::TransactionCsvExporter
       source_account = transfer&.from_account || entry.account
       destination_account = transfer&.to_account
 
-      [
-        entry.id,
-        transaction.id,
-        accessible_account_id(source_account),
-        spreadsheet_safe(account_name(source_account)),
-        accessible_account_id(destination_account),
-        spreadsheet_safe(account_name(destination_account)),
-        spreadsheet_safe(transaction.merchant&.name),
-        spreadsheet_safe(entry.name),
-        amount_value(entry.amount),
-        entry.currency,
-        entry.date&.iso8601,
-        spreadsheet_safe(category_name(transaction.category)),
-        spreadsheet_safe(transaction.tags.map(&:name).sort.join(", ")),
-        entry.updated_at&.iso8601
-      ]
+      values = {
+        "entry_id" => entry.id,
+        "transaction_id" => transaction.id,
+        "source_account_id" => accessible_account_id(source_account),
+        "source_account" => spreadsheet_safe(account_name(source_account)),
+        "destination_account_id" => accessible_account_id(destination_account),
+        "destination_account" => spreadsheet_safe(account_name(destination_account)),
+        "merchant" => spreadsheet_safe(transaction.merchant&.name),
+        "title" => spreadsheet_safe(entry.name),
+        "amount" => amount_value(entry.amount),
+        "currency" => entry.currency,
+        "date" => entry.date&.iso8601,
+        "category" => spreadsheet_safe(category_name(transaction.category)),
+        "tags" => spreadsheet_safe(transaction.tags.map(&:name).sort.join(", ")),
+        "updated_at" => entry.updated_at&.iso8601
+      }
+
+      headers.map { |header| values.fetch(header) }
+    end
+
+    def drive_detailed?
+      return true unless family_export.respond_to?(:detailed_export?)
+
+      family_export.detailed_export?
+    end
+
+    def include_category_column?
+      return true unless family_export.respond_to?(:include_category_column?)
+
+      family_export.include_category_column?
+    end
+
+    def include_tags_column?
+      return true unless family_export.respond_to?(:include_tags_column?)
+
+      family_export.include_tags_column?
     end
 
     def account_name(account)

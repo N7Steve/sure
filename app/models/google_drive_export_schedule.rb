@@ -1,4 +1,6 @@
 class GoogleDriveExportSchedule < ApplicationRecord
+  EXPORT_FORMATS = %w[clean detailed].freeze
+
   belongs_to :family
   belongs_to :user
   belongs_to :google_drive_connection, inverse_of: :export_schedules
@@ -55,6 +57,27 @@ class GoogleDriveExportSchedule < ApplicationRecord
 
   def excluded_tag_ids
     filter_values("excluded_tag_ids")
+  end
+
+  def export_format
+    value = filter_value("export_format").presence
+    EXPORT_FORMATS.include?(value) ? value : "detailed"
+  end
+
+  def clean_export?
+    export_format == "clean"
+  end
+
+  def detailed_export?
+    export_format == "detailed"
+  end
+
+  def include_category_column?
+    filter_boolean("include_category", default: true)
+  end
+
+  def include_tags_column?
+    filter_boolean("include_tags", default: true)
   end
 
   def export_start_date(on: export_end_date)
@@ -159,5 +182,19 @@ class GoogleDriveExportSchedule < ApplicationRecord
 
     def filter_values(key)
       Array(filters&.[](key) || filters&.[](key.to_sym)).compact_blank
+    end
+
+    def filter_value(key)
+      return if filters.blank?
+      return filters[key] if filters.key?(key)
+
+      filters[key.to_sym]
+    end
+
+    def filter_boolean(key, default:)
+      value = filter_value(key)
+      return default if value.nil?
+
+      ActiveModel::Type::Boolean.new.cast(value)
     end
 end

@@ -24,6 +24,13 @@ en:
       validation_error: Check the export settings
       name: Name
       filename: Google Drive file name
+      export_format: File format
+      export_formats:
+        clean: Clean and readable
+        detailed: Detailed (includes identifiers)
+      optional_columns: Optional columns
+      include_category: Category
+      include_tags: Tags
       accounts: Accounts to include
       date_range: Date range
       date_ranges:

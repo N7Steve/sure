@@ -330,6 +330,9 @@ Funcionalidad propia incorporada en agosto de 2026:
 - Exportaciones automáticas de transacciones a Google Drive por usuario, con OAuth
   independiente del inicio de sesión, filtros persistentes y frecuencia diaria,
   semanal o mensual en la zona horaria de la familia.
+- Cada programación permite elegir entre un CSV limpio, sin identificadores ni
+  fechas técnicas de actualización, y el formato detallado anterior. Las columnas
+  de categoría y etiquetas se pueden incluir o excluir de forma independiente.
 - El primer envío crea un CSV y guarda su `fileId`; los siguientes reemplazan el
   contenido del mismo archivo. Renombrarlo o moverlo conserva el enlace. Si se
   elimina, se envía a la papelera o pierde permisos, la programación requiere

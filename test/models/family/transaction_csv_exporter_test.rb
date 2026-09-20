@@ -134,6 +134,37 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     assert_equal entry.updated_at.iso8601, row["updated_at"]
   end
 
+  test "clean drive schema omits identifiers and update time" do
+    create_transaction(
+      account: @account,
+      name: "Readable transaction",
+      amount: 42.5,
+      date: Date.new(2026, 2, 15),
+      category: @allowed_category,
+      tags: [ @allowed_tag ]
+    )
+
+    rows = parse_csv(Family::TransactionCsvExporter.new(clean_drive_schedule, schema: :drive).generate)
+    row = rows.find { |candidate| candidate["title"] == "Readable transaction" }
+
+    assert_equal Family::TransactionCsvExporter::DRIVE_CLEAN_HEADERS, rows.headers
+    assert_nil rows.headers.find { |header| header.end_with?("_id") }
+    assert_not_includes rows.headers, "updated_at"
+    assert row
+    assert_equal @allowed_category.name, row["category"]
+    assert_equal @allowed_tag.name, row["tags"]
+  end
+
+  test "clean drive schema can omit category and tags independently" do
+    create_transaction(account: @account, name: "Optional columns", date: Date.new(2026, 2, 15))
+    schedule = clean_drive_schedule(include_category: false, include_tags: true)
+
+    rows = parse_csv(Family::TransactionCsvExporter.new(schedule, schema: :drive).generate)
+
+    assert_not_includes rows.headers, "category"
+    assert_includes rows.headers, "tags"
+  end
+
   private
     def exporter
       Family::TransactionCsvExporter.new(export_record)
@@ -149,6 +180,21 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
           account_ids: [ @account.id ],
           excluded_category_ids: [ @excluded_parent.id ],
           excluded_tag_ids: [ @excluded_tag.id ]
+        }
+      )
+    end
+
+    def clean_drive_schedule(include_category: true, include_tags: true)
+      GoogleDriveExportSchedule.new(
+        family: @family,
+        user: @user,
+        timezone: "UTC",
+        date_range: :all_history,
+        filters: {
+          account_ids: [ @account.id ],
+          export_format: "clean",
+          include_category: include_category,
+          include_tags: include_tags
         }
       )
     end

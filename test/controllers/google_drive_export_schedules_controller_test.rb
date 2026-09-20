@@ -31,7 +31,12 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
             day_of_month: "1",
             timezone: "Europe/Madrid",
             date_range: "all_history",
-            filters: { account_ids: [ @account.id ] }
+            filters: {
+              account_ids: [ @account.id ],
+              export_format: "clean",
+              include_category: "0",
+              include_tags: "1"
+            }
           }
         }
       end
@@ -42,6 +47,9 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
     assert_equal @user, schedule.user
     assert_equal @connection, schedule.google_drive_connection
     assert_equal [ @account.id.to_s ], schedule.selected_account_ids.map(&:to_s)
+    assert schedule.clean_export?
+    assert_not schedule.include_category_column?
+    assert schedule.include_tags_column?
   end
 
   test "does not allow another user to edit the schedule" do
@@ -76,5 +84,8 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-google-drive-export-form-target='frequencyField'].hidden", count: 2
     assert_select "input[type='hidden'][name='google_drive_export_schedule[timezone]']", count: 1
     assert_select "select[name='google_drive_export_schedule[timezone]']", count: 0
+    assert_select "select[name='google_drive_export_schedule[filters][export_format]'] option[selected][value='clean']", count: 1
+    assert_select "input[type='checkbox'][name='google_drive_export_schedule[filters][include_category]'][checked]", count: 1
+    assert_select "input[type='checkbox'][name='google_drive_export_schedule[filters][include_tags]'][checked]", count: 1
   end
 end

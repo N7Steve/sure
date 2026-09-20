@@ -87,11 +87,12 @@ class GoogleDriveExportSchedulesController < ApplicationController
         :date_range,
         :fixed_start_date,
         :rolling_days,
-        filters: {
-          account_ids: [],
-          excluded_category_ids: [],
-          excluded_tag_ids: []
-        }
+        filters: [
+          :export_format,
+          :include_category,
+          :include_tags,
+          { account_ids: [], excluded_category_ids: [], excluded_tag_ids: [] }
+        ]
       )
     end
 
@@ -106,15 +107,27 @@ class GoogleDriveExportSchedulesController < ApplicationController
       {
         "account_ids" => Array(values[:account_ids]).compact_blank.uniq,
         "excluded_category_ids" => Array(values[:excluded_category_ids]).compact_blank.uniq,
-        "excluded_tag_ids" => Array(values[:excluded_tag_ids]).compact_blank.uniq
+        "excluded_tag_ids" => Array(values[:excluded_tag_ids]).compact_blank.uniq,
+        "export_format" => values[:export_format].to_s.presence_in(GoogleDriveExportSchedule::EXPORT_FORMATS) || "clean",
+        "include_category" => normalized_boolean_filter(values, :include_category, default: true),
+        "include_tags" => normalized_boolean_filter(values, :include_tags, default: true)
       }
+    end
+
+    def normalized_boolean_filter(values, key, default:)
+      return default unless values.key?(key)
+
+      ActiveModel::Type::Boolean.new.cast(values[key])
     end
 
     def default_filters
       {
         "account_ids" => @accounts.map { |account| account.id.to_s },
         "excluded_category_ids" => [],
-        "excluded_tag_ids" => []
+        "excluded_tag_ids" => [],
+        "export_format" => "clean",
+        "include_category" => true,
+        "include_tags" => true
       }
     end
 

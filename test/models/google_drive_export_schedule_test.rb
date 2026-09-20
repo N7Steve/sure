@@ -47,6 +47,29 @@ class GoogleDriveExportScheduleTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 8, 22), schedule.export_start_date(on: end_date)
   end
 
+  test "keeps existing schedules detailed with category and tags" do
+    schedule = build_schedule
+
+    assert schedule.detailed_export?
+    assert schedule.include_category_column?
+    assert schedule.include_tags_column?
+  end
+
+  test "reads clean export and optional column settings" do
+    schedule = build_schedule(
+      filters: {
+        account_ids: [ @account.id ],
+        export_format: "clean",
+        include_category: false,
+        include_tags: "0"
+      }
+    )
+
+    assert schedule.clean_export?
+    assert_not schedule.include_category_column?
+    assert_not schedule.include_tags_column?
+  end
+
   private
     def build_schedule(attributes = {})
       GoogleDriveExportSchedule.new({
