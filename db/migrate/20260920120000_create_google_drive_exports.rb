@@ -2,7 +2,8 @@ class CreateGoogleDriveExports < ActiveRecord::Migration[8.1]
   def change
     create_table :google_drive_connections, id: :uuid do |t|
       t.references :family, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
-      t.references :user, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
+      t.references :user, type: :uuid, null: false,
+                   foreign_key: { on_delete: :cascade }, index: { unique: true }
       t.text :google_subject, null: false
       t.text :email, null: false
       t.text :access_token
@@ -13,7 +14,6 @@ class CreateGoogleDriveExports < ActiveRecord::Migration[8.1]
       t.datetime :connected_at, null: false
       t.timestamps
 
-      t.index :user_id, unique: true
       t.index [ :family_id, :google_subject ]
     end
 
