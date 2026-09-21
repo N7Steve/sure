@@ -98,6 +98,22 @@ class GoogleDriveExportJobTest < ActiveJob::TestCase
     assert_equal "failed", @schedule.runs.last.status
   end
 
+  test "uploads an account snapshot with the same stable target" do
+    @schedule.update!(filters: { account_ids: [ @account.id ], export_format: "snapshot" })
+    drive = mock("google drive")
+    GoogleDrive::Client.stubs(:new).with(@connection).returns(drive)
+    drive.expects(:find_file).with(schedule_id: @schedule.id, logical_key: "transactions").returns(nil)
+    drive.expects(:create_file).with do |attributes|
+      attributes[:content].start_with?("snapshot_date,position_id,institution,name,type,subtype,value,currency,notes") &&
+        attributes[:content].include?(@account.id)
+    end.returns({ "id" => "snapshot-file", "webViewLink" => "https://drive.google.com/file/snapshot", "trashed" => false })
+
+    GoogleDriveExportJob.perform_now(@schedule, triggered_by: "initial")
+
+    assert_equal "snapshot-file", @schedule.targets.find_by!(logical_key: "transactions").provider_file_id
+    assert_equal "completed", @schedule.runs.last.status
+  end
+
   test "renames the existing file without changing its id" do
     result = Family::TransactionCsvExporter.new(@schedule, schema: :drive).generate
     digest = Digest::SHA256.hexdigest(result.io.read)

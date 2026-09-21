@@ -70,6 +70,19 @@ class GoogleDriveExportScheduleTest < ActiveSupport::TestCase
     assert_not schedule.include_tags_column?
   end
 
+  test "recognizes an account snapshot export" do
+    schedule = build_schedule(
+      date_range: :fixed_start,
+      fixed_start_date: nil,
+      filters: { account_ids: [ @account.id ], export_format: "snapshot" }
+    )
+
+    assert schedule.valid?
+    assert schedule.snapshot_export?
+    assert_not schedule.clean_export?
+    assert_not schedule.detailed_export?
+  end
+
   private
     def build_schedule(attributes = {})
       GoogleDriveExportSchedule.new({

@@ -41,7 +41,7 @@ class GoogleDriveExportJob < ApplicationJob
       end
       run.update!(google_drive_export_target: target)
 
-      result = Family::TransactionCsvExporter.new(schedule, schema: :drive).generate
+      result = export_result(schedule)
       content = result.io.read
       digest = Digest::SHA256.hexdigest(content)
       drive = GoogleDrive::Client.new(schedule.google_drive_connection)
@@ -78,6 +78,14 @@ class GoogleDriveExportJob < ApplicationJob
         last_error_code: nil,
         status: schedule.paused? ? :paused : :active
       )
+    end
+
+    def export_result(schedule)
+      if schedule.snapshot_export?
+        Family::AccountSnapshotCsvExporter.new(schedule).generate
+      else
+        Family::TransactionCsvExporter.new(schedule, schema: :drive).generate
+      end
     end
 
     def resolve_file(drive, schedule, target, content)

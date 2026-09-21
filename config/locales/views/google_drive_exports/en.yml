@@ -28,6 +28,7 @@ en:
       export_formats:
         clean: Analytical (one row per transaction)
         detailed: Detailed (previous format)
+        snapshot: Account snapshot
       optional_columns: Optional columns
       include_category: Category and subcategory
       include_tags: Tags

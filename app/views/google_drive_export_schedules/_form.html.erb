@@ -46,10 +46,15 @@
                            @schedule.export_format
                          ),
                          id: "google_drive_export_schedule_filters_export_format",
-                         class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary" %>
+                         class: "w-full rounded-lg border border-primary bg-container px-3 py-2 text-primary",
+                         data: {
+                           google_drive_export_form_target: "exportFormat",
+                           action: "change->google-drive-export-form#toggleExportFormatFields"
+                         } %>
         </div>
 
-        <fieldset class="space-y-2">
+        <fieldset class="space-y-2 <%= "hidden" if @schedule.snapshot_export? %>"
+                  data-google-drive-export-form-target="transactionField">
           <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.optional_columns") %></legend>
           <div class="flex min-h-10 flex-wrap items-center gap-x-5 gap-y-2">
             <%= hidden_field_tag "google_drive_export_schedule[filters][include_category]", "0", id: nil %>
@@ -89,7 +94,8 @@
         </div>
       </fieldset>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 <%= "hidden" if @schedule.snapshot_export? %>"
+           data-google-drive-export-form-target="transactionField">
         <div class="space-y-1">
           <%= form.label :date_range, t("google_drive_export_schedules.form.date_range"), class: "text-sm font-medium text-primary" %>
           <%= form.select :date_range,
@@ -176,45 +182,48 @@
         </div>
       <% end %>
 
-      <%= render DS::Disclosure.new(
-        title: t("google_drive_export_schedules.form.optional_filters"),
-        align: "left",
-        open: @schedule.excluded_category_ids.any? || @schedule.excluded_tag_ids.any?
-      ) do %>
-        <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
-          <fieldset class="space-y-2">
-            <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_categories") %></legend>
-            <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
-              <% selected_category_ids = @schedule.excluded_category_ids.map(&:to_s) %>
-              <% @categories.each do |category| %>
-                <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
-                  <%= check_box_tag "google_drive_export_schedule[filters][excluded_category_ids][]",
-                                    category.id,
-                                    selected_category_ids.include?(category.id.to_s),
-                                    class: "checkbox" %>
-                  <span><%= category.parent ? "#{category.parent.name} / #{category.name}" : category.name %></span>
-                </label>
-              <% end %>
-            </div>
-          </fieldset>
+      <div class="<%= "hidden" if @schedule.snapshot_export? %>"
+           data-google-drive-export-form-target="transactionField">
+        <%= render DS::Disclosure.new(
+          title: t("google_drive_export_schedules.form.optional_filters"),
+          align: "left",
+          open: @schedule.excluded_category_ids.any? || @schedule.excluded_tag_ids.any?
+        ) do %>
+          <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+            <fieldset class="space-y-2">
+              <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_categories") %></legend>
+              <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
+                <% selected_category_ids = @schedule.excluded_category_ids.map(&:to_s) %>
+                <% @categories.each do |category| %>
+                  <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
+                    <%= check_box_tag "google_drive_export_schedule[filters][excluded_category_ids][]",
+                                      category.id,
+                                      selected_category_ids.include?(category.id.to_s),
+                                      class: "checkbox" %>
+                    <span><%= category.parent ? "#{category.parent.name} / #{category.name}" : category.name %></span>
+                  </label>
+                <% end %>
+              </div>
+            </fieldset>
 
-          <fieldset class="space-y-2">
-            <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_tags") %></legend>
-            <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
-              <% selected_tag_ids = @schedule.excluded_tag_ids.map(&:to_s) %>
-              <% @tags.each do |tag| %>
-                <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
-                  <%= check_box_tag "google_drive_export_schedule[filters][excluded_tag_ids][]",
-                                    tag.id,
-                                    selected_tag_ids.include?(tag.id.to_s),
-                                    class: "checkbox" %>
-                  <span><%= tag.name %></span>
-                </label>
-              <% end %>
-            </div>
-          </fieldset>
-        </div>
-      <% end %>
+            <fieldset class="space-y-2">
+              <legend class="text-sm font-medium text-primary"><%= t("google_drive_export_schedules.form.excluded_tags") %></legend>
+              <div class="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-primary bg-container-inset p-2">
+                <% selected_tag_ids = @schedule.excluded_tag_ids.map(&:to_s) %>
+                <% @tags.each do |tag| %>
+                  <label class="flex items-center gap-2 rounded-md p-2 text-sm text-primary hover:bg-surface-hover">
+                    <%= check_box_tag "google_drive_export_schedule[filters][excluded_tag_ids][]",
+                                      tag.id,
+                                      selected_tag_ids.include?(tag.id.to_s),
+                                      class: "checkbox" %>
+                    <span><%= tag.name %></span>
+                  </label>
+                <% end %>
+              </div>
+            </fieldset>
+          </div>
+        <% end %>
+      </div>
 
       <p class="flex items-start gap-2 text-xs text-secondary">
         <%= icon("info", size: "sm") %>

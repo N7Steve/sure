@@ -1,5 +1,5 @@
 class GoogleDriveExportSchedule < ApplicationRecord
-  EXPORT_FORMATS = %w[clean detailed].freeze
+  EXPORT_FORMATS = %w[clean detailed snapshot].freeze
 
   belongs_to :family
   belongs_to :user
@@ -70,6 +70,10 @@ class GoogleDriveExportSchedule < ApplicationRecord
 
   def detailed_export?
     export_format == "detailed"
+  end
+
+  def snapshot_export?
+    export_format == "snapshot"
   end
 
   def include_category_column?
@@ -160,6 +164,8 @@ class GoogleDriveExportSchedule < ApplicationRecord
     end
 
     def date_range_details_are_present
+      return if snapshot_export?
+
       errors.add(:fixed_start_date, :blank) if date_range_fixed_start? && fixed_start_date.blank?
       errors.add(:rolling_days, :blank) if date_range_rolling_days? && rolling_days.blank?
     end

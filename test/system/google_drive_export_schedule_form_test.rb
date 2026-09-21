@@ -29,6 +29,18 @@ class GoogleDriveExportScheduleFormTest < ApplicationSystemTestCase
     assert_not weekday.visible?
     assert_not day_of_month.visible?
 
+    transaction_fields = all("[data-google-drive-export-form-target='transactionField']", visible: :all)
+    assert_equal 3, transaction_fields.size
+    assert transaction_fields.all?(&:visible?)
+
+    select I18n.t("google_drive_export_schedules.form.export_formats.snapshot"),
+           from: I18n.t("google_drive_export_schedules.form.export_format")
+    assert transaction_fields.none?(&:visible?)
+
+    select I18n.t("google_drive_export_schedules.form.export_formats.clean"),
+           from: I18n.t("google_drive_export_schedules.form.export_format")
+    assert transaction_fields.all?(&:visible?)
+
     select I18n.t("google_drive_export_schedules.form.date_ranges.fixed_start"),
            from: I18n.t("google_drive_export_schedules.form.date_range")
     assert fixed_start.visible?

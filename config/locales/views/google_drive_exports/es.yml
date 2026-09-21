@@ -28,6 +28,7 @@ es:
       export_formats:
         clean: Analítico (una fila por movimiento)
         detailed: Detallado (formato anterior)
+        snapshot: Snapshot de cuentas
       optional_columns: Columnas opcionales
       include_category: Categoría y subcategoría
       include_tags: Etiquetas

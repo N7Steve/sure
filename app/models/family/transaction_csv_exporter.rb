@@ -245,7 +245,7 @@ class Family::TransactionCsvExporter
     end
 
     def clean_drive_schema?
-      schema == :drive && !drive_detailed?
+      schema == :drive && family_export.respond_to?(:clean_export?) && family_export.clean_export?
     end
 
     def include_category_column?

@@ -67,6 +67,27 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to family_exports_path
   end
 
+  test "creates a snapshot schedule without transaction-only fields" do
+    assert_difference("GoogleDriveExportSchedule.count", 1) do
+      post google_drive_export_schedules_path, params: {
+        google_drive_export_schedule: {
+          name: "Account snapshot",
+          filename: "positions.csv",
+          frequency: "daily",
+          run_at: "06:30",
+          timezone: "Europe/Madrid",
+          filters: {
+            account_ids: [ @account.id ],
+            export_format: "snapshot"
+          }
+        }
+      }
+    end
+
+    assert_redirected_to family_exports_path
+    assert GoogleDriveExportSchedule.order(:created_at).last.snapshot_export?
+  end
+
   test "requires a connected Drive account" do
     @connection.destroy!
 
@@ -85,6 +106,8 @@ class GoogleDriveExportSchedulesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type='hidden'][name='google_drive_export_schedule[timezone]']", count: 1
     assert_select "select[name='google_drive_export_schedule[timezone]']", count: 0
     assert_select "select[name='google_drive_export_schedule[filters][export_format]'] option[selected][value='clean']", count: 1
+    assert_select "select[name='google_drive_export_schedule[filters][export_format]'] option[value='snapshot']", count: 1
+    assert_select "[data-google-drive-export-form-target='transactionField']", count: 3
     assert_select "input[type='checkbox'][name='google_drive_export_schedule[filters][include_category]'][checked]", count: 1
     assert_select "input[type='checkbox'][name='google_drive_export_schedule[filters][include_tags]'][checked]", count: 1
   end

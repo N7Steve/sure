@@ -41,6 +41,19 @@ Sure overwrites the generated CSV on every changed run. Users may rename or move
 the file, but manual edits inside it will be replaced. Disconnecting Google Drive
 or deleting a schedule leaves its existing Drive file untouched.
 
+Schedules support three CSV formats:
+
+- **Analytical** exports one row per logical transaction with a stable ID,
+  explicit direction, positive amount, and optional category and tag columns.
+- **Detailed** preserves the original entry-level transaction schema.
+- **Account snapshot** exports the current selected account positions with a
+  snapshot date, stable position ID, institution, normalized type and subtype,
+  absolute value, currency, and notes.
+
+Analytical and snapshot files use UTF-8, comma-separated columns, decimal points,
+and ISO dates. Snapshot schedules do not use transaction date ranges or category
+and tag filters.
+
 If the linked file is deleted, trashed, or loses write permission, Sure stops the
 schedule instead of silently creating a new file with a different link. Reconnect
 the account when Google reports an invalid or revoked refresh token.
