@@ -26,10 +26,10 @@ es:
       filename: Nombre del archivo en Google Drive
       export_format: Formato del archivo
       export_formats:
-        clean: Limpio y legible
-        detailed: Detallado (incluye identificadores)
+        clean: Analítico (una fila por movimiento)
+        detailed: Detallado (formato anterior)
       optional_columns: Columnas opcionales
-      include_category: Categoría
+      include_category: Categoría y subcategoría
       include_tags: Etiquetas
       accounts: Cuentas que se incluirán
       date_range: Intervalo de fechas

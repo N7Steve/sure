@@ -11,7 +11,8 @@ class Family::TransactionCsvExporter
     destination_account merchant title amount currency date category tags updated_at
   ].freeze
   DRIVE_CLEAN_HEADERS = %w[
-    source_account destination_account merchant title amount currency date category tags
+    transaction_id source_account destination_account merchant title type amount currency
+    date category subcategory tags
   ].freeze
 
   def initialize(family_export, schema: :manual)
@@ -26,13 +27,14 @@ class Family::TransactionCsvExporter
     csv_data = CSV.generate(col_sep: column_separator) do |csv|
       csv << headers
 
-      transactions.each do |transaction|
+      export_transactions.each do |transaction|
         csv << serialize(transaction)
         count += 1
       end
     end
 
-    Result.new(io: StringIO.new("#{UTF_8_BOM}#{csv_data}"), record_count: count)
+    content = clean_drive_schema? ? csv_data : "#{UTF_8_BOM}#{csv_data}"
+    Result.new(io: StringIO.new(content), record_count: count)
   end
 
   private
@@ -42,9 +44,25 @@ class Family::TransactionCsvExporter
       return HEADERS unless schema == :drive
 
       selected_headers = drive_detailed? ? DRIVE_HEADERS : DRIVE_CLEAN_HEADERS
-      selected_headers = selected_headers.reject { |header| header == "category" } unless include_category_column?
+      unless include_category_column?
+        selected_headers = selected_headers.reject { |header| %w[category subcategory].include?(header) }
+      end
       selected_headers = selected_headers.reject { |header| header == "tags" } unless include_tags_column?
       selected_headers
+    end
+
+    def export_transactions
+      return transactions unless clean_drive_schema?
+
+      seen_transfer_ids = {}
+      transactions.filter_map do |transaction|
+        transfer = transaction.transfer
+        next transaction unless transfer
+        next if seen_transfer_ids[transfer.id]
+
+        seen_transfer_ids[transfer.id] = true
+        transaction
+      end
     end
 
     def transactions
@@ -68,8 +86,16 @@ class Family::TransactionCsvExporter
             :merchant,
             { category: :parent },
             { entry: :account },
-            { transfer_as_inflow: { outflow_transaction: { entry: :account } } },
-            { transfer_as_outflow: { inflow_transaction: { entry: :account } } }
+            {
+              transfer_as_inflow: {
+                outflow_transaction: [ :tags, :merchant, { category: :parent }, { entry: :account } ]
+              }
+            },
+            {
+              transfer_as_outflow: {
+                inflow_transaction: [ :tags, :merchant, { category: :parent }, { entry: :account } ]
+              }
+            }
           )
       end
     end
@@ -141,6 +167,8 @@ class Family::TransactionCsvExporter
     end
 
     def serialize_for_drive(transaction, entry, transfer)
+      return serialize_clean_for_drive(transaction, entry, transfer) if clean_drive_schema?
+
       source_account = transfer&.from_account || entry.account
       destination_account = transfer&.to_account
 
@@ -164,10 +192,60 @@ class Family::TransactionCsvExporter
       headers.map { |header| values.fetch(header) }
     end
 
+    def serialize_clean_for_drive(transaction, entry, transfer)
+      if transfer
+        outflow_transaction = transaction.id == transfer.outflow_transaction_id ? transaction : transfer.outflow_transaction
+        inflow_transaction = transaction.id == transfer.inflow_transaction_id ? transaction : transfer.inflow_transaction
+        entry = outflow_transaction.entry
+        source_account = entry.account
+        destination_account = inflow_transaction.entry.account
+        category = outflow_transaction.category || inflow_transaction.category
+        tag_names = (outflow_transaction.tags.to_a + inflow_transaction.tags.to_a).map(&:name).uniq.sort
+        merchant = outflow_transaction.merchant || inflow_transaction.merchant
+        transaction_id = transfer.id
+        title = entry.name.presence || transfer.name
+      else
+        source_account = entry.amount.negative? ? nil : entry.account
+        destination_account = entry.amount.negative? ? entry.account : nil
+        category = transaction.category
+        tag_names = transaction.tags.map(&:name).sort
+        merchant = transaction.merchant
+        transaction_id = transaction.id
+        title = entry.name
+      end
+
+      values = {
+        "transaction_id" => transaction_id,
+        "source_account" => spreadsheet_safe(account_name(source_account)),
+        "destination_account" => spreadsheet_safe(account_name(destination_account)),
+        "merchant" => spreadsheet_safe(merchant&.name),
+        "title" => spreadsheet_safe(title),
+        "type" => clean_transaction_type(transaction),
+        "amount" => entry.amount.to_d.abs.to_s("F"),
+        "currency" => entry.currency,
+        "date" => entry.date&.iso8601,
+        "category" => spreadsheet_safe(top_level_category_name(category)),
+        "subcategory" => spreadsheet_safe(subcategory_name(category)),
+        "tags" => spreadsheet_safe(tag_names.join(", "))
+      }
+
+      headers.map { |header| values.fetch(header) }
+    end
+
+    def clean_transaction_type(transaction)
+      return "transfer" if transaction.transfer? || transaction.transfer.present?
+
+      transaction.entry.amount.negative? ? "income" : "expense"
+    end
+
     def drive_detailed?
       return true unless family_export.respond_to?(:detailed_export?)
 
       family_export.detailed_export?
+    end
+
+    def clean_drive_schema?
+      schema == :drive && !drive_detailed?
     end
 
     def include_category_column?
@@ -202,7 +280,17 @@ class Family::TransactionCsvExporter
       [ category.parent&.name, category.name ].compact.join(" / ")
     end
 
+    def top_level_category_name(category)
+      category&.parent&.name || category&.name
+    end
+
+    def subcategory_name(category)
+      category&.name if category&.parent
+    end
+
     def column_separator
+      return "," if clean_drive_schema?
+
       locale = user.locale.presence || family.locale.presence || I18n.default_locale.to_s
       SEMICOLON_LANGUAGES.include?(locale.to_s.tr("_", "-").split("-").first) ? ";" : ","
     end

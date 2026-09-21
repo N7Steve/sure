@@ -134,24 +134,35 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     assert_equal entry.updated_at.iso8601, row["updated_at"]
   end
 
-  test "clean drive schema omits identifiers and update time" do
-    create_transaction(
+  test "clean drive schema omits internal identifiers and update time" do
+    subcategory = @family.categories.create!(name: "CSV Child", color: "#666666", parent: @allowed_category)
+    entry = create_transaction(
       account: @account,
-      name: "Readable transaction",
+      name: "Readable, transaction",
       amount: 42.5,
       date: Date.new(2026, 2, 15),
-      category: @allowed_category,
+      category: subcategory,
       tags: [ @allowed_tag ]
     )
 
-    rows = parse_csv(Family::TransactionCsvExporter.new(clean_drive_schedule, schema: :drive).generate)
-    row = rows.find { |candidate| candidate["title"] == "Readable transaction" }
+    result = Family::TransactionCsvExporter.new(clean_drive_schedule, schema: :drive).generate
+    rows = parse_clean_csv(result)
+    row = rows.find { |candidate| candidate["title"] == "Readable, transaction" }
 
+    assert_equal Encoding::UTF_8, result.io.string.encoding
+    assert_not result.io.string.start_with?(Family::TransactionCsvExporter::UTF_8_BOM)
+    assert_equal Family::TransactionCsvExporter::DRIVE_CLEAN_HEADERS.join(","), result.io.string.lines.first.chomp
     assert_equal Family::TransactionCsvExporter::DRIVE_CLEAN_HEADERS, rows.headers
-    assert_nil rows.headers.find { |header| header.end_with?("_id") }
+    assert_not_includes rows.headers, "entry_id"
+    assert_not_includes rows.headers, "source_account_id"
+    assert_not_includes rows.headers, "destination_account_id"
     assert_not_includes rows.headers, "updated_at"
     assert row
+    assert_equal entry.entryable.id, row["transaction_id"]
+    assert_equal "expense", row["type"]
+    assert_equal "42.5", row["amount"]
     assert_equal @allowed_category.name, row["category"]
+    assert_equal subcategory.name, row["subcategory"]
     assert_equal @allowed_tag.name, row["tags"]
   end
 
@@ -159,10 +170,49 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     create_transaction(account: @account, name: "Optional columns", date: Date.new(2026, 2, 15))
     schedule = clean_drive_schedule(include_category: false, include_tags: true)
 
-    rows = parse_csv(Family::TransactionCsvExporter.new(schedule, schema: :drive).generate)
+    rows = parse_clean_csv(Family::TransactionCsvExporter.new(schedule, schema: :drive).generate)
 
     assert_not_includes rows.headers, "category"
+    assert_not_includes rows.headers, "subcategory"
     assert_includes rows.headers, "tags"
+  end
+
+  test "clean drive schema makes income direction and amount explicit" do
+    entry = create_transaction(
+      account: @account,
+      name: "Salary",
+      amount: -3207.88,
+      date: Date.new(2026, 2, 15)
+    )
+
+    rows = parse_clean_csv(Family::TransactionCsvExporter.new(clean_drive_schedule, schema: :drive).generate)
+    row = rows.find { |candidate| candidate["transaction_id"] == entry.entryable.id }
+
+    assert row
+    assert_equal "income", row["type"]
+    assert_equal "3207.88", row["amount"]
+    assert_nil row["source_account"]
+    assert_equal @account.name, row["destination_account"]
+  end
+
+  test "clean drive schema exports a transfer as one logical row" do
+    transfer = create_transfer(
+      from_account: @account,
+      to_account: @other_account,
+      amount: 75.25,
+      date: Date.new(2026, 2, 15),
+      currency: @account.currency
+    )
+
+    schedule = clean_drive_schedule(account_ids: [ @account.id, @other_account.id ])
+    rows = parse_clean_csv(Family::TransactionCsvExporter.new(schedule, schema: :drive).generate)
+    transfer_rows = rows.select { |row| row["transaction_id"] == transfer.id }
+
+    assert_equal 1, transfer_rows.size
+    assert_equal "transfer", transfer_rows.first["type"]
+    assert_equal "75.25", transfer_rows.first["amount"]
+    assert_equal @account.name, transfer_rows.first["source_account"]
+    assert_equal @other_account.name, transfer_rows.first["destination_account"]
   end
 
   private
@@ -184,14 +234,14 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
       )
     end
 
-    def clean_drive_schedule(include_category: true, include_tags: true)
+    def clean_drive_schedule(include_category: true, include_tags: true, account_ids: [ @account.id ])
       GoogleDriveExportSchedule.new(
         family: @family,
         user: @user,
         timezone: "UTC",
         date_range: :all_history,
         filters: {
-          account_ids: [ @account.id ],
+          account_ids: account_ids,
           export_format: "clean",
           include_category: include_category,
           include_tags: include_tags
@@ -202,5 +252,9 @@ class Family::TransactionCsvExporterTest < ActiveSupport::TestCase
     def parse_csv(result)
       data = result.io.string.delete_prefix(Family::TransactionCsvExporter::UTF_8_BOM)
       CSV.parse(data, headers: true, col_sep: ";")
+    end
+
+    def parse_clean_csv(result)
+      CSV.parse(result.io.string, headers: true, col_sep: ",")
     end
 end

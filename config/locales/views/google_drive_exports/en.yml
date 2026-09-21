@@ -26,10 +26,10 @@ en:
       filename: Google Drive file name
       export_format: File format
       export_formats:
-        clean: Clean and readable
-        detailed: Detailed (includes identifiers)
+        clean: Analytical (one row per transaction)
+        detailed: Detailed (previous format)
       optional_columns: Optional columns
-      include_category: Category
+      include_category: Category and subcategory
       include_tags: Tags
       accounts: Accounts to include
       date_range: Date range
