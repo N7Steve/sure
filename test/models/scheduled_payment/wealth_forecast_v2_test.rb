@@ -102,7 +102,7 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
     forecast.stubs(:current_investment_balance).returns(Money.new(1_000, @family.currency))
     forecast.stubs(:historical_monthly_changes).returns([ 100, 100, 100 ])
     forecast.stubs(:irregular_monthly_reserve).returns(-20.to_d)
-    forecast.stubs(:investment_monthly_log_returns).returns([ Math.log1p(0.01) ] * 4)
+    forecast.stubs(:investment_monthly_log_returns).returns([ Math.log(1.01) ] * 4)
     event = ScheduledPayment::WealthForecast::Event.new(
       date: Date.current + 5.days, delta: -50.to_d, estimated: false,
       uncertainty: 0.to_d, investment_delta: 0.to_d
@@ -110,7 +110,7 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
     forecast.stubs(:future_events).returns([ event ])
     months = BigDecimal((forecast.end_date - forecast.start_date).to_i.to_s) /
       ScheduledPayment::WealthForecast::DAYS_PER_MONTH
-    expected = 10_000 + (100 - 20) * months - 50 + 1_000 * (BigDecimal(Math.exp(Math.log1p(0.01) * months.to_f).to_s) - 1)
+    expected = 10_000 + (100 - 20) * months - 50 + 1_000 * (BigDecimal(Math.exp(Math.log(1.01) * months.to_f).to_s) - 1)
 
     assert_in_delta expected, forecast.ending_balance(:normal).amount, 0.01
   end
@@ -158,7 +158,7 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
       forecast.stubs(:current_balance).returns(Money.new(1_000, @family.currency))
       forecast.stubs(:current_investment_balance).returns(Money.new(1_000, @family.currency))
       forecast.stubs(:investment_monthly_log_returns).returns([
-        Math.log1p(-0.01), Math.log1p(0.01), Math.log1p(0.01), Math.log1p(0.03)
+        Math.log(0.99), Math.log(1.01), Math.log(1.01), Math.log(1.03)
       ])
       forecast
     end

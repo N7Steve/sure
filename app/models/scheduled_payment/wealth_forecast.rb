@@ -36,7 +36,7 @@ class ScheduledPayment::WealthForecast
   def cashflow_residual = Money.new(cashflow_statistics.central, currency)
   def historical_monthly_savings = cashflow_residual
   def irregular_reserve = Money.new(irregular_monthly_reserve, currency)
-  def expected_investment_return = Math.expm1(investment_statistics.central.to_f)
+  def expected_investment_return = Math.exp(investment_statistics.central.to_f) - 1
 
   def expected_investment_return_equivalent
     Money.new(current_investment_balance.amount * BigDecimal(expected_investment_return.to_s), currency)
@@ -214,7 +214,7 @@ class ScheduledPayment::WealthForecast
         monthly_return = market_pnl / exposed_capital
         next if monthly_return <= -1
 
-        BigDecimal(Math.log1p(monthly_return.to_f).to_s)
+        BigDecimal(Math.log(1 + monthly_return.to_f).to_s)
       end
     end
 
