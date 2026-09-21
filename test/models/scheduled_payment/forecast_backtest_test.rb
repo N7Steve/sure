@@ -39,4 +39,12 @@ class ScheduledPayment::ForecastBacktestTest < ActiveSupport::TestCase
     assert_equal [ 3, 6, 12 ], results.map(&:horizon_months).uniq.sort
     assert results.all? { |result| result.samples.zero? && result.bias.nil? && result.mae.nil? && result.coverage.nil? }
   end
+
+  test "passes the calibrated cashflow z score to V2 forecasts" do
+    backtest = ScheduledPayment::ForecastBacktest.new(
+      family: families(:dylan_family), user: users(:family_admin), cutoffs: [], cashflow_scenario_z: 1.25
+    )
+
+    assert_equal 1.25, backtest.cashflow_scenario_z
+  end
 end

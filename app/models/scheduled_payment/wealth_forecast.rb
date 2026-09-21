@@ -5,19 +5,30 @@ class ScheduledPayment::WealthForecast
   IRREGULAR_HISTORY_MONTHS = 12
   CASHFLOW_DECAY = BigDecimal("0.92")
   INVESTMENT_DECAY = BigDecimal("0.97")
+  CASHFLOW_SCENARIO_Z = BigDecimal("1")
   DAYS_PER_MONTH = BigDecimal("30.4375")
 
-  Scenario = Data.define(:key, :monthly_cashflow)
+  Scenario = Data.define(:key, :cashflow_z)
   Event = Data.define(:date, :delta, :estimated, :uncertainty, :investment_delta)
+  CashflowMonth = Data.define(
+    :month, :raw_cashflow, :agenda_removed, :exceptional_removed,
+    :irregular_removed, :internal_removed, :adjusted_cashflow,
+    :winsorized_cashflow, :weight
+  )
 
-  attr_reader :family, :user, :horizon_months, :conversion_failures, :as_of
+  attr_reader :family, :user, :horizon_months, :conversion_failures, :as_of, :cashflow_scenario_z
 
-  def initialize(family:, user:, horizon_months: 3, as_of: Date.current, include_agenda: true)
+  def initialize(family:, user:, horizon_months: 3, as_of: Date.current, include_agenda: true,
+                 cashflow_scenario_z: CASHFLOW_SCENARIO_Z)
     @family = family
     @user = user
     @horizon_months = HORIZONS.include?(horizon_months.to_i) ? horizon_months.to_i : 3
     @as_of = as_of.to_date
     @include_agenda = include_agenda
+    @cashflow_scenario_z = BigDecimal(cashflow_scenario_z.to_s)
+    unless @cashflow_scenario_z.finite? && @cashflow_scenario_z >= 0
+      raise ArgumentError, "cashflow_scenario_z must be a finite non-negative number"
+    end
     @conversion_failures = 0
   end
 
@@ -57,6 +68,30 @@ class ScheduledPayment::WealthForecast
   def scheduled_event_count = future_events.count { |event| !event.delta.zero? }
   def ignored_one_time_count = exceptional_entries.size
   def irregular_entry_count = irregular_entries.size
+
+  def cashflow_diagnostics
+    diagnostics = ScheduledPayment::RobustEstimator.diagnose(
+      cashflow_month_breakdown.map { |month| month[:adjusted_cashflow] },
+      decay: CASHFLOW_DECAY
+    )
+    months = cashflow_month_breakdown.zip(diagnostics.observations).map do |month, observation|
+      CashflowMonth.new(
+        **month,
+        winsorized_cashflow: observation.winsorized,
+        weight: observation.weight
+      )
+    end
+
+    {
+      months:,
+      summary: {
+        median: diagnostics.median,
+        mad: diagnostics.mad,
+        robust_sigma: diagnostics.robust_sigma,
+        central: diagnostics.central
+      }
+    }
+  end
 
   def ending_balance(scenario)
     Money.new(chart_data.fetch(:points).last.fetch(scenario).fetch(:amount), currency)
@@ -133,19 +168,38 @@ class ScheduledPayment::WealthForecast
     end
 
     def historical_monthly_cashflows
-      @historical_monthly_cashflows ||= begin
-        first_activity = historical_entries.map(&:date).min
-        applicable = first_activity ? cashflow_periods.drop_while { |period| period.end < first_activity } : []
-        applicable.map do |period|
-          ordinary_cashflow_entries.select { |entry| period.cover?(entry.date) }.sum { |entry| economic_delta(entry) }
-        end
-      end
+      @historical_monthly_cashflows ||= cashflow_month_breakdown.map { |month| month[:adjusted_cashflow] }
     end
 
     alias_method :historical_monthly_changes, :historical_monthly_cashflows
 
     def cashflow_statistics
       @cashflow_statistics ||= ScheduledPayment::RobustEstimator.call(historical_monthly_changes, decay: CASHFLOW_DECAY)
+    end
+
+    def cashflow_month_breakdown
+      @cashflow_month_breakdown ||= begin
+        first_activity = historical_entries.map(&:date).min
+        periods = first_activity ? cashflow_periods.drop_while { |period| period.end < first_activity } : []
+        periods.map do |period|
+          entries = historical_entries.select { |entry| period.cover?(entry.date) }
+          remaining = entries.dup
+          agenda, remaining = remaining.partition { |entry| explained_by_schedule?(entry) }
+          exceptional, remaining = remaining.partition { |entry| entry.entryable.forecast_exceptional_once? }
+          irregular, remaining = remaining.partition { |entry| entry.entryable.forecast_irregular_recurring? }
+          internal, ordinary = remaining.partition { |entry| internal_transfer?(entry) }
+
+          {
+            month: period.begin,
+            raw_cashflow: entries.sum { |entry| economic_delta(entry) },
+            agenda_removed: agenda.sum { |entry| economic_delta(entry) },
+            exceptional_removed: exceptional.sum { |entry| economic_delta(entry) },
+            irregular_removed: irregular.sum { |entry| economic_delta(entry) },
+            internal_removed: internal.sum { |entry| economic_delta(entry) },
+            adjusted_cashflow: ordinary.sum { |entry| economic_delta(entry) }
+          }
+        end
+      end
     end
 
     def historical_entries
@@ -333,9 +387,9 @@ class ScheduledPayment::WealthForecast
 
     def scenarios
       @scenarios ||= [
-        Scenario.new(key: :pessimistic, monthly_cashflow: cashflow_statistics.central - cashflow_statistics.spread),
-        Scenario.new(key: :normal, monthly_cashflow: cashflow_statistics.central),
-        Scenario.new(key: :optimistic, monthly_cashflow: cashflow_statistics.central + cashflow_statistics.spread)
+        Scenario.new(key: :pessimistic, cashflow_z: -cashflow_scenario_z),
+        Scenario.new(key: :normal, cashflow_z: 0.to_d),
+        Scenario.new(key: :optimistic, cashflow_z: cashflow_scenario_z)
       ]
     end
 
@@ -430,10 +484,15 @@ class ScheduledPayment::WealthForecast
       scenarios.each_with_object({ date: date.iso8601, label: I18n.l(date, format: :short) }) do |scenario, point|
         agenda = future_events.select { |event| event.date <= date }
           .sum { |event| event.delta * estimated_multiplier(event, scenario.key) }
-        amount = current_balance.amount + scenario.monthly_cashflow * elapsed +
+        amount = current_balance.amount + cashflow_effect(elapsed, scenario.cashflow_z) +
           irregular_monthly_reserve * elapsed + agenda + investment_market_effect(date, scenario.key)
         point[scenario.key] = { amount: amount.to_f, formatted: Money.new(amount, currency).format }
       end
+    end
+
+    def cashflow_effect(months, scenario_z)
+      cashflow_statistics.central * months +
+        scenario_z * cashflow_statistics.spread * BigDecimal(Math.sqrt(months.to_f).to_s)
     end
 
     def investment_market_effect(date, scenario)

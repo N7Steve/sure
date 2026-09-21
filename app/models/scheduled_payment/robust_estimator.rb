@@ -3,9 +3,15 @@ class ScheduledPayment::RobustEstimator
   WINSOR_MULTIPLIER = BigDecimal("2.5")
 
   Result = Data.define(:central, :spread, :lower, :upper)
+  Observation = Data.define(:raw, :winsorized, :weight)
+  Diagnostics = Data.define(:median, :mad, :robust_sigma, :central, :lower, :upper, :observations)
 
   def self.call(values, decay:)
     new(values, decay:).call
+  end
+
+  def self.diagnose(values, decay:)
+    new(values, decay:).diagnose
   end
 
   def initialize(values, decay:)
@@ -14,7 +20,22 @@ class ScheduledPayment::RobustEstimator
   end
 
   def call
-    return Result.new(central: 0.to_d, spread: 0.to_d, lower: 0.to_d, upper: 0.to_d) if values.empty?
+    diagnostics = diagnose
+    Result.new(
+      central: diagnostics.central,
+      spread: diagnostics.robust_sigma,
+      lower: diagnostics.lower,
+      upper: diagnostics.upper
+    )
+  end
+
+  def diagnose
+    if values.empty?
+      return Diagnostics.new(
+        median: 0.to_d, mad: 0.to_d, robust_sigma: 0.to_d,
+        central: 0.to_d, lower: 0.to_d, upper: 0.to_d, observations: []
+      )
+    end
 
     center = median(values)
     deviations = values.map { |value| (value - center).abs }
@@ -25,7 +46,17 @@ class ScheduledPayment::RobustEstimator
     weights = clamped.each_index.map { |index| decay**(clamped.size - index - 1) }
     central = clamped.zip(weights).sum { |value, weight| value * weight } / weights.sum
 
-    Result.new(central:, spread:, lower:, upper:)
+    Diagnostics.new(
+      median: center,
+      mad:,
+      robust_sigma: spread,
+      central:,
+      lower:,
+      upper:,
+      observations: values.zip(clamped, weights).map do |raw, winsorized, weight|
+        Observation.new(raw:, winsorized:, weight:)
+      end
+    )
   end
 
   private

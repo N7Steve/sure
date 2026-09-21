@@ -127,6 +127,59 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
     assert_operator width_12 / width_3, :>, 1
   end
 
+  test "cashflow uncertainty grows with square root of time while normal remains linear" do
+    forecast_3 = isolated_cashflow_forecast(3)
+    forecast_12 = isolated_cashflow_forecast(12)
+
+    [ forecast_3, forecast_12 ].each do |forecast|
+      months = BigDecimal((forecast.end_date - forecast.start_date).to_i.to_s) /
+        ScheduledPayment::WealthForecast::DAYS_PER_MONTH
+      expected_normal = 10_000 + 100 * months
+      expected_half_width = 400 * BigDecimal(Math.sqrt(months.to_f).to_s)
+
+      assert_in_delta expected_normal, forecast.ending_balance(:normal).amount, 0.01
+      assert_in_delta expected_half_width,
+        forecast.ending_balance(:optimistic).amount - forecast.ending_balance(:normal).amount, 0.01
+    end
+
+    width_3 = forecast_3.ending_balance(:optimistic).amount - forecast_3.ending_balance(:normal).amount
+    width_12 = forecast_12.ending_balance(:optimistic).amount - forecast_12.ending_balance(:normal).amount
+    assert_in_delta 2, width_12 / width_3, 0.05
+  end
+
+  test "cashflow z score changes only the scenario width" do
+    narrow = isolated_cashflow_forecast(6, cashflow_z: 0.5)
+    wide = isolated_cashflow_forecast(6, cashflow_z: 1.5)
+
+    assert_equal narrow.ending_balance(:normal), wide.ending_balance(:normal)
+    narrow_width = narrow.ending_balance(:optimistic).amount - narrow.ending_balance(:normal).amount
+    wide_width = wide.ending_balance(:optimistic).amount - wide.ending_balance(:normal).amount
+    assert_in_delta 3, wide_width / narrow_width, 0.001
+  end
+
+  test "cashflow diagnostics explain every removal and robust input" do
+    ordinary = create_transaction(@cash, 100)
+    exceptional = create_transaction(@cash, 500, forecast_behavior: "exceptional_once")
+    irregular = create_transaction(@cash, 1_200, forecast_behavior: "irregular_recurring")
+    internal = create_transfer(@cash, @investment, 250).outflow_transaction.entry
+    forecast = build_forecast
+    forecast.stubs(:historical_entries).returns([ ordinary, exceptional, irregular, internal ])
+    forecast.stubs(:cashflow_periods).returns([ (Date.current - 1.month)..(Date.current - 1.day) ])
+
+    diagnostics = forecast.cashflow_diagnostics
+    month = diagnostics.fetch(:months).sole
+
+    assert_equal(-2_050, month.raw_cashflow)
+    assert_equal 0, month.agenda_removed
+    assert_equal(-500, month.exceptional_removed)
+    assert_equal(-1_200, month.irregular_removed)
+    assert_equal(-250, month.internal_removed)
+    assert_equal(-100, month.adjusted_cashflow)
+    assert_equal(-100, month.winsorized_cashflow)
+    assert_equal 1, month.weight
+    assert_equal(-100, diagnostics.dig(:summary, :central))
+  end
+
   test "current wealth exactly equals included accessible assets" do
     forecast = build_forecast
 
@@ -173,8 +226,10 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
 
   private
 
-    def build_forecast(horizon: 3)
-      ScheduledPayment::WealthForecast.new(family: @family, user: @user, horizon_months: horizon)
+    def build_forecast(horizon: 3, cashflow_z: ScheduledPayment::WealthForecast::CASHFLOW_SCENARIO_Z)
+      ScheduledPayment::WealthForecast.new(
+        family: @family, user: @user, horizon_months: horizon, cashflow_scenario_z: cashflow_z
+      )
     end
 
     def create_transaction(account, amount, forecast_behavior: "normal")
@@ -218,6 +273,21 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
       forecast.stubs(:investment_monthly_log_returns).returns([
         Math.log(0.99), Math.log(1.01), Math.log(1.01), Math.log(1.03)
       ])
+      forecast
+    end
+
+    def isolated_cashflow_forecast(horizon, cashflow_z: 1)
+      forecast = build_forecast(horizon:, cashflow_z:)
+      forecast.stubs(:current_balance).returns(Money.new(10_000, @family.currency))
+      forecast.stubs(:current_investment_balance).returns(Money.new(0, @family.currency))
+      forecast.stubs(:cashflow_statistics).returns(
+        ScheduledPayment::RobustEstimator::Result.new(
+          central: 100.to_d, spread: 400.to_d, lower: -300.to_d, upper: 500.to_d
+        )
+      )
+      forecast.stubs(:irregular_monthly_reserve).returns(0.to_d)
+      forecast.stubs(:future_events).returns([])
+      forecast.stubs(:investment_monthly_log_returns).returns([])
       forecast
     end
 end

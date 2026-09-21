@@ -2,12 +2,17 @@ class ScheduledPayment::ForecastBacktest
   HORIZONS = [ 3, 6, 12 ].freeze
   Result = Data.define(:model, :horizon_months, :samples, :bias, :mae, :coverage)
 
-  attr_reader :family, :user, :cutoffs
+  attr_reader :family, :user, :cutoffs, :cashflow_scenario_z
 
-  def initialize(family:, user:, cutoffs: nil)
+  def initialize(family:, user:, cutoffs: nil,
+                 cashflow_scenario_z: ScheduledPayment::WealthForecast::CASHFLOW_SCENARIO_Z)
     @family = family
     @user = user
     @cutoffs = cutoffs || default_cutoffs
+    @cashflow_scenario_z = BigDecimal(cashflow_scenario_z.to_s)
+    unless @cashflow_scenario_z.finite? && @cashflow_scenario_z >= 0
+      raise ArgumentError, "cashflow_scenario_z must be a finite non-negative number"
+    end
   end
 
   def call
@@ -33,7 +38,8 @@ class ScheduledPayment::ForecastBacktest
     def observation(cutoff, horizon)
       target = cutoff >> horizon
       forecast = ScheduledPayment::WealthForecast.new(
-        family:, user:, horizon_months: horizon, as_of: cutoff, include_agenda: false
+        family:, user:, horizon_months: horizon, as_of: cutoff, include_agenda: false,
+        cashflow_scenario_z:
       )
       actual = forecast.balance_at(target)
       return if actual.zero? && forecast.balance_at(target - 1.day).zero?
