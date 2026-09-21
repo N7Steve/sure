@@ -13,7 +13,8 @@ class Family::AccountSnapshotCsvExporterTest < ActiveSupport::TestCase
       institution_name: "Bankinter",
       balance: -4251.91,
       currency: "EUR",
-      notes: "Pending reconciliation"
+      notes: "Pending reconciliation",
+      financial_treatment: "tracking"
     )
     @cash_account.accountable.update!(subtype: "checking")
     @loan_account.update!(name: "Hipoteca Home", institution_name: "CA Auto Bank", currency: "EUR")
@@ -37,12 +38,14 @@ class Family::AccountSnapshotCsvExporterTest < ActiveSupport::TestCase
       assert_equal "Bankinter Nomina", cash["name"]
       assert_equal "cash", cash["type"]
       assert_equal "checking_account", cash["subtype"]
+      assert_equal "tracking", cash["scope"]
       assert_equal "4251.91", cash["value"]
       assert_equal "EUR", cash["currency"]
       assert_equal "Pending reconciliation", cash["notes"]
 
       assert_equal "liability", loan["type"]
       assert_equal "mortgage", loan["subtype"]
+      assert_equal "included", loan["scope"]
     end
   end
 

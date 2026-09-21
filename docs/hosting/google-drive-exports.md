@@ -48,7 +48,8 @@ Schedules support three CSV formats:
 - **Detailed** preserves the original entry-level transaction schema.
 - **Account snapshot** exports the current selected account positions with a
   snapshot date, stable position ID, institution, normalized type and subtype,
-  absolute value, currency, and notes.
+  account scope (`included`, `tracking`, or `outside_finances`), absolute value,
+  currency, and notes.
 
 Analytical and snapshot files use UTF-8, comma-separated columns, decimal points,
 and ISO dates. Snapshot schedules do not use transaction date ranges or category

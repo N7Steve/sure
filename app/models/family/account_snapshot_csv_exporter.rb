@@ -4,7 +4,7 @@ class Family::AccountSnapshotCsvExporter
   Result = Data.define(:io, :record_count)
 
   HEADERS = %w[
-    snapshot_date position_id institution name type subtype value currency notes
+    snapshot_date position_id institution name type subtype scope value currency notes
   ].freeze
 
   POSITION_TYPES = {
@@ -85,6 +85,7 @@ class Family::AccountSnapshotCsvExporter
         spreadsheet_safe(account.name),
         POSITION_TYPES.fetch(account.accountable_type),
         position_subtype(account),
+        account.financial_treatment,
         account.balance.to_d.abs.to_s("F"),
         account.currency,
         spreadsheet_safe(account.notes)

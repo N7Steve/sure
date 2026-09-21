@@ -104,7 +104,7 @@ class GoogleDriveExportJobTest < ActiveJob::TestCase
     GoogleDrive::Client.stubs(:new).with(@connection).returns(drive)
     drive.expects(:find_file).with(schedule_id: @schedule.id, logical_key: "transactions").returns(nil)
     drive.expects(:create_file).with do |attributes|
-      attributes[:content].start_with?("snapshot_date,position_id,institution,name,type,subtype,value,currency,notes") &&
+      attributes[:content].start_with?("snapshot_date,position_id,institution,name,type,subtype,scope,value,currency,notes") &&
         attributes[:content].include?(@account.id)
     end.returns({ "id" => "snapshot-file", "webViewLink" => "https://drive.google.com/file/snapshot", "trashed" => false })
 

@@ -338,8 +338,9 @@ Funcionalidad propia incorporada en agosto de 2026:
   excluir de forma independiente.
 - El formato snapshot reemplaza ese mismo archivo con una fotografía CSV de las
   cuentas seleccionadas. Incluye fecha, ID estable de posición, institución,
-  nombre, tipo y subtipo normalizados, valor absoluto, moneda y notas. Al elegirlo,
-  el formulario oculta rangos de fechas y filtros exclusivos de transacciones.
+  nombre, tipo y subtipo normalizados, ámbito financiero (`included`, `tracking`
+  u `outside_finances`), valor absoluto, moneda y notas. Al elegirlo, el formulario
+  oculta rangos de fechas y filtros exclusivos de transacciones.
 - El primer envío crea un CSV y guarda su `fileId`; los siguientes reemplazan el
   contenido del mismo archivo. Renombrarlo o moverlo conserva el enlace. Si se
   elimina, se envía a la papelera o pierde permisos, la programación requiere
