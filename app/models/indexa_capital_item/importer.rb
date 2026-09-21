@@ -84,18 +84,39 @@ class IndexaCapitalItem::Importer
       account_number = account_data[:account_number].to_s
       return if account_number.blank?
 
-      # Fetch current balance from performance endpoint
-      begin
-        balance = indexa_capital_provider.get_account_balance(account_number: account_number)
-        account_data[:current_balance] = balance
-        stats["api_requests"] = stats.fetch("api_requests", 0) + 1
-      rescue => e
-        Rails.logger.warn "IndexaCapitalItem::Importer - Failed to fetch balance for #{account_number}: #{e.message}"
-      end
-
       indexa_capital_account = indexa_capital_item.indexa_capital_accounts.find_or_initialize_by(
         indexa_capital_account_id: account_number
       )
+
+      # Preserve the complete response: besides the current balance it contains
+      # Indexa's contribution-adjusted daily return index, which is required to
+      # distinguish investment performance from deposits and withdrawals.
+      begin
+        performance = indexa_capital_provider.get_account_performance(account_number: account_number)
+        account_data[:current_balance] = indexa_capital_provider.get_account_balance(
+          account_number: account_number,
+          performance_data: performance
+        )
+        account_data[:performance_history] = performance
+        stats["api_requests"] = stats.fetch("api_requests", 0) + 1
+      rescue => e
+        Rails.logger.warn "IndexaCapitalItem::Importer - Failed to fetch performance for #{account_number}: #{e.message}"
+        previous_history = indexa_capital_account.raw_payload.to_h.with_indifferent_access[:performance_history]
+        account_data[:performance_history] = previous_history if previous_history.present?
+        linked_account_provider = indexa_capital_account.persisted? ? indexa_capital_account.account_provider : nil
+        DebugLogEntry.capture(
+          category: "provider_sync_error",
+          level: "warn",
+          message: "Failed to fetch Indexa performance history; keeping the previous investment return history",
+          source: self.class.name,
+          provider_key: "indexa_capital",
+          metadata: { account_number:, error_class: e.class.name },
+          family: indexa_capital_item.family,
+          account: linked_account_provider&.account,
+          account_provider: linked_account_provider
+        )
+        register_error(e, context: "performance", account_number:)
+      end
 
       indexa_capital_account.upsert_from_indexa_capital!(account_data)
 

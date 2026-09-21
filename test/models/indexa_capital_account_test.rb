@@ -13,6 +13,24 @@ class IndexaCapitalAccountTest < ActiveSupport::TestCase
     assert_equal @item, @account.indexa_capital_item
   end
 
+  test "suggests managed subtype while preserving pension tax semantics" do
+    assert_equal "roboadvisor", @account.suggested_investment_subtype
+    assert_equal "pension", indexa_capital_accounts(:pension_plan).suggested_investment_subtype
+  end
+
+  test "Indexa pension remains a managed portfolio without losing pension subtype" do
+    pension = indexa_capital_accounts(:pension_plan)
+    account = @family.accounts.create!(
+      name: "Managed pension", balance: 1_000, currency: "EUR",
+      accountable: Investment.new(subtype: "pension")
+    )
+    pension.ensure_account_provider!(account)
+
+    assert_predicate account, :managed_portfolio?
+    assert_equal "pension", account.subtype
+    assert_equal :tax_deferred, account.tax_treatment
+  end
+
   test "validates presence of name" do
     @account.name = nil
     assert_not @account.valid?

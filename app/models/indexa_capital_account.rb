@@ -27,6 +27,18 @@ class IndexaCapitalAccount < ApplicationRecord
     account
   end
 
+  # Indexa is always a managed portfolio, but its product subtype must retain
+  # tax semantics. Fund portfolios are roboadvisors; pension-family products
+  # remain pensions and are recognized as managed through their provider link.
+  def suggested_investment_subtype
+    case account_type
+    when "pension", "epsv", "employment_plan"
+      "pension"
+    else
+      "roboadvisor"
+    end
+  end
+
   # Idempotently create or update AccountProvider link
   # CRITICAL: After creation, reload association to avoid stale nil
   def ensure_account_provider!(linked_account)

@@ -103,8 +103,13 @@
         <% end %>
         <%= render DS::Card.new(class: "gap-1") do %>
           <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.investment_return") %></p>
-          <p class="text-lg font-medium text-primary privacy-sensitive"><%= number_to_percentage(@forecast.expected_investment_return * 100, precision: 2) %></p>
-          <p class="text-xs text-secondary privacy-sensitive"><%= t("scheduled_payments.agenda.forecast.investment_return_equivalent", amount: format_money(@forecast.expected_investment_return_equivalent)) %></p>
+          <% if @forecast.investment_return_available? %>
+            <p class="text-lg font-medium text-primary privacy-sensitive"><%= number_to_percentage(@forecast.expected_investment_return * 100, precision: 2) %></p>
+            <p class="text-xs text-secondary privacy-sensitive"><%= t("scheduled_payments.agenda.forecast.investment_return_equivalent", amount: format_money(@forecast.expected_investment_return_equivalent)) %></p>
+          <% else %>
+            <p class="text-lg font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.investment_return_unavailable") %></p>
+            <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.investment_return_unavailable_hint") %></p>
+          <% end %>
         <% end %>
       <% end %>
     </div>

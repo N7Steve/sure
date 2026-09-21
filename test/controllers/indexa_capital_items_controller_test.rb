@@ -64,6 +64,7 @@ class IndexaCapitalItemsControllerTest < ActionDispatch::IntegrationTest
     ica.reload
     assert_not_nil ica.current_account
     assert_equal "Investment", ica.current_account.accountable_type
+    assert_equal "roboadvisor", ica.current_account.subtype
   end
 
   test "complete_account_setup skips already linked accounts" do

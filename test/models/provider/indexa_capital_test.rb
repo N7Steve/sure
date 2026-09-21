@@ -96,6 +96,21 @@ class Provider::IndexaCapitalTest < ActiveSupport::TestCase
     assert_equal 38905.21.to_d, balance
   end
 
+  test "get_account_performance preserves contribution-adjusted return index" do
+    provider = Provider::IndexaCapital.new(api_token: "test_token")
+    payload = {
+      return: { index: { "20260205" => 1.01, "20260206" => 1.02 } },
+      portfolios: [ { date: "2026-02-06", total_amount: 38_905.21 } ]
+    }
+    Provider::IndexaCapital.stubs(:get).returns(OpenStruct.new(code: 200, body: payload.to_json))
+
+    performance = provider.get_account_performance(account_number: "ABC12345")
+
+    assert_equal 1.02, performance.dig(:return, :index, :"20260206")
+    assert_equal 38_905.21.to_d,
+      provider.get_account_balance(account_number: "ABC12345", performance_data: performance)
+  end
+
   test "get_account_balance returns 0 when no portfolios" do
     provider = Provider::IndexaCapital.new(api_token: "test_token")
 

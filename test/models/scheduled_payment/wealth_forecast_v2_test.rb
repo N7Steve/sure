@@ -58,6 +58,62 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
     assert_operator forecast.send(:investment_monthly_log_returns).sole, :<, 0
   end
 
+  test "balance-only investments use valuation adjustments net of flows as market return" do
+    period = Date.new(2026, 8, 1)..Date.new(2026, 8, 31)
+    valuation_gain = balance_row(
+      date: period.begin, start: 1_000, market: 0, cash_adjustments: 100
+    )
+    forecast = build_forecast
+    forecast.stubs(:investment_periods).returns([ period ])
+    forecast.stubs(:investment_balance_rows).returns([ valuation_gain ])
+    forecast.stubs(:balance_only_investment_ids).returns(Set[ @investment.id ])
+
+    assert_operator forecast.send(:investment_monthly_log_returns).sole, :>, 0
+    assert_predicate forecast, :investment_return_available?
+  end
+
+  test "reports unavailable investment return when no valid month exists" do
+    forecast = build_forecast
+    forecast.stubs(:investment_monthly_log_returns).returns([])
+
+    assert_not_predicate forecast, :investment_return_available?
+  end
+
+  test "uses Indexa contribution-adjusted return index instead of balance jump" do
+    period = Date.new(2026, 8, 1)..Date.new(2026, 8, 31)
+    performance = mock("roboadvisor_performance")
+    performance.stubs(:account).returns(@investment)
+    performance.stubs(:provider_history?).returns(true)
+    performance.stubs(:rate_for).with(period).returns(0.02.to_d)
+    performance.stubs(:opening_balance).with(period.begin).returns(1_000.to_d)
+    # A deposit doubled the visible balance, but Indexa's time-weighted index
+    # correctly reports only a 2% investment return.
+    balance = balance_row(date: period.begin, start: 1_000, market: 1_000)
+    forecast = build_forecast
+    forecast.stubs(:investment_periods).returns([ period ])
+    forecast.stubs(:investment_balance_rows).returns([ balance ])
+    forecast.stubs(:managed_portfolio_performances).returns([ performance ])
+
+    assert_in_delta Math.log(1.02), forecast.send(:investment_monthly_log_returns).sole, 0.000001
+  end
+
+  test "does not turn missing provider history for a month into a false zero return" do
+    period = Date.new(2026, 8, 1)..Date.new(2026, 8, 31)
+    performance = mock("roboadvisor_performance")
+    performance.stubs(:account).returns(@investment)
+    performance.stubs(:provider_history?).returns(true)
+    performance.stubs(:rate_for).with(period).returns(nil)
+    performance.stubs(:opening_balance).with(period.begin).returns(nil)
+    forecast = build_forecast
+    forecast.stubs(:investment_periods).returns([ period ])
+    forecast.stubs(:investment_balance_rows).returns([
+      balance_row(date: period.begin, start: 1_000, market: 0)
+    ])
+    forecast.stubs(:managed_portfolio_performances).returns([ performance ])
+
+    assert_empty forecast.send(:investment_monthly_log_returns)
+  end
+
   test "investment normal scenario compounds and uncertainty grows slower than linearly" do
     forecast_3 = isolated_market_forecast(3)
     forecast_12 = isolated_market_forecast(12)
@@ -139,11 +195,13 @@ class ScheduledPayment::WealthForecastV2Test < ActiveSupport::TestCase
       )
     end
 
-    def balance_row(date:, start:, market:, cash_inflows: 0, cash_outflows: 0)
+    def balance_row(date:, start:, market:, cash_inflows: 0, cash_outflows: 0, cash_adjustments: 0)
       Balance.new(
-        account: @investment, date:, currency: @investment.currency, balance: start + market,
+        account: @investment, date:, currency: @investment.currency,
+        balance: start + market + cash_adjustments,
         start_cash_balance: start, start_non_cash_balance: 0,
         cash_inflows:, cash_outflows:, non_cash_inflows: 0, non_cash_outflows: 0,
+        cash_adjustments:, non_cash_adjustments: 0,
         net_market_flows: market, flows_factor: 1
       ).tap do |row|
         row.define_singleton_method(:start_balance) { BigDecimal(start.to_s) }

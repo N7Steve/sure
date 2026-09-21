@@ -20,7 +20,7 @@
                         } %>
 
         <div class="max-w-full">
-          <% is_generic_fund = entry.account.investment? && %w[roboadvisor managed_fund].include?(entry.account.accountable&.subtype || entry.account.subtype) %>
+          <% is_generic_fund = entry.account.managed_portfolio? %>
           <%= tag.div class: ["flex items-center gap-2 min-w-0"] do %>
             <div class="hidden lg:flex">
               <% if trade_logo_url.present? %>

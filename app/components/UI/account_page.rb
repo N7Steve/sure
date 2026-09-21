@@ -49,8 +49,7 @@ class UI::AccountPage < ApplicationComponent
   def tabs
     base_tabs = case account.accountable_type
     when "Investment"
-      current_subtype = account.accountable&.subtype || account.subtype
-      if %w[roboadvisor managed_fund].include?(current_subtype)
+      if account.managed_portfolio?
         [ :activity ]
       else
         [ :holdings ]

@@ -700,10 +700,24 @@ class Account < ApplicationRecord
   # Investment accounts always support trades (except generic funds); Crypto only if subtype is "exchange"
   def supports_trades?
     current_subtype = accountable&.subtype || subtype
-    return false if investment? && %w[roboadvisor managed_fund].include?(current_subtype)
+    return false if managed_portfolio?
     return true if investment?
     return accountable.supports_trades? if crypto? && accountable.respond_to?(:supports_trades?)
     false
+  end
+
+  # Managed portfolios are identified by product semantics, not only subtype.
+  # Indexa pension accounts, for example, must keep their pension tax subtype
+  # while still behaving as roboadvisors for performance and trading surfaces.
+  def managed_portfolio?
+    return false unless investment?
+    return true if Investment::MANAGED_PORTFOLIO_SUBTYPES.include?(subtype)
+
+    if account_providers.loaded?
+      account_providers.any? { |link| link.provider_type == "IndexaCapitalAccount" }
+    else
+      linked_to?("IndexaCapitalAccount")
+    end
   end
 
   def traded_standard_securities

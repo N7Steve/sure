@@ -146,6 +146,7 @@ en:
       total_return: Total Return
       period_return: Period Return
       period_contributions: Period Contributions
+      period_withdrawals: Period Withdrawals
       accounts: Portfolios
       transfers: Transfers
       no_data: "No Returns"

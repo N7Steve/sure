@@ -38,6 +38,10 @@ class ScheduledPayment::WealthForecast
   def irregular_reserve = Money.new(irregular_monthly_reserve, currency)
   def expected_investment_return = Math.exp(investment_statistics.central.to_f) - 1
 
+  def investment_return_available?
+    investment_monthly_log_returns.any?
+  end
+
   def expected_investment_return_equivalent
     Money.new(current_investment_balance.amount * BigDecimal(expected_investment_return.to_s), currency)
   end
@@ -193,14 +197,22 @@ class ScheduledPayment::WealthForecast
 
     def investment_monthly_log_returns
       @investment_monthly_log_returns ||= investment_periods.filter_map do |period|
-        rows = investment_balance_rows.select { |balance| period.cover?(balance.date) }
-        next if rows.empty?
+        native_returns = managed_portfolio_native_returns(period)
+        native_source_ids = managed_portfolio_performances
+          .select(&:provider_history?)
+          .map { |performance| performance.account.id }
+          .to_set | native_returns.map { |observation| observation[:account_id] }.to_set
+        rows = investment_balance_rows.select do |balance|
+          period.cover?(balance.date) && !native_source_ids.include?(balance.account_id)
+        end
+        next if rows.empty? && native_returns.empty?
 
-        market_pnl = rows.sum { |balance| convert(balance.net_market_flows, balance.currency, balance.date) }
+        market_pnl = rows.sum { |balance| convert(market_pnl_for(balance), balance.currency, balance.date) } +
+          native_returns.sum { |observation| observation[:market_pnl] }
         opening = rows.group_by(&:account_id).sum do |_account_id, account_rows|
           first = account_rows.min_by(&:date)
           convert(first.start_balance, first.currency, first.date)
-        end
+        end + native_returns.sum { |observation| observation[:opening] }
         weighted_flows = rows.sum do |balance|
           flow = balance.flows_factor * (
             balance.cash_inflows - balance.cash_outflows + balance.non_cash_inflows - balance.non_cash_outflows
@@ -218,6 +230,31 @@ class ScheduledPayment::WealthForecast
       end
     end
 
+    # Roboadvisor providers can expose a native, time-weighted return index. It
+    # is superior to inferring performance from balance changes because deposits
+    # would otherwise look like market P&L.
+    # Balance rows for an account are replaced only for months with a valid
+    # provider observation, keeping the generic calculation as a safe fallback.
+    def managed_portfolio_native_returns(period)
+      managed_portfolio_performances.filter_map do |performance|
+        rate = performance.rate_for(period)
+        opening_native = performance.opening_balance(period.begin)
+        next if rate.nil? || rate <= -1 || !opening_native&.positive?
+
+        account = performance.account
+        opening = convert(opening_native, account.currency, period.begin)
+        next unless opening.positive?
+
+        { account_id: account.id, opening:, market_pnl: opening * rate }
+      end
+    end
+
+    def managed_portfolio_performances
+      @managed_portfolio_performances ||= historical_investment_accounts
+        .select(&:managed_portfolio?)
+        .map { |account| Investment::RoboadvisorPerformance.new(account) }
+    end
+
     def investment_balance_rows
       @investment_balance_rows ||= begin
         ids = historical_investment_accounts.map(&:id)
@@ -227,6 +264,34 @@ class ScheduledPayment::WealthForecast
           Balance.where(account_id: ids, date: investment_periods.first.begin..investment_periods.last.end).order(:date).to_a
         end
       end
+    end
+
+    def balance_only_investment_ids
+      @balance_only_investment_ids ||= begin
+        account_ids = historical_investment_accounts.map(&:id)
+        accounts_with_holdings = Holding.where(account_id: account_ids).distinct.pluck(:account_id).to_set
+        account_ids.to_set - accounts_with_holdings
+      end
+    end
+
+    def market_pnl_for(balance)
+      pnl = balance.net_market_flows
+      return pnl unless balance_only_investment_ids.include?(balance.account_id)
+      return pnl if first_investment_balance_dates[balance.account_id] == balance.date
+
+      # Balance-only investments (notably roboadvisors/managed funds) have no
+      # holdings from which the materializer can derive net_market_flows. Their
+      # unexplained valuation change is persisted as an adjustment. Because
+      # transaction/trade flows are already removed by the balance equation,
+      # the adjustment is the deterministic equivalent of market P&L here.
+      pnl + balance.cash_adjustments + balance.non_cash_adjustments
+    end
+
+    def first_investment_balance_dates
+      @first_investment_balance_dates ||= Balance
+        .where(account_id: historical_investment_accounts.map(&:id))
+        .group(:account_id)
+        .minimum(:date)
     end
 
     def investment_statistics

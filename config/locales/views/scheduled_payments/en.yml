@@ -49,13 +49,15 @@ en:
         irregular_reserve: Irregular monthly reserve
         investment_return: Expected investment return
         investment_return_equivalent: "About %{amount} on today's invested capital"
+        investment_return_unavailable: Not enough history
+        investment_return_unavailable_hint: No valid month of investment value and exposed capital is available yet.
         scheduled_average: Scheduled monthly change
         metrics_method_title: How these figures are calculated
         projected_savings_explanation: The average monthly balance growth in the normal scenario. It is calculated by subtracting the current balance from the final projected balance and dividing the result by the selected number of months. It therefore combines Agenda with the unscheduled trend.
         projected_wealth_growth_explanation: The average monthly wealth growth in the normal scenario. It combines Agenda, residual cash flow, the irregular reserve, and compounded investment returns.
         cashflow_residual_explanation: The robust monthly economic flow not explained by Agenda or markets. It uses up to 18 complete months with 0.92 monthly decay and excludes internal transfers, exceptional events and irregular-reserve movements.
         irregular_reserve_explanation: Signed irregular recurring movements observed over the last 12 months, divided by the observable complete months. These movements are excluded from ordinary residual cash flow.
-        investment_return_explanation: Robust expected monthly log return from up to 36 months of market P&L, divided by date-weighted exposed capital. Contributions and withdrawals are not returns.
+        investment_return_explanation: Robust expected monthly log return from up to 36 months. It uses the provider's contribution-adjusted index when available and otherwise market P&L over exposed capital. Balance-only investments use valuation changes net of flows. Contributions and withdrawals are not returns.
         historical_savings_explanation: The average monthly effect of transactions not explained by Agenda. It uses up to 12 complete months, weights recent months more heavily and limits outliers. One-time movements, internal transfers, pending transactions and split parents are excluded.
         historical_wealth_growth_explanation: The robust monthly change in the combined value of your assets. It combines unscheduled saving and appreciation, uses up to five years and gives progressively more weight to recent months. One-time movements are excluded from the trend.
         scheduled_average_explanation: The net monthly effect of Agenda on this account. All scheduled income is added and expenses are subtracted; transfers subtract from the source and add to the destination. The resulting total is divided by the selected number of months.

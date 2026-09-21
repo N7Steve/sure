@@ -70,17 +70,23 @@ class Provider::IndexaCapital
     end
   end
 
-  # GET /accounts/{account_number}/performance → latest portfolio total_amount
-  def get_account_balance(account_number:)
+  # GET /accounts/{account_number}/performance → complete balance and
+  # time-weighted return history. Consumers should preserve this response:
+  # return.index is Indexa's contribution-adjusted return series.
+  def get_account_performance(account_number:)
     sanitize_account_number!(account_number)
-    with_retries("get_account_balance") do
+    with_retries("get_account_performance") do
       response = self.class.get(
         "#{base_url}/accounts/#{account_number}/performance",
         headers: auth_headers
       )
-      data = handle_response(response)
-      extract_balance(data)
+      handle_response(response)
     end
+  end
+
+  def get_account_balance(account_number:, performance_data: nil)
+    data = performance_data || get_account_performance(account_number:)
+    extract_balance(data.with_indifferent_access)
   end
 
   # No activities/transactions endpoint exists in the Indexa Capital API.

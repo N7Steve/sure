@@ -303,14 +303,48 @@ class InvestmentStatementTest < ActiveSupport::TestCase
       "the investment_accounts lookup backing current_holdings should only run once, even for the empty case"
   end
 
+  test "roboadvisor net contributions subtract withdrawals" do
+    account = create_investment_account(balance: 900, subtype: "roboadvisor")
+    date = Date.current
+    account.entries.create!(
+      name: "Contribution", date:, amount: -1_000, currency: "USD",
+      entryable: Transaction.new(kind: "investment_contribution")
+    )
+    account.entries.create!(
+      name: "Withdrawal", date:, amount: 200, currency: "USD",
+      entryable: Transaction.new(kind: "funds_movement")
+    )
+    period = Period.custom(start_date: date, end_date: date)
+
+    assert_equal 800, @statement.roboadvisor_net_contributions(period:)
+    assert_equal Money.new(1_000, "USD"), @statement.roboadvisor_period_contributions(period:)
+    assert_equal Money.new(200, "USD"), @statement.roboadvisor_period_withdrawals(period:)
+  end
+
+  test "roboadvisor period return uses valuation P&L instead of requiring a transaction" do
+    account = create_investment_account(balance: 1_050, subtype: "roboadvisor")
+    account.balances.create!(
+      date: Date.current - 1.month, balance: 1_000, currency: "USD",
+      cash_adjustments: 1_000
+    )
+    account.balances.create!(
+      date: Date.current, balance: 1_050, currency: "USD",
+      start_cash_balance: 1_000, cash_adjustments: 50
+    )
+    period = Period.custom(start_date: Date.current.beginning_of_month, end_date: Date.current)
+
+    assert_equal Money.new(50, "USD"), @statement.roboadvisor_period_return(period:)
+    assert_equal 50, @statement.roboadvisor_total_return
+  end
+
   private
-    def create_investment_account(balance:, cash_balance: 0, currency: "USD")
+    def create_investment_account(balance:, cash_balance: 0, currency: "USD", subtype: nil)
       @family.accounts.create!(
         name: "Investment #{SecureRandom.hex(3)}",
         balance: balance,
         cash_balance: cash_balance,
         currency: currency,
-        accountable: Investment.new
+        accountable: Investment.new(subtype:)
       )
     end
 

@@ -61,6 +61,8 @@ class IndexaCapitalAccount::ProcessorTest < ActiveSupport::TestCase
 
     @account.reload
     assert_in_delta 38905.21, @account.balance.to_f, 0.01
+    assert_equal "roboadvisor", @account.subtype
+    assert_predicate @account, :managed_portfolio?
   end
 
   test "processor falls back to holdings sum when current_balance is missing" do

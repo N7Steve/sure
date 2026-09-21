@@ -290,12 +290,17 @@ class IndexaCapitalItemsController < ApplicationController
 
     def link_indexa_capital_account(indexa_capital_account, accountable_type)
       accountable_class = validated_accountable_class(accountable_type)
+      accountable_attrs = if accountable_class == Investment
+        { subtype: indexa_capital_account.suggested_investment_subtype }
+      else
+        {}
+      end
 
       account = Current.family.accounts.create!(
         name: indexa_capital_account.name,
         balance: indexa_capital_account.current_balance || 0,
         currency: indexa_capital_account.currency || "EUR",
-        accountable: accountable_class.new
+        accountable: accountable_class.new(accountable_attrs)
       )
 
       account.auto_share_with_family! if Current.family.share_all_by_default?
@@ -308,7 +313,9 @@ class IndexaCapitalItemsController < ApplicationController
       accountable_attrs = {}
 
       # Set subtype if the accountable supports it
-      if config[:subtype].present? && accountable_class.respond_to?(:subtypes)
+      if accountable_class == Investment
+        accountable_attrs[:subtype] = config[:subtype].presence || indexa_capital_account.suggested_investment_subtype
+      elsif config[:subtype].present? && accountable_class.respond_to?(:subtypes)
         accountable_attrs[:subtype] = config[:subtype]
       end
 

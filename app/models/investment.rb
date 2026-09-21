@@ -1,4 +1,5 @@
 class Investment < ApplicationRecord
+  MANAGED_PORTFOLIO_SUBTYPES = %w[roboadvisor managed_fund].freeze
   include Accountable
 
   after_update :migrate_trades_to_transactions, if: :subtype_migrated_to_generic?
@@ -155,7 +156,7 @@ class Investment < ApplicationRecord
   private
 
     def subtype_migrated_to_generic?
-      saved_change_to_subtype? && %w[roboadvisor managed_fund].include?(subtype)
+      saved_change_to_subtype? && MANAGED_PORTFOLIO_SUBTYPES.include?(subtype)
     end
 
     def migrate_trades_to_transactions

@@ -7,7 +7,7 @@
     </div>
 
     <%# Roboadvisor Summary Cards %>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <%# Portfolio Value Card %>
       <div class="bg-container-inset rounded-lg p-4">
         <div class="flex items-center gap-2 mb-3">
@@ -19,7 +19,7 @@
         </p>
         <% if roboadvisor_metrics[:total_return_trend] %>
           <% total_return_money = Money.new(roboadvisor_metrics[:total_return_trend].value, Current.family.currency) %>
-          <p class="text-xs text-gray-500 mt-1 privacy-sensitive">
+          <p class="text-xs text-secondary mt-1 privacy-sensitive">
             <%= t("reports.roboadvisor_performance.estimated_net_value", value: format_money(calculate_estimated_net_liquidity(roboadvisor_metrics[:portfolio_value], total_return_money))) %>
           </p>
         <% end %>
@@ -37,7 +37,7 @@
             <%= format_money(total_return_money) %>
             (<%= roboadvisor_metrics[:total_return_trend].percent_formatted %>)
           </p>
-          <p class="text-xs text-gray-500 mt-1 privacy-sensitive">
+          <p class="text-xs text-secondary mt-1 privacy-sensitive">
             <%= t("reports.roboadvisor_performance.estimated_net_return", value: format_money(calculate_estimated_net_return(total_return_money))) %>
           </p>
         <% else %>
@@ -54,6 +54,17 @@
         <% period_return = roboadvisor_metrics[:period_return] %>
         <p class="text-xl font-semibold privacy-sensitive" style="color: <%= period_return.amount >= 0 ? 'var(--color-success)' : 'var(--color-destructive)' %>">
           <%= format_money(period_return) %>
+        </p>
+      </div>
+
+      <%# Period Withdrawals Card %>
+      <div class="bg-container-inset rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <%= icon("arrow-up-from-line", size: "sm") %>
+          <span class="text-sm text-secondary"><%= t("reports.roboadvisor_performance.period_withdrawals") %></span>
+        </div>
+        <p class="text-xl font-semibold text-primary privacy-sensitive">
+          <%= format_money(roboadvisor_metrics[:period_withdrawals]) %>
         </p>
       </div>
 

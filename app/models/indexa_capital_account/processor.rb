@@ -15,6 +15,8 @@ class IndexaCapitalAccount::Processor
 
     Rails.logger.info "IndexaCapitalAccount::Processor - Processing account #{indexa_capital_account.id} -> Sure account #{account.id}"
 
+    apply_managed_portfolio_semantics(account)
+
     # Update account balance FIRST (before processing transactions/holdings/activities)
     update_account_balance(account)
 
@@ -48,6 +50,13 @@ class IndexaCapitalAccount::Processor
   end
 
   private
+
+    def apply_managed_portfolio_semantics(account)
+      return unless account.investment?
+      return if account.subtype.present?
+
+      account.accountable.update!(subtype: indexa_capital_account.suggested_investment_subtype)
+    end
 
     def update_account_balance(account)
       # Calculate total balance and cash balance from provider data

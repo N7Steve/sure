@@ -146,6 +146,7 @@ es:
       total_return: Rentabilidad Total
       period_return: Rentabilidad del Periodo
       period_contributions: Aportaciones del Periodo
+      period_withdrawals: Retiradas del Periodo
       accounts: Carteras
       transfers: Transferencias
       no_data: "Sin datos"
