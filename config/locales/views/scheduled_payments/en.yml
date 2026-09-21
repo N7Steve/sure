@@ -45,10 +45,17 @@ en:
         projected_wealth_growth: Projected monthly wealth growth
         historical_savings: Unscheduled monthly trend
         historical_wealth_growth: Historical saving and growth
+        cashflow_residual: Expected residual cash flow
+        irregular_reserve: Irregular monthly reserve
+        investment_return: Expected investment return
+        investment_return_equivalent: "About %{amount} on today's invested capital"
         scheduled_average: Scheduled monthly change
         metrics_method_title: How these figures are calculated
         projected_savings_explanation: The average monthly balance growth in the normal scenario. It is calculated by subtracting the current balance from the final projected balance and dividing the result by the selected number of months. It therefore combines Agenda with the unscheduled trend.
-        projected_wealth_growth_explanation: The average monthly wealth growth in the normal scenario. It combines Agenda with the weighted historical trend, including unscheduled saving and asset appreciation.
+        projected_wealth_growth_explanation: The average monthly wealth growth in the normal scenario. It combines Agenda, residual cash flow, the irregular reserve, and compounded investment returns.
+        cashflow_residual_explanation: The robust monthly economic flow not explained by Agenda or markets. It uses up to 18 complete months with 0.92 monthly decay and excludes internal transfers, exceptional events and irregular-reserve movements.
+        irregular_reserve_explanation: Signed irregular recurring movements observed over the last 12 months, divided by the observable complete months. These movements are excluded from ordinary residual cash flow.
+        investment_return_explanation: Robust expected monthly log return from up to 36 months of market P&L, divided by date-weighted exposed capital. Contributions and withdrawals are not returns.
         historical_savings_explanation: The average monthly effect of transactions not explained by Agenda. It uses up to 12 complete months, weights recent months more heavily and limits outliers. One-time movements, internal transfers, pending transactions and split parents are excluded.
         historical_wealth_growth_explanation: The robust monthly change in the combined value of your assets. It combines unscheduled saving and appreciation, uses up to five years and gives progressively more weight to recent months. One-time movements are excluded from the trend.
         scheduled_average_explanation: The net monthly effect of Agenda on this account. All scheduled income is added and expenses are subtracted; transfers subtract from the source and add to the destination. The resulting total is divided by the selected number of months.
@@ -66,8 +73,8 @@ en:
         method_agenda: Agenda movements are the source of truth and are applied on their exact future dates. They are not estimated again from history.
         wealth_method_agenda: Agenda income and expenses are applied on their exact dates and removed from the historical trend to avoid double counting. Transfers between included assets do not change wealth.
         method_history: The remaining historical cash flow uses up to 12 complete months, gives more weight to recent months and limits the effect of outliers. Transfers, pending transactions, split parents and one-time movements are excluded.
-        wealth_method_history: The remaining trend uses up to 60 months of aggregate asset values, weights recent months exponentially and limits outliers. Historical one-time movements are excluded rather than projected into the future.
-        method_scenarios: The normal scenario uses the robust historical trend. Optimistic and pessimistic scenarios use its variability; estimated Agenda amounts also vary by 15%.
+        wealth_method_history: Residual cash flow and investment returns are fitted independently. Cash flow is linear; investment returns compound on current capital and on scheduled contributions from their dates.
+        method_scenarios: Cash-flow uncertainty grows linearly. Investment uncertainty grows with the square root of time. Estimated Agenda amounts use learned historical error dispersion after four confirmations, otherwise 15%.
         one_time_ignored:
           one: One historical one-time movement was ignored.
           other: "%{count} historical one-time movements were ignored."

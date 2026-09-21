@@ -78,6 +78,14 @@ class Transaction < ApplicationRecord
     transfer_from_excluded: "transfer_from_excluded" # Crossing into the user's financial boundary; treated as income
   }
 
+  enum :forecast_behavior, {
+    normal: "normal",
+    exceptional_once: "exceptional_once",
+    irregular_recurring: "irregular_recurring"
+  }, prefix: :forecast, validate: true
+
+  before_validation :synchronize_legacy_one_time_behavior
+
   # All kinds where money moves between accounts (transfer? returns true).
   # Used for search filters, rule conditions, and UI display.
   TRANSFER_KINDS = %w[funds_movement cc_payment loan_payment investment_contribution transfer_to_excluded transfer_from_excluded].freeze
@@ -393,6 +401,15 @@ class Transaction < ApplicationRecord
   end
 
   private
+
+    def synchronize_legacy_one_time_behavior
+      if will_save_change_to_kind? && kind == "one_time" && !will_save_change_to_forecast_behavior?
+        self.forecast_behavior = "exceptional_once"
+      elsif will_save_change_to_forecast_behavior?
+        self.kind = "one_time" if forecast_exceptional_once?
+        self.kind = "standard" if kind == "one_time" && !forecast_exceptional_once?
+      end
+    end
 
     def validate_attachments
       # Check attachment count limit

@@ -67,13 +67,7 @@ class ScheduledPayment::WealthForecastTest < ActiveSupport::TestCase
       name: "Exceptional purchase",
       entryable: transaction
     )
-    series = Series.from_raw_values([
-      { date: Date.new(2026, 1, 31), value: Money.new(10_000, @family.currency) },
-      { date: Date.new(2026, 2, 28), value: Money.new(9_000, @family.currency) }
-    ], interval: "1 month")
     forecast = build_forecast
-    forecast.stubs(:historical_series).returns(series)
-    forecast.stubs(:first_balance_date).returns(Date.new(2026, 1, 1))
 
     assert_equal 0, forecast.historical_monthly_savings.amount
     assert_equal 1, forecast.ignored_one_time_count

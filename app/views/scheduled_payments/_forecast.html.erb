@@ -79,7 +79,7 @@
       </div>
     <% end %>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 <%= @wealth_forecast ? "xl:grid-cols-3" : "xl:grid-cols-4" %>">
       <%= render DS::Card.new(class: "gap-1") do %>
         <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "current_wealth" : "current_balance"}") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.current_balance) %></p>
@@ -89,12 +89,23 @@
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.projected_monthly_savings) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
-        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth" : "historical_savings"}") %></p>
-        <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.historical_monthly_savings) %></p>
+        <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "cashflow_residual" : "historical_savings"}") %></p>
+        <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@wealth_forecast ? @forecast.cashflow_residual : @forecast.historical_monthly_savings) %></p>
       <% end %>
       <%= render DS::Card.new(class: "gap-1") do %>
         <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.scheduled_average") %></p>
         <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.scheduled_monthly_change) %></p>
+      <% end %>
+      <% if @wealth_forecast %>
+        <%= render DS::Card.new(class: "gap-1") do %>
+          <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.irregular_reserve") %></p>
+          <p class="text-lg font-medium text-primary privacy-sensitive"><%= format_money(@forecast.irregular_reserve) %></p>
+        <% end %>
+        <%= render DS::Card.new(class: "gap-1") do %>
+          <p class="text-xs text-secondary"><%= t("scheduled_payments.agenda.forecast.investment_return") %></p>
+          <p class="text-lg font-medium text-primary privacy-sensitive"><%= number_to_percentage(@forecast.expected_investment_return * 100, precision: 2) %></p>
+          <p class="text-xs text-secondary privacy-sensitive"><%= t("scheduled_payments.agenda.forecast.investment_return_equivalent", amount: format_money(@forecast.expected_investment_return_equivalent)) %></p>
+        <% end %>
       <% end %>
     </div>
 
@@ -105,9 +116,19 @@
           <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "projected_wealth_growth_explanation" : "projected_savings_explanation"}") %></dd>
         </div>
         <div>
-          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth" : "historical_savings"}") %></dt>
-          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "historical_wealth_growth_explanation" : "historical_savings_explanation"}") %></dd>
+          <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "cashflow_residual" : "historical_savings"}") %></dt>
+          <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "cashflow_residual_explanation" : "historical_savings_explanation"}") %></dd>
         </div>
+        <% if @wealth_forecast %>
+          <div>
+            <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.investment_return") %></dt>
+            <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.investment_return_explanation") %></dd>
+          </div>
+          <div>
+            <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.irregular_reserve") %></dt>
+            <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.irregular_reserve_explanation") %></dd>
+          </div>
+        <% end %>
         <div>
           <dt class="font-medium text-primary"><%= t("scheduled_payments.agenda.forecast.scheduled_average") %></dt>
           <dd class="mt-1 text-secondary"><%= t("scheduled_payments.agenda.forecast.#{@wealth_forecast ? "wealth_scheduled_average_explanation" : "scheduled_average_explanation"}") %></dd>

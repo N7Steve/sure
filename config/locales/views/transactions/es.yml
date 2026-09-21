@@ -77,6 +77,12 @@ es:
       activity_type_description: Tipo de actividad de inversión (Compra, Venta, Dividendo, etc.). Detectado automáticamente o configurado manualmente.
       one_time_title: Transacción puntual %{type}
       one_time_description: Las transacciones puntuales se excluirán de ciertos cálculos de presupuesto e informes para ayudarte a ver lo que es realmente importante.
+      forecast_behavior_title: Comportamiento en previsiones
+      forecast_behavior_description: Elige cómo debe influir este movimiento en las previsiones futuras.
+      forecast_behaviors:
+        normal: Normal
+        exceptional_once: Excepcional, no prever
+        irregular_recurring: Irregular, provisionar durante el año
       convert_to_trade_title: Convertir en operación de valores
       convert_to_trade_description: Convierte esta transacción en una operación de compra o venta con detalles del valor para el seguimiento de la cartera.
       convert_to_trade_button: Convertir en operación

@@ -1,9 +1,9 @@
 class ScheduledPayment::Forecast
   HORIZONS = [ 1, 3, 6, 12, 36 ].freeze
   HISTORY_MONTHS = 12
-  ESTIMATE_VARIANCE = BigDecimal("0.15")
+  ESTIMATE_VARIANCE = ScheduledPayment::EstimateUncertainty::FALLBACK
   Scenario = Data.define(:key, :monthly_residual)
-  Event = Data.define(:date, :delta, :estimated)
+  Event = Data.define(:date, :delta, :estimated, :uncertainty)
 
   attr_reader :family, :user, :account, :horizon_months, :conversion_failures
 
@@ -33,6 +33,10 @@ class ScheduledPayment::Forecast
 
   def historical_monthly_savings
     Money.new(central_monthly_change, account.currency)
+  end
+
+  def irregular_reserve
+    Money.new(irregular_monthly_reserve, account.currency)
   end
 
   def scheduled_monthly_change
@@ -102,13 +106,26 @@ class ScheduledPayment::Forecast
       @historical_monthly_changes ||= begin
         periods = completed_periods
         entries = eligible_historical_entries.where(date: periods.first.begin..periods.last.end).to_a
-          .reject { |entry| explained_by_schedule?(entry) }
+          .reject { |entry| explained_by_schedule?(entry) || entry.entryable.forecast_irregular_recurring? }
         first_activity = entries.map(&:date).min
         applicable = first_activity ? periods.drop_while { |period| period.end < first_activity } : []
 
         applicable.map do |period|
           -entries.select { |entry| period.cover?(entry.date) }.sum(&:amount)
         end
+      end
+    end
+
+    def irregular_monthly_reserve
+      @irregular_monthly_reserve ||= begin
+        periods = completed_periods
+        entries = historical_scope.where(
+          date: periods.first.begin..periods.last.end,
+          transactions: { forecast_behavior: "irregular_recurring" }
+        ).to_a.reject { |entry| explained_by_schedule?(entry) }
+        first_activity = historical_scope.where(date: periods.first.begin..periods.last.end).minimum(:date)
+        observed = first_activity ? periods.drop_while { |period| period.end < first_activity } : []
+        observed.empty? ? 0.to_d : -entries.sum(&:amount) / BigDecimal(observed.size.to_s)
       end
     end
 
@@ -129,43 +146,18 @@ class ScheduledPayment::Forecast
     end
 
     def central_monthly_change
-      robust_history.fetch(:central)
+      robust_history.central
     end
 
     def robust_history
-      @robust_history ||= begin
-        values = historical_monthly_changes.map { |value| BigDecimal(value.to_s) }
-        if values.empty?
-          { central: BigDecimal("0"), spread: BigDecimal("0") }
-        else
-          median = median(values)
-          mad = median(values.map { |value| (value - median).abs })
-          clamped = if mad.zero?
-            values
-          else
-            lower = median - mad * BigDecimal("2.5")
-            upper = median + mad * BigDecimal("2.5")
-            values.map { |value| value.clamp(lower, upper) }
-          end
-          weights = (1..clamped.size).map { |weight| BigDecimal(weight.to_s) }
-          central = clamped.zip(weights).sum { |value, weight| value * weight } / weights.sum
-          spread = mad * BigDecimal("1.4826")
-          { central: central, spread: spread }
-        end
-      end
-    end
-
-    def median(values)
-      sorted = values.sort
-      middle = sorted.length / 2
-      sorted.length.odd? ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
+      @robust_history ||= ScheduledPayment::RobustEstimator.call(historical_monthly_changes, decay: BigDecimal("0.92"))
     end
 
     def scenarios
       @scenarios ||= [
-        Scenario.new(key: :pessimistic, monthly_residual: central_monthly_change - robust_history.fetch(:spread)),
+        Scenario.new(key: :pessimistic, monthly_residual: central_monthly_change - robust_history.spread),
         Scenario.new(key: :normal, monthly_residual: central_monthly_change),
-        Scenario.new(key: :optimistic, monthly_residual: central_monthly_change + robust_history.fetch(:spread))
+        Scenario.new(key: :optimistic, monthly_residual: central_monthly_change + robust_history.spread)
       ]
     end
 
@@ -197,7 +189,7 @@ class ScheduledPayment::Forecast
         return unless entry
         return if entry.date <= start_date
 
-        return Event.new(date: entry.date, delta: -entry.amount, estimated: false)
+        return Event.new(date: entry.date, delta: -entry.amount, estimated: false, uncertainty: 0.to_d)
       end
 
       delta = if payment.account_id == account.id
@@ -205,7 +197,10 @@ class ScheduledPayment::Forecast
       else
         converted_transfer_amount(payment)
       end
-      Event.new(date: date, delta: delta, estimated: payment.amount_estimated?) if delta
+      Event.new(
+        date:, delta:, estimated: payment.amount_estimated?,
+        uncertainty: ScheduledPayment::EstimateUncertainty.for(payment, before: start_date)
+      ) if delta
     end
 
     def converted_transfer_amount(payment)
@@ -228,7 +223,8 @@ class ScheduledPayment::Forecast
         scheduled_delta = future_events.select { |event| event.date <= date }.sum do |event|
           event.delta * estimated_multiplier(event, scenario.key)
         end
-        amount = BigDecimal(account.balance.to_s) + scenario.monthly_residual * elapsed_months + scheduled_delta
+        amount = BigDecimal(account.balance.to_s) +
+          (scenario.monthly_residual + irregular_monthly_reserve) * elapsed_months + scheduled_delta
         money = Money.new(amount, account.currency)
         point[scenario.key] = { amount: amount.to_f, formatted: money.format }
       end
@@ -238,7 +234,7 @@ class ScheduledPayment::Forecast
       return BigDecimal("1") unless event.estimated
       return BigDecimal("1") if scenario == :normal
 
-      adverse = event.delta.negative? ? BigDecimal("1") + ESTIMATE_VARIANCE : BigDecimal("1") - ESTIMATE_VARIANCE
+      adverse = event.delta.negative? ? BigDecimal("1") + event.uncertainty : BigDecimal("1") - event.uncertainty
       scenario == :pessimistic ? adverse : BigDecimal("2") - adverse
     end
 end

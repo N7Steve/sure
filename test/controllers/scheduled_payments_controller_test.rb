@@ -60,7 +60,9 @@ class ScheduledPaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name=account_id] option[selected][value=wealth]",
       text: I18n.t("scheduled_payments.agenda.forecast.wealth")
     assert_select "[data-controller=forecast-chart]", count: 1
-    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.historical_wealth_growth")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.cashflow_residual")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.investment_return")
+    assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.irregular_reserve")
     assert_includes response.body, I18n.t("scheduled_payments.agenda.forecast.horizons.12")
   end
 

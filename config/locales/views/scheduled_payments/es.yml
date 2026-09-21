@@ -45,10 +45,17 @@ es:
         projected_wealth_growth: Crecimiento mensual previsto
         historical_savings: Tendencia mensual no programada
         historical_wealth_growth: Ahorro y crecimiento histórico
+        cashflow_residual: Flujo residual mensual esperado
+        irregular_reserve: Reserva irregular mensual
+        investment_return: Rentabilidad esperada de inversiones
+        investment_return_equivalent: "Aproximadamente %{amount} sobre el capital invertido actual"
         scheduled_average: Variación mensual programada
         metrics_method_title: Cómo se calculan estos importes
         projected_savings_explanation: Es el crecimiento mensual medio del saldo en el escenario normal. Se calcula restando el saldo actual al saldo final previsto y dividiendo el resultado entre los meses seleccionados. Por tanto, combina Agenda con la tendencia no programada.
-        projected_wealth_growth_explanation: Es el crecimiento mensual medio del patrimonio en el escenario normal. Combina Agenda con la tendencia histórica ponderada, incluido el ahorro no programado y la revalorización de los activos.
+        projected_wealth_growth_explanation: Es el crecimiento mensual medio del patrimonio en el escenario normal. Combina Agenda, flujo residual, reserva irregular y rentabilidad compuesta de las inversiones.
+        cashflow_residual_explanation: Es el flujo económico mensual robusto no explicado por Agenda ni por mercado. Usa hasta 18 meses completos con decay mensual 0,92 y excluye transferencias internas, eventos excepcionales y movimientos de la reserva irregular.
+        irregular_reserve_explanation: Suma firmada de movimientos irregulares recurrentes de los últimos 12 meses, dividida entre los meses completos observables. Esos movimientos no entran en el residual ordinario.
+        investment_return_explanation: Rentabilidad logarítmica mensual robusta obtenida de hasta 36 meses de P&L de mercado sobre capital expuesto ponderado por fecha. Las aportaciones y retiradas no son rentabilidad.
         historical_savings_explanation: Es el efecto mensual medio de las transacciones que no explica Agenda. Usa hasta 12 meses completos, da más peso a los recientes y limita los valores atípicos. Excluye movimientos puntuales, transferencias internas, pendientes y padres de divisiones.
         historical_wealth_growth_explanation: Es el cambio mensual robusto del valor conjunto de tus activos. Combina ahorro no programado y revalorización, usa hasta cinco años y da cada vez más peso a los meses recientes. Los movimientos puntuales se excluyen de la tendencia.
         scheduled_average_explanation: Es el efecto mensual neto de Agenda sobre esta cuenta. Suma los ingresos programados y resta los gastos; las transferencias restan en el origen y suman en el destino. El total resultante se divide entre los meses seleccionados.
@@ -66,8 +73,8 @@ es:
         method_agenda: Los movimientos de Agenda son la fuente de verdad y se aplican en sus fechas futuras exactas. No se vuelven a estimar a partir del historial.
         wealth_method_agenda: Los ingresos y gastos de Agenda se aplican en sus fechas exactas y se retiran de la tendencia histórica para no duplicarlos. Las transferencias entre activos incluidos no cambian el patrimonio.
         method_history: El flujo restante usa hasta 12 meses completos, pondera más los recientes y limita el efecto de valores atípicos. Excluye transferencias, pendientes, padres de divisiones y movimientos puntuales.
-        wealth_method_history: La tendencia restante usa hasta 60 meses del valor agregado de los activos, pondera exponencialmente los meses recientes y limita valores atípicos. Los movimientos puntuales históricos se excluyen en vez de proyectarse hacia el futuro.
-        method_scenarios: El escenario normal usa la tendencia histórica robusta. El optimista y el pesimista usan su variabilidad; los importes estimados de Agenda varían además un 15 %.
+        wealth_method_history: El flujo residual y la rentabilidad de inversiones se ajustan por separado. El flujo es lineal; la inversión capitaliza sobre el capital actual y las aportaciones programadas desde su fecha.
+        method_scenarios: La incertidumbre de cashflow crece linealmente y la de mercado con la raíz cuadrada del tiempo. Los importes estimados de Agenda aprenden su dispersión tras cuatro confirmaciones; antes usan 15 %.
         one_time_ignored:
           one: Se ha ignorado un movimiento puntual histórico.
           other: "Se han ignorado %{count} movimientos puntuales históricos."

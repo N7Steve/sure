@@ -885,7 +885,8 @@ class Family::DataImporter
         transaction.assign_attributes(
           category_id: new_category_id,
           merchant_id: new_merchant_id,
-          kind: data["kind"] || "standard"
+          kind: data["kind"] || "standard",
+          forecast_behavior: data["forecast_behavior"] || (data["kind"] == "one_time" ? "exceptional_once" : "normal")
         )
 
         entry ||= Entry.new(entryable: transaction)
@@ -952,7 +953,8 @@ class Family::DataImporter
           excluded: boolean_import_value(row, "excluded", default: false),
           tag_ids: mapped_tag_ids(row["tag_ids"], record_type: "Transaction"),
           tag_ids_provided: row.key?("tag_ids"),
-          kind: row["kind"]
+          kind: row["kind"],
+          forecast_behavior: row["forecast_behavior"]
         }
       end
     end
@@ -973,7 +975,8 @@ class Family::DataImporter
         transaction = child_entry.entryable
         transaction.update!(
           merchant_id: row[:merchant_id_provided] ? row[:merchant_id] : transaction.merchant_id,
-          kind: row[:kind].presence || transaction.kind
+          kind: row[:kind].presence || transaction.kind,
+          forecast_behavior: row[:forecast_behavior].presence || transaction.forecast_behavior
         )
         child_entry.update!(notes: row[:notes]) if row[:notes].present?
 
