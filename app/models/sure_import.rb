@@ -60,7 +60,15 @@ class SureImport < Import
     end
 
     def dry_run_totals_from_ndjson(content)
+      if Family::Backup.snapshot?(content)
+        return Family::Backup::Restorer.new(nil, content).validate!.counts.transform_keys(&:to_sym)
+      end
+
       dry_run_totals_from_line_type_counts(ndjson_line_type_counts(content))
+    rescue Family::Backup::InvalidBackupError
+      # Keep invalid uploads inspectable through preflight, without allowing
+      # them to become publishable or failing the upload itself.
+      {}
     end
 
     def dry_run_totals_from_line_type_counts(counts)
@@ -134,6 +142,11 @@ class SureImport < Import
     importer = Family::DataImporter.new(family, ndjson_blob_string, import_session: import_session, import: self)
     result = importer.import!
 
+    if result[:verification]
+      update!(summary: result[:summary], readback_verification: result[:verification])
+      return result
+    end
+
     Import.transaction do
       result[:accounts].each { |account| account.save! if account.new_record? }
       result[:entries].each { |entry| entry.save! if entry.new_record? }
@@ -179,7 +192,7 @@ class SureImport < Import
 
     import!
 
-    family.sync_later
+    family.sync_later unless full_backup?
 
     update! status: :complete
   rescue StandardError => error
@@ -253,8 +266,22 @@ class SureImport < Import
   end
 
   def revert
+    raise NotPublishableError, "A full backup restore cannot be reverted as a transaction import." if full_backup?
+
     super
     reset_readback_verification! if pending?
+  end
+
+  def full_backup?
+    ndjson_file.attached? && Family::Backup.snapshot?(ndjson_blob_string)
+  end
+
+  def data_committed?
+    summary&.dig("backup_restore", "sha256").present? || super
+  end
+
+  def revertable?
+    !full_backup? && super
   end
 
   private
@@ -264,7 +291,7 @@ class SureImport < Import
 
       update_columns(
         rows_count: line_counts.values.sum,
-        expected_record_counts: self.class.expected_record_counts_from_line_type_counts(line_counts),
+        expected_record_counts: full_backup? ? dry_run.transform_keys(&:to_s) : self.class.expected_record_counts_from_line_type_counts(line_counts),
         readback_verification: {},
         updated_at: Time.current
       )

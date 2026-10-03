@@ -58,7 +58,11 @@ module Family::VectorSearchable
       file_size: file_content.bytesize,
       provider_file_id: response.data[:file_id],
       status: "ready",
-      metadata: metadata || {}
+      metadata: metadata || {},
+      file: {
+        io: StringIO.new(file_content), filename: filename,
+        content_type: Marcel::MimeType.for(name: filename), identify: false
+      }
     )
   end
 

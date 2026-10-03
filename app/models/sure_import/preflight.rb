@@ -115,6 +115,8 @@ class SureImport::Preflight
   end
 
   def call
+    return backup_preflight if Family::Backup.snapshot?(@content)
+
     parse_records
     validate_taxonomy_collisions
     validate_duplicate_taxonomy_names
@@ -139,6 +141,19 @@ class SureImport::Preflight
   end
 
   private
+    def backup_preflight
+      restorer = Family::Backup::Restorer.new(family, @content).validate!
+      Result.new(errors: [], warnings: restorer.warnings, stats: {
+        rows_count: @content.lines.size, valid_rows_count: @content.lines.size,
+        invalid_rows_count: 0, entity_counts: restorer.counts, record_type_counts: {}
+      })
+    rescue Family::Backup::InvalidBackupError => error
+      Result.new(errors: [ { code: "invalid_backup", message: error.message } ], warnings: [], stats: {
+        rows_count: @content.lines.size, valid_rows_count: 0,
+        invalid_rows_count: @content.lines.size, entity_counts: {}, record_type_counts: {}
+      })
+    end
+
     attr_reader :family
 
     def parse_records

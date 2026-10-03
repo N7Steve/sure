@@ -424,6 +424,15 @@ class Api::V1::ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, import.rows_count
   end
 
+  test "members cannot upload complete snapshots" do
+    @user.update!(role: "member")
+    content = Family::Backup.new(Family.create!(name: "Backup source")).generate_ndjson
+    assert_no_difference("Import.count") do
+      post api_v1_imports_url, params: { type: "SureImport", raw_file_content: content }, headers: api_headers(@api_key)
+    end
+    assert_response :forbidden
+  end
+
   test "should reject Sure import with no file or raw content" do
     assert_no_difference("Import.count") do
       post api_v1_imports_url,

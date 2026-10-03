@@ -32,6 +32,9 @@ class Api::V1::ImportSessionsController < Api::V1::BaseController
   def create_chunk
     content, filename, content_type = sure_import_upload_attributes
     return unless content
+    if Family::Backup.snapshot?(content) && !current_resource_owner.admin?
+      return render_error("forbidden", "Full backup restoration requires a family administrator.", :forbidden)
+    end
 
     @import_session.attach_chunk!(
       sequence: sequence_param,
@@ -55,6 +58,9 @@ class Api::V1::ImportSessionsController < Api::V1::BaseController
   end
 
   def publish
+    if @import_session.imports.any?(&:full_backup?) && !current_resource_owner.admin?
+      return render_error("forbidden", "Full backup restoration requires a family administrator.", :forbidden)
+    end
     @import_session.publish_later
     @import_session.reload
     render_import_session(status: :accepted)

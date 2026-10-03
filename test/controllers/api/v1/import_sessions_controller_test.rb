@@ -15,6 +15,22 @@ class Api::V1::ImportSessionsControllerTest < ActionDispatch::IntegrationTest
     Redis.new.del("api_rate_limit:#{@read_only_api_key.id}")
   end
 
+  test "members cannot attach or publish complete snapshots" do
+    session = @family.import_sessions.create!(import_type: "SureImport")
+    content = Family::Backup.new(Family.create!(name: "Backup source")).generate_ndjson
+    @user.update!(role: "member")
+    assert_no_difference("Import.count") do
+      post chunks_api_v1_import_session_url(session), params: { sequence: 1, raw_file_content: content }, headers: api_headers(@api_key)
+    end
+    assert_response :forbidden
+
+    session.attach_chunk!(sequence: 1, content: content, filename: "all.ndjson", content_type: "application/x-ndjson")
+    assert_no_enqueued_jobs do
+      post publish_api_v1_import_session_url(session), headers: api_headers(@api_key)
+    end
+    assert_response :forbidden
+  end
+
   test "creates an idempotent Sure import session" do
     assert_difference("ImportSession.count", 1) do
       post api_v1_import_sessions_url,

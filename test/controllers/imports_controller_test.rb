@@ -8,6 +8,23 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     ensure_tailwind_build
   end
 
+  test "members cannot upload or publish complete backups" do
+    @user.update!(role: "member")
+    content = Family::Backup.new(Family.create!(name: "Backup source")).generate_ndjson
+    file = Rack::Test::UploadedFile.new(StringIO.new(content), "application/x-ndjson", original_filename: "all.ndjson")
+    assert_no_difference("Import.count") do
+      post imports_url, params: { import: { type: "SureImport", import_file: file } }
+    end
+    assert_response :forbidden
+
+    import = @user.family.imports.create!(type: "SureImport")
+    import.ndjson_file.attach(io: StringIO.new(content), filename: "all.ndjson", content_type: "application/x-ndjson")
+    assert_no_enqueued_jobs do
+      post publish_import_url(import)
+    end
+    assert_response :forbidden
+  end
+
   test "gets index" do
     get imports_url
 

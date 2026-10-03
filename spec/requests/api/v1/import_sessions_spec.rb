@@ -184,7 +184,7 @@ RSpec.describe 'API V1 Import Sessions', type: :request do
     let(:id) { import_session.id }
 
     post 'Upload import session chunk' do
-      description 'Attach an ordered Sure NDJSON chunk to an import session. Chunks are idempotent by sequence and client_chunk_id with content verification.'
+      description 'Attach an ordered Sure NDJSON chunk to an import session. Chunks are idempotent by sequence and client_chunk_id with content verification. A version 3 full backup is a self-contained single chunk and requires a family administrator.'
       tags 'Import Sessions'
       security [ { apiKeyAuth: [] } ]
       consumes 'application/json', 'multipart/form-data'
@@ -324,7 +324,7 @@ RSpec.describe 'API V1 Import Sessions', type: :request do
     let(:id) { import_session.id }
 
     post 'Publish import session' do
-      description 'Queue ordered chunk processing for a SureImport session. Later chunks can reference source IDs mapped by earlier chunks.'
+      description 'Queue ordered chunk processing for a SureImport session. Later chunks can reference source IDs mapped by earlier chunks. Publishing a session containing a version 3 full backup requires a family administrator and an empty destination family.'
       tags 'Import Sessions'
       security [ { apiKeyAuth: [] } ]
       produces 'application/json'

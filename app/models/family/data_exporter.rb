@@ -2,58 +2,71 @@ require "zip"
 require "csv"
 
 class Family::DataExporter
-  EXPORT_VERSION = 2
+  EXPORT_VERSION = 3
 
   def initialize(family)
     @family = family
   end
 
   def generate_export
-    # Create a StringIO to hold the zip data in memory
-    zip_data = Zip::OutputStream.write_buffer do |zipfile|
-      # Add export version marker for downstream tooling
-      zipfile.put_next_entry("version.txt")
-      zipfile.write generate_version_txt
-
-      # Add accounts.csv
-      zipfile.put_next_entry("accounts.csv")
-      zipfile.write generate_accounts_csv
-
-      # Add transactions.csv
-      zipfile.put_next_entry("transactions.csv")
-      zipfile.write generate_transactions_csv
-
-      # Add trades.csv
-      zipfile.put_next_entry("trades.csv")
-      zipfile.write generate_trades_csv
-
-      # Add categories.csv
-      zipfile.put_next_entry("categories.csv")
-      zipfile.write generate_categories_csv
-
-      # Add merchants.csv
-      zipfile.put_next_entry("merchants.csv")
-      zipfile.write generate_merchants_csv
-
-      # Add rules.csv
-      zipfile.put_next_entry("rules.csv")
-      zipfile.write generate_rules_csv
-
-      # Add attachment manifest metadata. Binary file payloads are not included.
-      zipfile.put_next_entry("attachments.json")
-      zipfile.write generate_attachments_manifest
-
-      # Add all.ndjson
-      zipfile.put_next_entry("all.ndjson")
-      zipfile.write generate_ndjson
+    ApplicationRecord.connection_pool.with_connection do |connection|
+      if connection.transaction_open?
+        generate_zip
+      else
+        ApplicationRecord.transaction(isolation: :repeatable_read) { generate_zip }
+      end
     end
-
-    # Rewind and return the StringIO
-    zip_data.rewind
-    zip_data
   end
 
   private
+    def generate_zip
+      # Create a StringIO to hold the zip data in memory
+      zip_data = Zip::OutputStream.write_buffer do |zipfile|
+        # Add export version marker for downstream tooling
+        zipfile.put_next_entry("version.txt")
+        zipfile.write generate_version_txt
+
+        # Add accounts.csv
+        zipfile.put_next_entry("accounts.csv")
+        zipfile.write generate_accounts_csv
+
+        # Add transactions.csv
+        zipfile.put_next_entry("transactions.csv")
+        zipfile.write generate_transactions_csv
+
+        # Add trades.csv
+        zipfile.put_next_entry("trades.csv")
+        zipfile.write generate_trades_csv
+
+        # Add categories.csv
+        zipfile.put_next_entry("categories.csv")
+        zipfile.write generate_categories_csv
+
+        # Add merchants.csv
+        zipfile.put_next_entry("merchants.csv")
+        zipfile.write generate_merchants_csv
+
+        # Add rules.csv
+        zipfile.put_next_entry("rules.csv")
+        zipfile.write generate_rules_csv
+
+        # File payloads travel inside all.ndjson so it is independently restorable.
+        zipfile.put_next_entry("attachments.json")
+        zipfile.write generate_attachments_manifest
+
+        zipfile.put_next_entry("backup_report.json")
+        zipfile.write Family::Backup.new(@family).report.to_json
+
+        # Add all.ndjson
+        zipfile.put_next_entry("all.ndjson")
+        zipfile.write generate_ndjson
+      end
+
+      # Rewind and return the StringIO
+      zip_data.rewind
+      zip_data
+  end
+
     def generate_version_txt
       <<~TEXT
         export_version: #{EXPORT_VERSION}
@@ -179,14 +192,14 @@ class Family::DataExporter
 
     def generate_attachments_manifest
       {
-        version: 1,
-        binary_included: false,
+        version: 2,
+        binary_included: true,
         attachments: attachment_manifest_items
       }.to_json
     end
 
     def attachment_manifest_items
-      (transaction_attachment_manifest_items + family_document_attachment_manifest_items)
+      (transaction_attachment_manifest_items + family_document_attachment_manifest_items + additional_attachment_manifest_items)
         .sort_by { |item| [ item[:record_type], item[:record_id].to_s, item[:filename].to_s, item[:id].to_s ] }
     end
 
@@ -207,6 +220,17 @@ class Family::DataExporter
             )
           end
         end
+    end
+
+    def additional_attachment_manifest_items
+      backup = Family::Backup.new(@family)
+      Family::Backup.models.flat_map do |name, model|
+        next [] if name.in?(%w[Transaction FamilyDocument]) || !Family::Backup.has_attachments?(model)
+
+        ActiveStorage::Attachment.includes(:blob)
+          .where(record_type: model.base_class.name, record_id: backup.scope_for(name).select(:id))
+          .map { |attachment| attachment_manifest_item(attachment, record_type: name, record_id: attachment.record_id) }
+      end
     end
 
     def family_document_attachment_manifest_items
@@ -235,7 +259,7 @@ class Family::DataExporter
         content_type: blob.content_type,
         byte_size: blob.byte_size,
         checksum: blob.checksum,
-        binary_included: false,
+        binary_included: true,
         created_at: attachment.created_at
       }.merge(extra)
     end
@@ -548,7 +572,7 @@ class Family::DataExporter
         }.to_json
       end
 
-      lines.join("\n")
+      [ Family::Backup.new(@family).generate_ndjson, lines.join("\n") ].join("\n")
     end
 
     def exportable_transactions

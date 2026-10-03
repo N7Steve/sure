@@ -33,6 +33,7 @@ class ImportSourceMapping < ApplicationRecord
     def target_matches_family
       return if target_type.blank? || !SOURCE_TYPES.include?(target_type)
       return if target.blank?
+      return if target.is_a?(ProviderMerchant) && target.family_id.nil?
       return unless target.respond_to?(:family_id)
       return if target.family_id == family_id
 

@@ -222,6 +222,9 @@ class Api::V1::ImportsController < Api::V1::BaseController
     def create_sure_import(family)
       content, filename, content_type = sure_import_upload_attributes
       return unless content
+      if Family::Backup.snapshot?(content) && !current_resource_owner.admin?
+        return render json: { error: "forbidden", message: "Full backup restoration requires a family administrator." }, status: :forbidden
+      end
 
       begin
         @import = persist_sure_import!(family, content, filename, content_type)

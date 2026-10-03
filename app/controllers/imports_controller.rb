@@ -33,6 +33,8 @@ class ImportsController < ApplicationController
   end
 
   def publish
+    return head(:forbidden) if @import.is_a?(SureImport) && @import.full_backup? && !Current.user.admin?
+
     @import.publish_later
 
     redirect_to import_path(@import), notice: t(".started")
@@ -269,6 +271,8 @@ class ImportsController < ApplicationController
 
       content = file.read
       file.rewind
+      return head(:forbidden) if Family::Backup.snapshot?(content) && !Current.user.admin?
+
       unless SureImport.valid_ndjson_first_line?(content)
         redirect_to new_import_path, alert: t("imports.create.invalid_ndjson_file_type")
         return

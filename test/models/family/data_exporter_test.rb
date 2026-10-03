@@ -55,7 +55,7 @@ class Family::DataExporterTest < ActiveSupport::TestCase
     assert zip_data.is_a?(StringIO)
 
     # Check that the zip contains all expected files
-    expected_files = [ "version.txt", "accounts.csv", "transactions.csv", "trades.csv", "categories.csv", "merchants.csv", "rules.csv", "attachments.json", "all.ndjson" ]
+    expected_files = [ "version.txt", "accounts.csv", "transactions.csv", "trades.csv", "categories.csv", "merchants.csv", "rules.csv", "attachments.json", "backup_report.json", "all.ndjson" ]
 
     Zip::File.open_buffer(zip_data) do |zip|
       actual_files = zip.entries.map(&:name)
@@ -79,7 +79,7 @@ class Family::DataExporterTest < ActiveSupport::TestCase
     end
   end
 
-  test "exports attachment manifest metadata without binary payloads" do
+  test "exports attachment manifest metadata with portable binary payloads" do
     entry = @account.entries.create!(
       name: "Receipt Transaction",
       amount: 12.34,
@@ -130,8 +130,8 @@ class Family::DataExporterTest < ActiveSupport::TestCase
       attachments = manifest["attachments"]
       filenames = attachments.map { |attachment| attachment["filename"] }
 
-      assert_equal 1, manifest["version"]
-      assert_equal false, manifest["binary_included"]
+      assert_equal 2, manifest["version"]
+      assert_equal true, manifest["binary_included"]
       assert_includes filenames, "receipt.pdf"
       assert_includes filenames, "statement.pdf"
       refute_includes filenames, "other-receipt.pdf"
@@ -142,13 +142,13 @@ class Family::DataExporterTest < ActiveSupport::TestCase
       assert_equal @account.id, transaction_item["account_id"]
       assert_equal "attachments", transaction_item["name"]
       assert_equal "application/pdf", transaction_item["content_type"]
-      assert_equal false, transaction_item["binary_included"]
+      assert_equal true, transaction_item["binary_included"]
 
       document_item = attachments.find { |attachment| attachment["record_type"] == "FamilyDocument" }
       assert_equal family_document.id, document_item["record_id"]
       assert_equal "ready", document_item["status"]
       assert_equal "file", document_item["name"]
-      assert_equal false, document_item["binary_included"]
+      assert_equal true, document_item["binary_included"]
     end
   end
 
@@ -193,7 +193,7 @@ class Family::DataExporterTest < ActiveSupport::TestCase
 
       # Check version marker
       version_txt = zip.read("version.txt")
-      assert_includes version_txt, "export_version: 2"
+      assert_includes version_txt, "export_version: 3"
       refute_includes version_txt, "csv_export_version"
 
       # Check transactions.csv

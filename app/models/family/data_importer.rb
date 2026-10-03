@@ -104,6 +104,10 @@ class Family::DataImporter
   end
 
   def import!
+    if Family::Backup.snapshot?(@ndjson_content)
+      return Family::Backup::Restorer.new(@family, @ndjson_content, import: @import, import_session: @import_session).restore!
+    end
+
     records = parse_ndjson
     @oldest_import_entry_dates_by_account = oldest_import_entry_dates_by_account(records)
     @imported_opening_anchor_account_ids = imported_opening_anchor_account_ids(records["Valuation"] || [])

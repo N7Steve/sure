@@ -7207,6 +7207,8 @@ paths:
       summary: Upload import session chunk
       description: Attach an ordered Sure NDJSON chunk to an import session. Chunks
         are idempotent by sequence and client_chunk_id with content verification.
+        A version 3 full backup is a self-contained single chunk and requires a family
+        administrator.
       tags:
       - Import Sessions
       security:
@@ -7306,7 +7308,9 @@ paths:
     post:
       summary: Publish import session
       description: Queue ordered chunk processing for a SureImport session. Later
-        chunks can reference source IDs mapped by earlier chunks.
+        chunks can reference source IDs mapped by earlier chunks. Publishing a session
+        containing a version 3 full backup requires a family administrator and an
+        empty destination family.
       tags:
       - Import Sessions
       security:
@@ -7417,7 +7421,9 @@ paths:
     post:
       summary: Create import
       description: Create a new import from raw CSV content, inline Sure NDJSON content,
-        or an uploaded Sure NDJSON file. CSV content is limited to 10MB.
+        or an uploaded Sure NDJSON file. CSV content is limited to 10MB. Version 3
+        full backups include files and require a family administrator and an empty
+        destination family for restoration.
       tags:
       - Imports
       security:
@@ -7430,6 +7436,12 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ImportResponse"
+        '403':
+          description: full backup restoration requires an administrator
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
         '422':
           description: validation error or publish rejection
           content:

@@ -123,7 +123,7 @@ RSpec.describe 'API V1 Imports', type: :request do
     end
 
     post 'Create import' do
-      description 'Create a new import from raw CSV content, inline Sure NDJSON content, or an uploaded Sure NDJSON file. CSV content is limited to 10MB.'
+      description 'Create a new import from raw CSV content, inline Sure NDJSON content, or an uploaded Sure NDJSON file. CSV content is limited to 10MB. Version 3 full backups include files and require a family administrator and an empty destination family for restoration.'
       tags 'Imports'
       security [ { apiKeyAuth: [] } ]
       consumes 'application/json', 'multipart/form-data'
@@ -247,6 +247,14 @@ RSpec.describe 'API V1 Imports', type: :request do
           }
         end
 
+        run_test!
+      end
+
+      response '403', 'full backup restoration requires an administrator' do
+        schema '$ref' => '#/components/schemas/ErrorResponse'
+        let(:body) do
+          { type: 'SureImport', raw_file_content: { type: 'BackupManifest', data: { version: 1 } }.to_json }
+        end
         run_test!
       end
 
